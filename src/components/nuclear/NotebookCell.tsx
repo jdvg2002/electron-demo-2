@@ -81,13 +81,11 @@ const formatNumber = (value: number): string => {
 
 const NotebookCell = ({ cell, isActive, onToggle }: NotebookCellProps) => {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const [stlFile, setStlFile] = useState<File | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [cellCode, setCellCode] = useState(cell.code || '');
   const [isExecuting, setIsExecuting] = useState(false);
   const [executionResult, setExecutionResult] = useState<any>(null);
   const [viewState, setViewState] = useState<'idle' | 'loading' | 'viewing' | 'error'>('idle');
-  const [pipeMeasurements, setPipeMeasurements] = useState<PipeMeasurements | null>(null);
   const [renderedFile, setRenderedFile] = useState<RenderedFileInfo | null>(null);
   const [stepFileData, setStepFileData] = useState<StepFileData | null>(null);
 
@@ -96,7 +94,12 @@ const NotebookCell = ({ cell, isActive, onToggle }: NotebookCellProps) => {
     if (!file) return;
 
     if (file.name.toLowerCase().endsWith('.stl')) {
-      setStlFile(file);
+      setStepFileData({
+        stlFile: file,
+        pipeMeasurements: null,
+        originalFileName: file.name,
+        timestamp: new Date().toISOString()
+      });
       setViewState('viewing');
       setRenderedFile({
         file,
@@ -115,8 +118,14 @@ const NotebookCell = ({ cell, isActive, onToggle }: NotebookCellProps) => {
         if (result.success) {
           const stlBlob = new Blob([result.stl_data], { type: 'model/stl' });
           const stlFile = new File([stlBlob], 'converted.stl', { type: 'model/stl' });
-          setStlFile(stlFile);
-          setPipeMeasurements(result.pipe_measurements);
+          
+          setStepFileData({
+            stlFile,
+            pipeMeasurements: result.pipe_measurements,
+            originalFileName: file.name,
+            timestamp: new Date().toISOString()
+          });
+          
           setViewState('viewing');
           setRenderedFile({
             file: stlFile,
@@ -242,8 +251,7 @@ const NotebookCell = ({ cell, isActive, onToggle }: NotebookCellProps) => {
               fileInfo={renderedFile}
               onClear={() => {
                 setRenderedFile(null);
-                setStlFile(null);
-                setPipeMeasurements(null);
+                setStepFileData(null);
                 setViewState('idle');
                 setErrorMessage(null);
                 if (fileInputRef.current) {
@@ -263,10 +271,10 @@ const NotebookCell = ({ cell, isActive, onToggle }: NotebookCellProps) => {
           )}
           
           {/* Visualization Section */}
-          {stlFile && pipeMeasurements && (
+          {stepFileData && (
             <div className="w-full">
               <VisualizationGrid 
-                cards={createVisualizationCards(stlFile, pipeMeasurements)}
+                cards={createVisualizationCards(stepFileData.stlFile, stepFileData.pipeMeasurements)}
                 cardsPerRow={5}
               />
             </div>
