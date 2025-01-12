@@ -79,26 +79,40 @@ const CardRenderer: React.FC<{ content: CardContent }> = ({ content }) => {
   }
 };
 
-const VisualizationCard: React.FC<{ card: VisualizationCard }> = ({ card }) => (
-  <Card className="aspect-square p-2 min-w-[200px] overflow-hidden">
-    <h3 className="font-medium mb-1 px-2 text-sm">{card.title}</h3>
-    <div className="h-[calc(100%-1.5rem)] w-full">
-      <CardRenderer content={card.content} />
-    </div>
-  </Card>
-);
+const VisualizationCard: React.FC<{ 
+  card: VisualizationCard;
+  index: number; // Add index prop to determine if it's the STL viewer
+}> = ({ card, index }) => {
+  const isStlViewer = card.content.type === 'stl';
+  
+  return (
+    <Card className={`
+      aspect-square p-2 min-w-[200px] overflow-hidden
+      ${isStlViewer ? 'row-span-2 col-span-2' : ''} 
+    `}>
+      <h3 className="font-medium mb-1 px-2 text-sm">{card.title}</h3>
+      <div className="h-[calc(100%-1.5rem)] w-full">
+        <CardRenderer content={card.content} />
+      </div>
+    </Card>
+  );
+};
 
 const VisualizationGrid: React.FC<VisualizationGridProps> = ({ 
   cards,
   cardsPerRow = 5
 }) => {
   return (
-    <div className="w-full grid gap-3"
+    <div className="w-full grid gap-3 auto-rows-fr"
       style={{ 
         gridTemplateColumns: `repeat(${cardsPerRow}, minmax(200px, 1fr))`
       }}>
       {cards.map((card, index) => (
-        <VisualizationCard key={index} card={card} />
+        <VisualizationCard 
+          key={index} 
+          card={card} 
+          index={index}
+        />
       ))}
     </div>
   );
