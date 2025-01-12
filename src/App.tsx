@@ -16,7 +16,7 @@ export default function App() {
   return (
     <>
       <Titlebar />
-      <Demo />
+      <Dashboard />
     </>
   );
 }
@@ -24,5 +24,5 @@ export default function App() {
 // Single render point
 const root = createRoot(document.getElementById("app")!);
 root.render(
-  <Dashboard />
+  <App />
 );
