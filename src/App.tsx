@@ -9,6 +9,8 @@ import { RouterProvider } from "@tanstack/react-router";
 import Demo from "./components/nuclear/demo";
 import Titlebar from './components/Titlebar';
 import Dashboard from "./components/nuclear/dashboard";
+import './components/nuclear/MonacoConfig';
+
 
 export default function App() {
   return (

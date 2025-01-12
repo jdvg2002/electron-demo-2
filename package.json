@@ -17,7 +17,8 @@
         "test:unit": "jest",
         "test:e2e": "playwright test",
         "test:all": "jest && playwright test",
-        "postinstall": "ts-node scripts/bundle-python.ts"
+        "postinstall": "ts-node scripts/bundle-python.ts",
+        "bundle-python": "ts-node scripts/bundle-python.ts"
     },
     "author": "ROG <luan.roger.2003@gmail.com>",
     "license": "MIT",

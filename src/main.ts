@@ -1,7 +1,5 @@
 import { app, BrowserWindow, ipcMain } from "electron";
 import registerListeners from "./helpers/ipc/listeners-register";
-// "electron-squirrel-startup" seems broken when packaging with vite
-//import started from "electron-squirrel-startup";
 import path from "path";
 import { PythonShell } from 'python-shell';
 import fs from 'fs';
@@ -106,3 +104,62 @@ async function convert_step_to_stl(filePath: string) {
     });
   });
 }
+
+// Add this with other IPC handlers
+ipcMain.handle('execute-python', async (_event, code) => {
+  try {
+    const scriptPath = path.join(os.tmpdir(), `temp-${Date.now()}.py`);
+    await fs.promises.writeFile(scriptPath, code);
+    
+    const pythonPath = path.join(
+      process.cwd(), 
+      'bundled-python', 
+      'envs', 
+      'occ',
+      os.platform() === 'win32' 
+        ? 'python.exe' 
+        : path.join('bin', 'python')
+    );
+
+    return new Promise((resolve, reject) => {
+      const process = new PythonShell(scriptPath, {
+        pythonPath,
+        mode: 'text'
+      });
+
+      let stdout = [];
+      let stderr = [];
+
+      process.on('message', (message) => {
+        stdout.push(message);
+      });
+
+      process.on('stderr', (message) => {
+        stderr.push(message);
+      });
+
+      process.end((err) => {
+        // Clean up temp file
+        fs.unlink(scriptPath, () => {});
+
+        if (err) {
+          reject({
+            success: false,
+            error: stderr.join('\n') || err.message
+          });
+        } else {
+          resolve({
+            success: true,
+            stdout: stdout.join('\n'),
+            result: stdout[stdout.length - 1] // Last line as result
+          });
+        }
+      });
+    });
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+});

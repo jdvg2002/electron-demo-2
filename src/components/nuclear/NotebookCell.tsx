@@ -11,7 +11,6 @@ import { temperatureData, fluxData, safetyMarginData, coolantData } from '../../
 import { StlViewer } from 'react-stl-viewer';
 import PostProcessingChart from './PostProcessingChart';
 import resultsData from '@/data/results.json';
-import { loadPyodide } from 'pyodide';
 import ExternalTool from './ExternalTool';
 
 interface CellFile {
@@ -77,25 +76,8 @@ const NotebookCell = ({ cell, isActive, onToggle }: NotebookCellProps) => {
   const [cellCode, setCellCode] = useState(cell.code || '');
   const [isExecuting, setIsExecuting] = useState(false);
   const [executionResult, setExecutionResult] = useState<any>(null);
-  const [pyodide, setPyodide] = useState<any>(null);
   const [viewState, setViewState] = useState<'idle' | 'loading' | 'viewing' | 'error'>('idle');
   const [pipeMeasurements, setPipeMeasurements] = useState<PipeMeasurements | null>(null);
-
-  useEffect(() => {
-    const initPyodide = async () => {
-      console.log("Starting Pyodide initialization...");
-      try {
-        const pyodideInstance = await loadPyodide({
-          indexURL: "https://cdn.jsdelivr.net/pyodide/v0.27.0/full/"
-        });
-        console.log("Pyodide initialized successfully!");
-        setPyodide(pyodideInstance);
-      } catch (error) {
-        console.error("Failed to initialize Pyodide:", error);
-      }
-    };
-    initPyodide();
-  }, []);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -146,30 +128,20 @@ const NotebookCell = ({ cell, isActive, onToggle }: NotebookCellProps) => {
       return;
     }
     
-    if (!pyodide) {
-      setErrorMessage('Python runtime not initialized');
-      return;
-    }
-    
     try {
       console.log("Starting execution...");
       setIsExecuting(true);
+      setErrorMessage(null);
 
-      // Create a new stdout capture
-      const stdout: string[] = [];
-      pyodide.setStdout({
-        batched: (text: string[]) => {
-          stdout.push(...text);
-        },
-      });
-
-      // Run the code
-      const result = await pyodide.runPythonAsync(cellCode);
-      console.log("Execution completed:", { stdout, result });
+      const result = await window.electronWindow.executePython(cellCode);
+      
+      if (!result.success) {
+        throw new Error(result.error);
+      }
 
       setExecutionResult({
-        stdout: stdout.join('\n'),
-        result: result
+        stdout: result.stdout,
+        result: result.result
       });
     } catch (error) {
       console.error("Execution failed:", error);
@@ -177,7 +149,7 @@ const NotebookCell = ({ cell, isActive, onToggle }: NotebookCellProps) => {
     } finally {
       setIsExecuting(false);
     }
-  }, [cellCode, pyodide]);
+  }, [cellCode]);
 
   const renderCellIcon = () => {
     switch (cell.type) {
@@ -282,19 +254,13 @@ const NotebookCell = ({ cell, isActive, onToggle }: NotebookCellProps) => {
   );
 
   return (
-    <Card 
-      className="mb-4 border-l-4 border-l-blue-500 w-full"
-      onClick={onToggle}
-      style={{ cursor: 'pointer' }}
-    >
-      <CardHeader 
-        className="flex flex-row items-center justify-between p-4"
-      >
+    <Card className="mb-4 border-l-4 border-l-blue-500 w-full">
+      <CardHeader className="flex flex-row items-center justify-between p-4">
         <div className="flex items-center gap-2">
           {renderCellIcon()}
           <CardTitle className="text-lg font-medium">{cell.title}</CardTitle>
         </div>
-        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-2">
           <input
             type="file"
             ref={fileInputRef}
@@ -334,10 +300,7 @@ const NotebookCell = ({ cell, isActive, onToggle }: NotebookCellProps) => {
       </CardHeader>
       
       {isActive && (
-        <CardContent 
-          onClick={(e) => e.stopPropagation()} 
-          className="p-4 space-y-4"
-        >
+        <CardContent className="p-4 space-y-4">
           {/* External Tool */}
           {cell.type === 'external' && cell.tool && cell.input && (
             <ExternalTool

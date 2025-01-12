@@ -1,4 +1,4 @@
-import { Editor } from '@monaco-editor/react';
+import { Editor, loader } from '@monaco-editor/react';
 import React, { useState } from 'react';
 import { Copy, Check } from 'lucide-react';
 
@@ -29,6 +29,23 @@ const CodeBlock = ({
     } catch (err) {
       console.error('Failed to copy code:', err);
     }
+  };
+
+  const handleEditorDidMount = (editor: any) => {
+    // Ensure the editor updates its layout
+    setTimeout(() => {
+      editor.layout();
+    }, 100);
+  };
+
+  const handleEditorWillMount = (monaco: any) => {
+    // Optional: Configure Monaco instance before mounting
+    monaco.editor.defineTheme('customTheme', {
+      base: 'vs',
+      inherit: true,
+      rules: [],
+      colors: {}
+    });
   };
 
   return (
@@ -64,6 +81,9 @@ const CodeBlock = ({
             automaticLayout: true,
           }}
           onChange={onChange}
+          onMount={handleEditorDidMount}
+          beforeMount={handleEditorWillMount}
+          loading={<div className="p-4 text-gray-500">Loading editor...</div>}
         />
       </div>
     </div>
