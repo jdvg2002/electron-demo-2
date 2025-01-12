@@ -94,12 +94,14 @@ const NotebookCell = ({ cell, isActive, onToggle }: NotebookCellProps) => {
     if (!file) return;
 
     if (file.name.toLowerCase().endsWith('.stl')) {
-      setStepFileData({
+      const newStepFileData = {
         stlFile: file,
         pipeMeasurements: null,
         originalFileName: file.name,
         timestamp: new Date().toISOString()
-      });
+      };
+      console.log('STL File Data:', newStepFileData);
+      setStepFileData(newStepFileData);
       setViewState('viewing');
       setRenderedFile({
         file,
@@ -119,12 +121,14 @@ const NotebookCell = ({ cell, isActive, onToggle }: NotebookCellProps) => {
           const stlBlob = new Blob([result.stl_data], { type: 'model/stl' });
           const stlFile = new File([stlBlob], 'converted.stl', { type: 'model/stl' });
           
-          setStepFileData({
+          const newStepFileData = {
             stlFile,
             pipeMeasurements: result.pipe_measurements,
             originalFileName: file.name,
             timestamp: new Date().toISOString()
-          });
+          };
+          console.log('STEP File Data:', newStepFileData);
+          setStepFileData(newStepFileData);
           
           setViewState('viewing');
           setRenderedFile({
