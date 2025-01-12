@@ -128,27 +128,6 @@ const NotebookCell: React.FC<NotebookCellProps> = ({
         timestamp: new Date().toISOString()
       };
       
-      // Create output file from StepFileData
-      const outputFileData: CellFile = {
-        name: file.name.replace(/\.(stl)$/i, '.json'),
-        size: `${Math.round(file.size / 1024)} KB`,
-        format: 'json',
-        timestamp: new Date().toISOString()
-      };
-
-      // Update cell with new output
-      const updatedCell: CellData = {
-        ...cell,
-        stlFile: {
-          name: file.name,
-          data: base64data,
-          type: 'model/stl'
-        },
-        output: {
-          file: outputFileData
-        }
-      };
-      
       console.log('STL File Data:', newStepFileData);
       setStepFileData(newStepFileData);
       setViewState('viewing');
