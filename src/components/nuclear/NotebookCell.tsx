@@ -98,10 +98,20 @@ const NotebookCell: React.FC<NotebookCellProps> = ({
       const blob = new Blob([ab], { type: cell.stlFile.type });
       const file = new File([blob], cell.stlFile.name, { type: cell.stlFile.type });
       
-      setStlFile(file);
-      if (cell.pipeMeasurements) {
-        setPipeMeasurements(cell.pipeMeasurements);
-      }
+      setStepFileData({
+        stlFile: file,
+        pipeMeasurements: cell.pipeMeasurements || null,
+        originalFileName: cell.stlFile.name,
+        timestamp: new Date().toISOString()
+      });
+
+      setRenderedFile({
+        file: file,
+        timestamp: new Date().toISOString(),
+        success: true,
+        originalFileName: cell.stlFile.name
+      });
+      
       setViewState('viewing');
     }
   }, [cell.stlFile]);
@@ -117,6 +127,28 @@ const NotebookCell: React.FC<NotebookCellProps> = ({
         originalFileName: file.name,
         timestamp: new Date().toISOString()
       };
+      
+      // Create output file from StepFileData
+      const outputFileData: CellFile = {
+        name: file.name.replace(/\.(stl)$/i, '.json'),
+        size: `${Math.round(file.size / 1024)} KB`,
+        format: 'json',
+        timestamp: new Date().toISOString()
+      };
+
+      // Update cell with new output
+      const updatedCell: CellData = {
+        ...cell,
+        stlFile: {
+          name: file.name,
+          data: base64data,
+          type: 'model/stl'
+        },
+        output: {
+          file: outputFileData
+        }
+      };
+      
       console.log('STL File Data:', newStepFileData);
       setStepFileData(newStepFileData);
       setViewState('viewing');
@@ -145,7 +177,8 @@ const NotebookCell: React.FC<NotebookCellProps> = ({
         
         if (result.success) {
           const stlBlob = new Blob([result.stl_data], { type: 'model/stl' });
-          const stlFile = new File([stlBlob], 'converted.stl', { type: 'model/stl' });
+          const newFileName = file.name.replace(/\.(step|stp)$/i, '.stl');
+          const stlFile = new File([stlBlob], newFileName, { type: 'model/stl' });
           
           const newStepFileData = {
             stlFile,
@@ -157,14 +190,12 @@ const NotebookCell: React.FC<NotebookCellProps> = ({
           setStepFileData(newStepFileData);
           
           setViewState('viewing');
-<<<<<<< HEAD
           setRenderedFile({
             file: stlFile,
             timestamp: new Date().toISOString(),
             success: true,
             originalFileName: file.name
           });
-=======
 
           const reader = new FileReader();
           reader.onload = () => {
@@ -172,7 +203,7 @@ const NotebookCell: React.FC<NotebookCellProps> = ({
             const updatedCell: CellData = {
               ...cell,
               stlFile: {
-                name: 'converted.stl',
+                name: newFileName,
                 data: base64data,
                 type: 'model/stl'
               },
@@ -181,7 +212,6 @@ const NotebookCell: React.FC<NotebookCellProps> = ({
             onCellChange(updatedCell);
           };
           reader.readAsDataURL(stlFile);
->>>>>>> 6c11e33 (fix persistence)
         } else {
           setErrorMessage(result.error || 'Failed to convert STEP file');
           setViewState('error');
