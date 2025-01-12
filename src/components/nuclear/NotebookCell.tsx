@@ -213,7 +213,7 @@ const NotebookCell = ({ cell, isActive, onToggle }: NotebookCellProps) => {
       </CardHeader>
       
       {isActive && (
-        <CardContent className="p-4 space-y-4">
+        <CardContent className="p-2 space-y-4 w-full">
           {/* External Tool */}
           {cell.type === 'external' && cell.tool && cell.input && (
             <ExternalTool
@@ -225,10 +225,12 @@ const NotebookCell = ({ cell, isActive, onToggle }: NotebookCellProps) => {
           
           {/* Visualization Section */}
           {stlFile && pipeMeasurements && (
-            <VisualizationGrid 
-              cards={createVisualizationCards(stlFile, pipeMeasurements)}
-              cardsPerRow={3}
-            />
+            <div className="w-full">
+              <VisualizationGrid 
+                cards={createVisualizationCards(stlFile, pipeMeasurements)}
+                cardsPerRow={5}
+              />
+            </div>
           )}
 
           {/* Error Message */}

@@ -28,25 +28,27 @@ const CardRenderer: React.FC<{ content: CardContent }> = ({ content }) => {
   switch (content.type) {
     case 'stl':
       return (
-        <StlViewer
-          style={{ width: '100%', height: '100%' }}
-          orbitControls
-          shadows
-          url={URL.createObjectURL(content.file)}
-          modelProps={{
-            scale: 1.25,
-            rotationX: 0,
-            rotationY: 0,
-            rotationZ: 0
-          }}
-        />
+        <div className="w-full h-full -ml-2 -mr-2 -mb-2">
+          <StlViewer
+            style={{ width: '100%', height: '100%' }}
+            orbitControls
+            shadows
+            url={URL.createObjectURL(content.file)}
+            modelProps={{
+              scale: 1.25,
+              rotationX: 0,
+              rotationY: 0,
+              rotationZ: 0
+            }}
+          />
+        </div>
       );
 
     case 'measurements':
       return (
-        <div className="grid grid-rows-3 h-full gap-4">
+        <div className="grid grid-rows-3 h-full gap-4 -ml-2 -mr-2 -mb-2">
           {Object.entries(content.data).map(([key, value]) => (
-            <div key={key} className="flex flex-col justify-center">
+            <div key={key} className="flex flex-col justify-center px-4">
               <p className="text-sm text-gray-500">
                 {key.split('_').map(word => 
                   word.charAt(0).toUpperCase() + word.slice(1)
@@ -60,7 +62,7 @@ const CardRenderer: React.FC<{ content: CardContent }> = ({ content }) => {
 
     case 'distribution':
       return (
-        <div className="w-full h-full -ml-4">
+        <div className="w-full h-full -ml-2 -mr-2 -mb-2">
           <DistributionChart
             mean={content.mean}
             stdDev={content.stdDev}
@@ -78,8 +80,8 @@ const CardRenderer: React.FC<{ content: CardContent }> = ({ content }) => {
 };
 
 const VisualizationCard: React.FC<{ card: VisualizationCard }> = ({ card }) => (
-  <Card className="aspect-square p-2">
-    <h3 className="font-medium mb-1 px-2">{card.title}</h3>
+  <Card className="aspect-square p-2 min-w-[200px] overflow-hidden">
+    <h3 className="font-medium mb-1 px-2 text-sm">{card.title}</h3>
     <div className="h-[calc(100%-1.5rem)] w-full">
       <CardRenderer content={card.content} />
     </div>
@@ -88,12 +90,12 @@ const VisualizationCard: React.FC<{ card: VisualizationCard }> = ({ card }) => (
 
 const VisualizationGrid: React.FC<VisualizationGridProps> = ({ 
   cards,
-  cardsPerRow = 3
+  cardsPerRow = 5
 }) => {
   return (
-    <div className="grid gap-4" 
+    <div className="w-full grid gap-3"
       style={{ 
-        gridTemplateColumns: `repeat(${cardsPerRow}, minmax(0, 1fr))` 
+        gridTemplateColumns: `repeat(${cardsPerRow}, minmax(200px, 1fr))`
       }}>
       {cards.map((card, index) => (
         <VisualizationCard key={index} card={card} />
