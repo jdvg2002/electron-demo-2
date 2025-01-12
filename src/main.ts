@@ -7,6 +7,9 @@ import os from 'os';
 
 const inDevelopment = process.env.NODE_ENV === "development";
 
+let mainWindow: BrowserWindow | null = null;
+let isInitialLaunch = true;
+
 function createWindow() {
     const preload = path.join(__dirname, "preload.js");
     
@@ -15,14 +18,14 @@ function createWindow() {
     const { width: displayWidth, height: displayHeight } = primaryDisplay.workAreaSize;
     
     // Calculate window dimensions
-    const windowHeight = Math.round(displayHeight * 0.95);  // 80% of display height
-    const windowWidth = Math.round(windowHeight * 1.5);   // 1.25x the height
+    const windowHeight = Math.round(displayHeight * 0.95);
+    const windowWidth = Math.round(windowHeight * 1.5);
 
-    const mainWindow = new BrowserWindow({
+    mainWindow = new BrowserWindow({
         width: windowWidth,
         height: windowHeight,
-        minWidth: 800,       // Minimum width
-        minHeight: 640,      // Minimum height
+        minWidth: 800,
+        minHeight: 640,
         center: true,
         webPreferences: {
             devTools: inDevelopment,
@@ -33,15 +36,30 @@ function createWindow() {
         },
         titleBarStyle: "hidden",
     });
+
     registerListeners(mainWindow);
 
     if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-        mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
+        mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL)
+          .then(() => clearLocalStorage(mainWindow));
     } else {
         mainWindow.loadFile(
             path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`)
-        );
+        ).then(() => clearLocalStorage(mainWindow));
     }
+
+    // Handle window close cleanup
+    mainWindow.on('close', (event) => {
+        event.preventDefault();
+        mainWindow.webContents.executeJavaScript(`
+            localStorage.removeItem('dashboardCards');
+            localStorage.removeItem('dashboardNextId');
+            localStorage.removeItem('dashboardWires');
+        `).then(() => {
+            isInitialLaunch = true; // Reset for next launch
+            mainWindow.destroy();
+        });
+    });
 }
 
 app.whenReady().then(createWindow);
@@ -174,3 +192,15 @@ ipcMain.handle('execute-python', async (_event, code) => {
     };
   }
 });
+
+function clearLocalStorage(mainWindow: BrowserWindow) {
+  if (!isInitialLaunch) return;
+  
+  mainWindow.webContents.executeJavaScript(`
+    localStorage.removeItem('dashboardCards');
+    localStorage.removeItem('dashboardNextId');
+    localStorage.removeItem('dashboardWires');
+  `).then(() => {
+    isInitialLaunch = false;
+  });
+}

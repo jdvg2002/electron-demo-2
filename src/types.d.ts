@@ -34,4 +34,7 @@ declare interface Window {
             error?: string;
         }>;
     };
+    cleanup: {
+        clearStorage: () => Promise<void>;
+    };
 }

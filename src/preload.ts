@@ -24,3 +24,7 @@ contextBridge.exposeInMainWorld('electronWindow', {
 contextBridge.exposeInMainWorld('stepConverter', {
   convertStep: (filePath: string) => ipcRenderer.invoke('convert-step', filePath)
 });
+
+contextBridge.exposeInMainWorld('cleanup', {
+  clearStorage: () => ipcRenderer.invoke('cleanup:storage')
+});

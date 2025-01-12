@@ -12,6 +12,16 @@ export function addWindowEventListeners(mainWindow: BrowserWindow) {
             mainWindow.maximize();
         }
     });
+    mainWindow.on('close', (event) => {
+        event.preventDefault();
+        mainWindow.webContents.executeJavaScript(`
+            localStorage.removeItem('dashboardCards');
+            localStorage.removeItem('dashboardNextId');
+            localStorage.removeItem('dashboardWires');
+        `).then(() => {
+            mainWindow.destroy();
+        });
+    });
     ipcMain.handle(WIN_CLOSE_CHANNEL, () => {
         mainWindow.close();
     });
