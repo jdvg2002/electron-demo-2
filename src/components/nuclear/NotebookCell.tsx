@@ -15,6 +15,7 @@ import ExternalTool from './ExternalTool';
 import CellVisualization from './CellVisualization';
 import VisualizationGrid, { createVisualizationCards } from './CellVisualization';
 import FileRenderInfo, { RenderedFileInfo } from './FileRenderInfo';
+import { CellData } from '@/backend/models/Cell';
 
 interface CellFile {
   name: string;
@@ -42,19 +43,10 @@ interface CellOutput {
 }
 
 interface NotebookCellProps {
-  cell: {
-    id: number;
-    type: 'preprocessing' | 'external' | 'postprocessing';
-    title: string;
-    code?: string;
-    status?: string;
-    tool?: string;
-    input?: CellInput;
-    output?: CellOutput;
-    onExecute?: (code: string) => Promise<any>;
-  };
+  cell: CellData;
   isActive: boolean;
-  onToggle: () => void;
+  onToggle(): void;
+  onCellChange: (updatedCell: CellData) => void;
 }
 
 type DistributionType = 'normal' | 'uniform' | 'exponential';
@@ -79,15 +71,40 @@ const formatNumber = (value: number): string => {
   return new Intl.NumberFormat('en-US').format(Math.round(value));
 };
 
-const NotebookCell = ({ cell, isActive, onToggle }: NotebookCellProps) => {
+const NotebookCell: React.FC<NotebookCellProps> = ({
+  cell,
+  isActive,
+  onToggle,
+  onCellChange
+}) => {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [cellCode, setCellCode] = useState(cell.code || '');
+  const [localCode, setLocalCode] = useState(cell.code || '');
   const [isExecuting, setIsExecuting] = useState(false);
   const [executionResult, setExecutionResult] = useState<any>(null);
   const [viewState, setViewState] = useState<'idle' | 'loading' | 'viewing' | 'error'>('idle');
   const [renderedFile, setRenderedFile] = useState<RenderedFileInfo | null>(null);
   const [stepFileData, setStepFileData] = useState<StepFileData | null>(null);
+
+  useEffect(() => {
+    if (cell.stlFile?.data) {
+      // Convert base64 back to File object
+      const byteString = atob(cell.stlFile.data.split(',')[1]);
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+      }
+      const blob = new Blob([ab], { type: cell.stlFile.type });
+      const file = new File([blob], cell.stlFile.name, { type: cell.stlFile.type });
+      
+      setStlFile(file);
+      if (cell.pipeMeasurements) {
+        setPipeMeasurements(cell.pipeMeasurements);
+      }
+      setViewState('viewing');
+    }
+  }, [cell.stlFile]);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -103,12 +120,21 @@ const NotebookCell = ({ cell, isActive, onToggle }: NotebookCellProps) => {
       console.log('STL File Data:', newStepFileData);
       setStepFileData(newStepFileData);
       setViewState('viewing');
-      setRenderedFile({
-        file,
-        timestamp: new Date().toISOString(),
-        success: true,
-        originalFileName: file.name
-      });
+      
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64data = reader.result as string;
+        const updatedCell: CellData = {
+          ...cell,
+          stlFile: {
+            name: file.name,
+            data: base64data,
+            type: 'model/stl'
+          }
+        };
+        onCellChange(updatedCell);
+      };
+      reader.readAsDataURL(file);
     } 
     else if (file.name.toLowerCase().endsWith('.step') || file.name.toLowerCase().endsWith('.stp')) {
       setViewState('loading');
@@ -131,12 +157,31 @@ const NotebookCell = ({ cell, isActive, onToggle }: NotebookCellProps) => {
           setStepFileData(newStepFileData);
           
           setViewState('viewing');
+<<<<<<< HEAD
           setRenderedFile({
             file: stlFile,
             timestamp: new Date().toISOString(),
             success: true,
             originalFileName: file.name
           });
+=======
+
+          const reader = new FileReader();
+          reader.onload = () => {
+            const base64data = reader.result as string;
+            const updatedCell: CellData = {
+              ...cell,
+              stlFile: {
+                name: 'converted.stl',
+                data: base64data,
+                type: 'model/stl'
+              },
+              pipeMeasurements: result.pipe_measurements
+            };
+            onCellChange(updatedCell);
+          };
+          reader.readAsDataURL(stlFile);
+>>>>>>> 6c11e33 (fix persistence)
         } else {
           setErrorMessage(result.error || 'Failed to convert STEP file');
           setViewState('error');
@@ -153,14 +198,15 @@ const NotebookCell = ({ cell, isActive, onToggle }: NotebookCellProps) => {
 
   const handleCodeChange = (value: string | undefined) => {
     if (value !== undefined) {
-      setCellCode(value);
-      // You might want to add logic here to save the code
-      // or sync it with your application state
+      setLocalCode(value);
+      // Immediately update the cell data and pass it up
+      const updatedCell: CellData = { ...cell, code: value };
+      onCellChange(updatedCell);
     }
   };
 
   const handleRunCell = useCallback(async () => {
-    if (!cellCode) {
+    if (!localCode) {
       console.log("Cannot execute: missing cellCode");
       return;
     }
@@ -170,7 +216,7 @@ const NotebookCell = ({ cell, isActive, onToggle }: NotebookCellProps) => {
       setIsExecuting(true);
       setErrorMessage(null);
 
-      const result = await window.electronWindow.executePython(cellCode);
+      const result = await window.electronWindow.executePython(localCode);
       
       if (!result.success) {
         throw new Error(result.error);
@@ -186,7 +232,7 @@ const NotebookCell = ({ cell, isActive, onToggle }: NotebookCellProps) => {
     } finally {
       setIsExecuting(false);
     }
-  }, [cellCode]);
+  }, [localCode]);
 
   const renderCellIcon = () => {
     switch (cell.type) {
@@ -294,7 +340,7 @@ const NotebookCell = ({ cell, isActive, onToggle }: NotebookCellProps) => {
           {/* Code Block */}
           {cell.code && (
             <CodeBlock 
-              code={cellCode}
+              code={localCode}
               language="python"
               showCopy={true}
               onChange={handleCodeChange}
