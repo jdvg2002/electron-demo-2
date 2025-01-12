@@ -14,7 +14,11 @@ import resultsData from '@/data/results.json';
 import ExternalTool from './ExternalTool';
 import CellVisualization from './CellVisualization';
 import VisualizationGrid, { createVisualizationCards } from './CellVisualization';
+<<<<<<< HEAD
 import FileRenderInfo, { RenderedFileInfo } from './FileRenderInfo';
+=======
+import { CellData } from '@/backend/models/Cell';
+>>>>>>> bbfa92a (refactor)
 
 interface CellFile {
   name: string;
@@ -42,19 +46,10 @@ interface CellOutput {
 }
 
 interface NotebookCellProps {
-  cell: {
-    id: number;
-    type: 'preprocessing' | 'external' | 'postprocessing';
-    title: string;
-    code?: string;
-    status?: string;
-    tool?: string;
-    input?: CellInput;
-    output?: CellOutput;
-    onExecute?: (code: string) => Promise<any>;
-  };
+  cell: CellData;
   isActive: boolean;
-  onToggle: () => void;
+  onToggle(): void;
+  onCellChange: (updatedCell: CellData) => void;
 }
 
 type DistributionType = 'normal' | 'uniform' | 'exponential';
@@ -79,10 +74,15 @@ const formatNumber = (value: number): string => {
   return new Intl.NumberFormat('en-US').format(Math.round(value));
 };
 
-const NotebookCell = ({ cell, isActive, onToggle }: NotebookCellProps) => {
+const NotebookCell: React.FC<NotebookCellProps> = ({
+  cell,
+  isActive,
+  onToggle,
+  onCellChange
+}) => {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [cellCode, setCellCode] = useState(cell.code || '');
+  const [localCode, setLocalCode] = useState(cell.code || '');
   const [isExecuting, setIsExecuting] = useState(false);
   const [executionResult, setExecutionResult] = useState<any>(null);
   const [viewState, setViewState] = useState<'idle' | 'loading' | 'viewing' | 'error'>('idle');
@@ -149,14 +149,15 @@ const NotebookCell = ({ cell, isActive, onToggle }: NotebookCellProps) => {
 
   const handleCodeChange = (value: string | undefined) => {
     if (value !== undefined) {
-      setCellCode(value);
-      // You might want to add logic here to save the code
-      // or sync it with your application state
+      setLocalCode(value);
+      // Immediately update the cell data and pass it up
+      const updatedCell: CellData = { ...cell, code: value };
+      onCellChange(updatedCell);
     }
   };
 
   const handleRunCell = useCallback(async () => {
-    if (!cellCode) {
+    if (!localCode) {
       console.log("Cannot execute: missing cellCode");
       return;
     }
@@ -166,7 +167,7 @@ const NotebookCell = ({ cell, isActive, onToggle }: NotebookCellProps) => {
       setIsExecuting(true);
       setErrorMessage(null);
 
-      const result = await window.electronWindow.executePython(cellCode);
+      const result = await window.electronWindow.executePython(localCode);
       
       if (!result.success) {
         throw new Error(result.error);
@@ -182,7 +183,7 @@ const NotebookCell = ({ cell, isActive, onToggle }: NotebookCellProps) => {
     } finally {
       setIsExecuting(false);
     }
-  }, [cellCode]);
+  }, [localCode]);
 
   const renderCellIcon = () => {
     switch (cell.type) {
@@ -290,7 +291,7 @@ const NotebookCell = ({ cell, isActive, onToggle }: NotebookCellProps) => {
           {/* Code Block */}
           {cell.code && (
             <CodeBlock 
-              code={cellCode}
+              code={localCode}
               language="python"
               showCopy={true}
               onChange={handleCodeChange}

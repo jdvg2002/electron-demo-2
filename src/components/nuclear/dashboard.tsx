@@ -1,197 +1,52 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { router } from '@/routes/router';
+import { ModuleManager } from '@/backend/manager/ModuleManager';
+import { ModuleCard } from '@/backend/models/ModuleCard';
 
 const DraggableCardsCanvas = () => {
-  const [cards, setCards] = useState(() => {
-    const savedCards = localStorage.getItem('dashboardCards');
-    return savedCards ? JSON.parse(savedCards) : [
-      { 
-        id: 1, 
-        x: 100, 
-        y: 100, 
-        isDragging: false, 
-        dragOffset: { x: 0, y: 0 },
-        title: 'Card 1',
-        content: 'Edit this text!'
-      }
-    ];
-  });
-
-  const [nextId, setNextId] = useState(() => {
-    const savedNextId = localStorage.getItem('dashboardNextId');
-    return savedNextId ? parseInt(savedNextId) : 2;
-  });
-
-  const [wires, setWires] = useState(() => {
-    const savedWires = localStorage.getItem('dashboardWires');
-    return savedWires ? JSON.parse(savedWires) : [];
-  });
-
-  // Save state to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('dashboardCards', JSON.stringify(cards));
-    localStorage.setItem('dashboardNextId', nextId.toString());
-    localStorage.setItem('dashboardWires', JSON.stringify(wires));
-  }, [cards, nextId, wires]);
-
-  const [editingCard, setEditingCard] = useState(null);
-  const [activeWire, setActiveWire] = useState(null);
+  const manager = ModuleManager.getInstance();
+  const [modules, setModules] = useState(manager.getAllModules());
+  const [wires, setWires] = useState(manager.getAllWires());
   const [isWiring, setIsWiring] = useState(false);
-  const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
+  const [activeWire, setActiveWire] = useState<{
+    startCard: number;
+    startX: number;
+    startY: number;
+    startRelX: number;
+    startRelY: number;
+    mouseX?: number;
+    mouseY?: number;
+  } | null>(null);
+
+  const [editingCard, setEditingCard] = useState<number | null>(null);
   const [recentlyDragged, setRecentlyDragged] = useState(false);
+  const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
   const [pendingDragCard, setPendingDragCard] = useState<number | null>(null);
 
-  // Calculate the nearest edge point on a card
-  const getSnapPoint = (cardRect, mouseX, mouseY) => {
-    const centerX = cardRect.x + cardRect.width / 2;
-    const centerY = cardRect.y + cardRect.height / 2;
-    
-    // Calculate distances to each edge
-    const distToLeft = Math.abs(mouseX - cardRect.x);
-    const distToRight = Math.abs(mouseX - (cardRect.x + cardRect.width));
-    const distToTop = Math.abs(mouseY - cardRect.y);
-    const distToBottom = Math.abs(mouseY - (cardRect.y + cardRect.height));
-    
-    // Find the minimum distance
-    const minDist = Math.min(distToLeft, distToRight, distToTop, distToBottom);
-    
-    // Also return relative coordinates for anchoring
-    if (minDist === distToLeft) {
-      return { 
-        x: cardRect.x, 
-        y: mouseY,
-        relX: 0,
-        relY: (mouseY - cardRect.y) / cardRect.height
-      };
-    } else if (minDist === distToRight) {
-      return { 
-        x: cardRect.x + cardRect.width, 
-        y: mouseY,
-        relX: 1,
-        relY: (mouseY - cardRect.y) / cardRect.height
-      };
-    } else if (minDist === distToTop) {
-      return { 
-        x: mouseX, 
-        y: cardRect.y,
-        relX: (mouseX - cardRect.x) / cardRect.width,
-        relY: 0
-      };
-    } else {
-      return { 
-        x: mouseX, 
-        y: cardRect.y + cardRect.height,
-        relX: (mouseX - cardRect.x) / cardRect.width,
-        relY: 1
-      };
-    }
-  };
+  // Reflect changes from manager if storing wires/modules somewhere else
+  useEffect(() => {
+    const storedModules = manager.getAllModules();
+    setModules([...storedModules]);
+    setWires([...manager.getAllWires()]);
+  }, []);
 
-  const handleCardClick = (e, cardId) => {
-    // If we're wiring, handle the wiring logic
-    if (isWiring) {
-      // Reference existing wiring code
-      const cardElement = e.currentTarget;
-      const cardRect = cardElement.getBoundingClientRect();
-      const canvasRect = cardElement.parentElement.getBoundingClientRect();
-      
-      const mouseX = e.clientX - canvasRect.left;
-      const mouseY = e.clientY - canvasRect.top;
-      
-      const snapPoint = getSnapPoint(
-        {
-          x: cardRect.left - canvasRect.left,
-          y: cardRect.top - canvasRect.top,
-          width: cardRect.width,
-          height: cardRect.height
-        },
-        mouseX,
-        mouseY
-      );
+  useEffect(() => {
+    // Keep wires in internal state synchronized
+    manager.setWires(wires);
+  }, [wires]);
 
-      if (!activeWire) {
-        // Start new wire
-        setActiveWire({
-          startCard: cardId,
-          startX: snapPoint.x,
-          startY: snapPoint.y,
-          startRelX: snapPoint.relX,
-          startRelY: snapPoint.relY
-        });
-      } else {
-        // Check if clicking the same card as start
-        if (activeWire.startCard === cardId) {
-          // Cancel the wire
-          setActiveWire(null);
-          setIsWiring(false);
-          return;
-        }
-
-        // Check for existing connections in either direction
-        const hasExistingConnection = wires.some(wire => 
-          (wire.startCard === activeWire.startCard && wire.endCard === cardId) ||
-          (wire.startCard === cardId && wire.endCard === activeWire.startCard)
-        );
-
-        if (hasExistingConnection) {
-          // Alert user and cancel the wire
-          alert("These cards are already connected!");
-          setActiveWire(null);
-          setIsWiring(false);
-          return;
-        }
-
-        // Complete wire
-        setWires([...wires, {
-          id: wires.length,
-          startCard: activeWire.startCard,
-          endCard: cardId,
-          startX: activeWire.startX,
-          startY: activeWire.startY,
-          endX: snapPoint.x,
-          endY: snapPoint.y,
-          // Store relative positions
-          startRelX: activeWire.startRelX,
-          startRelY: activeWire.startRelY,
-          endRelX: snapPoint.relX,
-          endRelY: snapPoint.relY
-        }]);
-        setActiveWire(null);
-        setIsWiring(false);
-      }
-      return;
-    }
-
-    // Get the card and check if it's being dragged
-    const card = cards.find(c => c.id === cardId);
-    
-    // Don't open demo if we're dragging, recently dragged, or if any card is dragging
-    if (card?.isDragging || cards.some(c => c.isDragging) || recentlyDragged) {
-      return;
-    }
-
-    // If we're editing text, don't navigate
-    if (editingCard !== null) return;
-
-    // If we're not dragging or wiring, navigate to the Demo
-    router.navigate({ to: '/demo/$cardId', params: { cardId: cardId.toString() } });
-  };
-
-  const handleMouseMove = (e) => {
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (dragStart && pendingDragCard) {
       const dx = Math.abs(e.clientX - dragStart.x);
       const dy = Math.abs(e.clientY - dragStart.y);
-      
+
       // Only start dragging if mouse has moved more than 3 pixels
       if (dx > 3 || dy > 3) {
-        const draggingCard = cards.find(card => card.id === pendingDragCard);
-        if (draggingCard) {
-          setCards(cards.map(card =>
-            card.id === draggingCard.id
-              ? { ...card, isDragging: true }
-              : card
-          ));
+        const draggingModule = modules.find(m => m.card.id === pendingDragCard);
+        if (draggingModule) {
+          draggingModule.card.isDragging = true;
+          setModules([...modules]);
         }
       }
     }
@@ -200,109 +55,243 @@ const DraggableCardsCanvas = () => {
     const mouseX = e.clientX - canvasRect.left;
     const mouseY = e.clientY - canvasRect.top;
 
-    // Update active wire position if we're wiring
     if (activeWire) {
       setActiveWire({
         ...activeWire,
         mouseX,
-        mouseY
+        mouseY,
       });
     }
 
-    // Handle card dragging
-    const draggingCard = cards.find(card => card.isDragging);
-    if (draggingCard) {
-      const canvasRect = e.currentTarget.getBoundingClientRect();
-      const newX = e.clientX - canvasRect.left - draggingCard.dragOffset.x;
-      const newY = e.clientY - canvasRect.top - draggingCard.dragOffset.y;
+    const draggingModule = modules.find(m => m.card.isDragging);
+    if (draggingModule) {
+      const newX = mouseX - draggingModule.card.dragOffset.x;
+      const newY = mouseY - draggingModule.card.dragOffset.y;
 
-      // Update card position
-      setCards(cards.map(card =>
-        card.id === draggingCard.id
-          ? { ...card, x: newX, y: newY }
-          : card
-      ));
-
-      // Update connected wires
-      setWires(wires.map(wire => {
-        if (wire.startCard === draggingCard.id || wire.endCard === draggingCard.id) {
-          const cardElement = e.currentTarget.querySelector(`[data-card-id="${draggingCard.id}"]`);
-          const cardRect = cardElement.getBoundingClientRect();
-          const canvasRect = e.currentTarget.getBoundingClientRect();
-          const relativeRect = {
-            x: newX,
-            y: newY,
-            width: cardRect.width,
-            height: cardRect.height
-          };
-          
-          if (wire.startCard === draggingCard.id) {
-            // Calculate absolute position from relative coordinates
-            const startX = relativeRect.x + (wire.startRelX * relativeRect.width);
-            const startY = relativeRect.y + (wire.startRelY * relativeRect.height);
-            return { ...wire, startX, startY };
-          } else {
-            // Calculate absolute position from relative coordinates
-            const endX = relativeRect.x + (wire.endRelX * relativeRect.width);
-            const endY = relativeRect.y + (wire.endRelY * relativeRect.height);
-            return { ...wire, endX, endY };
-          }
-        }
-        return wire;
-      }));
+      draggingModule.updateCardPosition(newX, newY);
+      setModules([...modules]);
+      updateConnectedWirePositions(draggingModule.card.id, newX, newY, e.currentTarget);
     }
-  };
-
-  const handleMouseDown = (e, cardId) => {
-    if (editingCard !== null || isWiring) return;
-    
-    const card = cards.find(c => c.id === cardId);
-    if (!card) return;
-
-    setDragStart({ x: e.clientX, y: e.clientY });
-    setPendingDragCard(cardId);
-
-    const rect = e.currentTarget.getBoundingClientRect();
-    const offsetX = e.clientX - rect.left;
-    const offsetY = e.clientY - rect.top;
-
-    setCards(cards.map(card => 
-      card.id === cardId 
-        ? { ...card, isDragging: false, dragOffset: { x: offsetX, y: offsetY } }
-        : card
-    ));
   };
 
   const handleMouseUp = () => {
     setDragStart(null);
     setPendingDragCard(null);
-    if (cards.some(card => card.isDragging)) {
+    const anyDragging = modules.some(m => m.card.isDragging);
+    if (anyDragging) {
       setRecentlyDragged(true);
       setTimeout(() => setRecentlyDragged(false), 100);
     }
-    setCards(cards.map(card => ({ ...card, isDragging: false })));
+    modules.forEach(m => m.card.isDragging = false);
+    setModules([...modules]);
+  };
+
+  const updateConnectedWirePositions = (
+    cardId: number,
+    newX: number,
+    newY: number,
+    canvasElement: HTMLDivElement
+  ) => {
+    // Recalculate wires that connect to this card
+    const updated = wires.map(wire => {
+      if (wire.startCard === cardId || wire.endCard === cardId) {
+        const cardElement = canvasElement.querySelector(`[data-card-id="${cardId}"]`) as HTMLDivElement | null;
+        if (!cardElement) return wire;
+
+        const cardRect = cardElement.getBoundingClientRect();
+        const canvasRect = canvasElement.getBoundingClientRect();
+        const relativeRect = {
+          x: newX,
+          y: newY,
+          width: cardRect.width,
+          height: cardRect.height
+        };
+        if (wire.startCard === cardId) {
+          const startX = relativeRect.x + wire.startRelX * relativeRect.width;
+          const startY = relativeRect.y + wire.startRelY * relativeRect.height;
+          return { ...wire, startX, startY };
+        } else {
+          const endX = relativeRect.x + wire.endRelX * relativeRect.width;
+          const endY = relativeRect.y + wire.endRelY * relativeRect.height;
+          return { ...wire, endX, endY };
+        }
+      }
+      return wire;
+    });
+    setWires(updated);
+  };
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>, cardId: number) => {
+    if (editingCard !== null || isWiring) return;
+    const found = modules.find(m => m.card.id === cardId);
+    if (!found) return;
+
+    setDragStart({ x: e.clientX, y: e.clientY });
+    setPendingDragCard(cardId);
+
+    const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
+
+    found.card.isDragging = false;
+    found.card.dragOffset = { x: offsetX, y: offsetY };
+    setModules([...modules]);
+  };
+
+  const handleCardClick = (
+    e: React.MouseEvent<HTMLDivElement>,
+    cardId: number
+  ) => {
+    if (isWiring) {
+      wireLogic(e, cardId);
+      return;
+    }
+    const found = modules.find(m => m.card.id === cardId);
+    if (!found) return;
+
+    if (found.card.isDragging || modules.some(m => m.card.isDragging) || recentlyDragged) {
+      return;
+    }
+    if (editingCard !== null) return;
+
+    router.navigate({ to: '/demo/$cardId', params: { cardId: cardId.toString() } });
+  };
+
+  const wireLogic = (e: React.MouseEvent<HTMLDivElement>, cardId: number) => {
+    const cardElement = e.currentTarget as HTMLDivElement;
+    const canvasRect = cardElement.parentElement?.getBoundingClientRect();
+    if (!canvasRect) return;
+
+    const cardRect = cardElement.getBoundingClientRect();
+    const mouseX = e.clientX - canvasRect.left;
+    const mouseY = e.clientY - canvasRect.top;
+
+    // Snap to nearest edge
+    const snapPoint = getSnapPoint(
+      {
+        x: cardRect.left - canvasRect.left,
+        y: cardRect.top - canvasRect.top,
+        width: cardRect.width,
+        height: cardRect.height
+      },
+      mouseX,
+      mouseY
+    );
+
+    if (!activeWire) {
+      setActiveWire({
+        startCard: cardId,
+        startX: snapPoint.x,
+        startY: snapPoint.y,
+        startRelX: snapPoint.relX,
+        startRelY: snapPoint.relY
+      });
+    } else {
+      if (activeWire.startCard === cardId) {
+        setActiveWire(null);
+        setIsWiring(false);
+        return;
+      }
+      const hasExistingConnection = wires.some(
+        wire =>
+          (wire.startCard === activeWire.startCard && wire.endCard === cardId) ||
+          (wire.startCard === cardId && wire.endCard === activeWire.startCard)
+      );
+      if (hasExistingConnection) {
+        alert('These cards are already connected!');
+        setActiveWire(null);
+        setIsWiring(false);
+        return;
+      }
+      const newWire = {
+        id: wires.length,
+        startCard: activeWire.startCard,
+        endCard: cardId,
+        startX: activeWire.startX,
+        startY: activeWire.startY,
+        endX: snapPoint.x,
+        endY: snapPoint.y,
+        startRelX: activeWire.startRelX,
+        startRelY: activeWire.startRelY,
+        endRelX: snapPoint.relX,
+        endRelY: snapPoint.relY
+      };
+      setWires([...wires, newWire]);
+      manager.addWire(newWire);
+      setActiveWire(null);
+      setIsWiring(false);
+    }
+  };
+
+  const getSnapPoint = (
+    cardRect: { x: number; y: number; width: number; height: number },
+    mouseX: number,
+    mouseY: number
+  ) => {
+    const distToLeft = Math.abs(mouseX - cardRect.x);
+    const distToRight = Math.abs(mouseX - (cardRect.x + cardRect.width));
+    const distToTop = Math.abs(mouseY - cardRect.y);
+    const distToBottom = Math.abs(mouseY - (cardRect.y + cardRect.height));
+    const minDist = Math.min(distToLeft, distToRight, distToTop, distToBottom);
+
+    if (minDist === distToLeft) {
+      return {
+        x: cardRect.x,
+        y: mouseY,
+        relX: 0,
+        relY: (mouseY - cardRect.y) / cardRect.height
+      };
+    } else if (minDist === distToRight) {
+      return {
+        x: cardRect.x + cardRect.width,
+        y: mouseY,
+        relX: 1,
+        relY: (mouseY - cardRect.y) / cardRect.height
+      };
+    } else if (minDist === distToTop) {
+      return {
+        x: mouseX,
+        y: cardRect.y,
+        relX: (mouseX - cardRect.x) / cardRect.width,
+        relY: 0
+      };
+    } else {
+      return {
+        x: mouseX,
+        y: cardRect.y + cardRect.height,
+        relX: (mouseX - cardRect.x) / cardRect.width,
+        relY: 1
+      };
+    }
   };
 
   const addNewCard = () => {
-    const newCard = {
-      id: nextId,
-      x: Math.random() * 300,
-      y: Math.random() * 300,
+    // You can generate an ID from something else or just keep a running count
+    const newId = modules.length ? Math.max(...modules.map(m => m.card.id)) + 1 : 1;
+
+    const newCard: ModuleCard = {
+      id: newId,
+      x: 100,
+      y: 100,
       isDragging: false,
       dragOffset: { x: 0, y: 0 },
-      title: `Card ${nextId}`,
+      title: `Card ${newId}`,
       content: 'Edit this text!'
     };
-    setCards([...cards, newCard]);
-    setNextId(nextId + 1);
+    const newModule = manager.createModule(newCard, []);
+    setModules([...modules, newModule]);
   };
 
-  const updateCardText = (cardId, field, value) => {
-    setCards(cards.map(card =>
-      card.id === cardId
-        ? { ...card, [field]: value }
-        : card
-    ));
+  const updateCardText = (moduleId: number, field: 'title' | 'content', value: string) => {
+    const targetModule = modules.find(m => m.card.id === moduleId);
+    if (!targetModule) return;
+    if (field === 'title') {
+      targetModule.updateCardTitle(value);
+    } else {
+      targetModule.updateCardContent(value);
+    }
+    manager.updateModuleCard(moduleId, { [field]: value });
+    setModules([...modules]);
   };
 
   const startWiring = () => {
@@ -313,68 +302,54 @@ const DraggableCardsCanvas = () => {
   return (
     <div className="w-full h-full flex flex-col gap-4 p-4">
       <div className="flex gap-4">
-        <button 
+        <button
           onClick={addNewCard}
           className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded w-32"
         >
           Add Card
         </button>
-        <button 
+        <button
           onClick={startWiring}
           className={`px-4 py-2 rounded w-32 ${
-            isWiring 
-              ? 'bg-green-500 hover:bg-green-600 text-white' 
+            isWiring
+              ? 'bg-green-500 hover:bg-green-600 text-white'
               : 'bg-blue-500 hover:bg-blue-600 text-white'
           }`}
         >
           {isWiring ? 'Wiring...' : 'Add Wire'}
         </button>
       </div>
-      <div 
+
+      <div
         className="w-full h-96 bg-white border-2 border-gray-200 rounded-lg relative"
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       >
-        {/* Render wires */}
         <svg className="absolute inset-0 w-full h-full pointer-events-none">
           {wires.map(wire => {
-            // Calculate control points for the curve
-            // Move control points out perpendicular to the connection
             const dx = wire.endX - wire.startX;
             const dy = wire.endY - wire.startY;
             const distance = Math.sqrt(dx * dx + dy * dy);
-            
-            // Control point distance is proportional to the distance between points
             const controlDistance = Math.min(distance * 0.5, 100);
-            
-            // Calculate which sides the wire is connecting to
-            const startSide = wire.startX < wire.endX ? 'right' : 'left';
-            const endSide = wire.startX < wire.endX ? 'left' : 'right';
-            
-            // Set control points based on connection sides
+
             let c1x, c1y, c2x, c2y;
-            
-            if (startSide === 'right') {
+            if (wire.startX < wire.endX) {
               c1x = wire.startX + controlDistance;
               c1y = wire.startY;
+              c2x = wire.endX - controlDistance;
+              c2y = wire.endY;
             } else {
               c1x = wire.startX - controlDistance;
               c1y = wire.startY;
-            }
-            
-            if (endSide === 'right') {
               c2x = wire.endX + controlDistance;
-              c2y = wire.endY;
-            } else {
-              c2x = wire.endX - controlDistance;
               c2y = wire.endY;
             }
 
-            const path = `M ${wire.startX} ${wire.startY} 
-                         C ${c1x} ${c1y}, 
-                           ${c2x} ${c2y}, 
-                           ${wire.endX} ${wire.endY}`;
+            const path = `M ${wire.startX} ${wire.startY}
+              C ${c1x} ${c1y},
+                ${c2x} ${c2y},
+                ${wire.endX} ${wire.endY}`;
 
             return (
               <path
@@ -388,10 +363,10 @@ const DraggableCardsCanvas = () => {
           })}
           {activeWire && (
             <path
-              d={`M ${activeWire.startX} ${activeWire.startY} 
-                  C ${activeWire.startX + 100} ${activeWire.startY},
-                    ${(activeWire.mouseX || activeWire.startX) - 100} ${activeWire.mouseY || activeWire.startY},
-                    ${activeWire.mouseX || activeWire.startX} ${activeWire.mouseY || activeWire.startY}`}
+              d={`M ${activeWire.startX} ${activeWire.startY}
+                C ${activeWire.startX + 100} ${activeWire.startY},
+                  ${(activeWire.mouseX || activeWire.startX) - 100} ${activeWire.mouseY || activeWire.startY},
+                  ${activeWire.mouseX || activeWire.startX} ${activeWire.mouseY || activeWire.startY}`}
               fill="none"
               stroke="#2563eb"
               strokeWidth="2"
@@ -400,68 +375,62 @@ const DraggableCardsCanvas = () => {
           )}
         </svg>
 
-        {/* Render cards */}
-        {cards.map(card => (
+        {modules.map(mod => (
           <Card
-            key={card.id}
-            data-card-id={card.id}
+            key={mod.card.id}
+            data-card-id={mod.card.id}
             className="absolute w-64 cursor-move shadow-lg"
             style={{
-              transform: `translate(${card.x}px, ${card.y}px)`,
-              zIndex: card.isDragging ? 10 : 1,
+              transform: `translate(${mod.card.x}px, ${mod.card.y}px)`,
+              zIndex: mod.card.isDragging ? 10 : 1,
             }}
-            onMouseDown={(e) => handleMouseDown(e, card.id)}
-            onClick={(e) => handleCardClick(e, card.id)}
+            onMouseDown={(e) => handleMouseDown(e, mod.card.id)}
+            onClick={(e) => handleCardClick(e, mod.card.id)}
           >
             <div className="p-4 space-y-2">
               <div className="relative">
-                <span 
+                <span
                   className="absolute inset-0 cursor-text"
-                  style={{ 
-                    width: card.title.length + 'ch',
+                  style={{
+                    width: mod.card.title.length + 'ch',
                     minWidth: '4ch'
                   }}
                 >
                   <input
                     type="text"
-                    value={card.title}
-                    onChange={(e) => updateCardText(card.id, 'title', e.target.value)}
-                    onFocus={() => setEditingCard(card.id)}
+                    value={mod.card.title}
+                    onChange={(e) => updateCardText(mod.card.id, 'title', e.target.value)}
+                    onFocus={() => setEditingCard(mod.card.id)}
                     onBlur={() => setEditingCard(null)}
-                    className="font-semibold bg-transparent w-full border-none 
-                             focus:outline-none focus:ring-1 focus:ring-blue-500 
-                             rounded px-1 cursor-text"
+                    className="font-semibold bg-transparent w-full border-none focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 cursor-text"
                     onClick={(e) => e.stopPropagation()}
                   />
                 </span>
                 <span className="font-semibold invisible">
-                  {card.title || ' '}
+                  {mod.card.title || ' '}
                 </span>
               </div>
-              
               <div className="relative">
-                <span 
+                <span
                   className="absolute inset-0 cursor-text inline-block"
-                  style={{ 
-                    width: Math.max(card.content.length, 4) + 'ch',
+                  style={{
+                    width: Math.max(mod.card.content.length, 4) + 'ch',
                     minHeight: '1.5em',
                     height: 'auto'
                   }}
                 >
                   <textarea
-                    value={card.content}
-                    onChange={(e) => updateCardText(card.id, 'content', e.target.value)}
-                    onFocus={() => setEditingCard(card.id)}
+                    value={mod.card.content}
+                    onChange={(e) => updateCardText(mod.card.id, 'content', e.target.value)}
+                    onFocus={() => setEditingCard(mod.card.id)}
                     onBlur={() => setEditingCard(null)}
-                    className="w-full min-h-[1.5em] bg-transparent border-none resize-none 
-                             focus:outline-none focus:ring-1 focus:ring-blue-500 
-                             rounded px-1 cursor-text"
+                    className="w-full min-h-[1.5em] bg-transparent border-none resize-none focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 cursor-text"
                     style={{ height: '100%' }}
                     onClick={(e) => e.stopPropagation()}
                   />
                 </span>
                 <span className="invisible whitespace-pre-wrap block">
-                  {card.content || ' '}
+                  {mod.card.content || ' '}
                 </span>
               </div>
             </div>
@@ -469,7 +438,6 @@ const DraggableCardsCanvas = () => {
         ))}
       </div>
 
-      {/* Connection Table */}
       <div className="w-full mt-4 bg-white border rounded-lg">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
@@ -484,15 +452,15 @@ const DraggableCardsCanvas = () => {
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {wires.map(wire => {
-              const startCard = cards.find(c => c.id === wire.startCard);
-              const endCard = cards.find(c => c.id === wire.endCard);
+              const startModule = modules.find(m => m.card.id === wire.startCard);
+              const endModule = modules.find(m => m.card.id === wire.endCard);
               return (
                 <tr key={wire.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {startCard ? startCard.title : `Card ${wire.startCard}`}
+                    {startModule ? startModule.card.title : `Card ${wire.startCard}`}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {endCard ? endCard.title : `Card ${wire.endCard}`}
+                    {endModule ? endModule.card.title : `Card ${wire.endCard}`}
                   </td>
                 </tr>
               );
