@@ -12,6 +12,8 @@ import { StlViewer } from 'react-stl-viewer';
 import PostProcessingChart from './PostProcessingChart';
 import resultsData from '@/data/results.json';
 import ExternalTool from './ExternalTool';
+import CellVisualization from './CellVisualization';
+import VisualizationGrid, { createVisualizationCards } from './CellVisualization';
 
 interface CellFile {
   name: string;
@@ -164,95 +166,6 @@ const NotebookCell = ({ cell, isActive, onToggle }: NotebookCellProps) => {
     }
   };
 
-  const STLViewer = () => (
-    stlFile && (
-      <div className="space-y-4">
-        <div className="w-full h-[400px] bg-[#ffffff] rounded-lg overflow-hidden">
-          <StlViewer
-            style={{ width: '100%', height: '100%' }}
-            orbitControls
-            shadows
-            url={URL.createObjectURL(stlFile)}
-            modelProps={{
-              scale: 1.25,
-              rotationX: 0,
-              rotationY: 0,
-              rotationZ: 0
-            }}
-          />
-        </div>
-        
-        {/* Pipe measurements */}
-        {pipeMeasurements && (
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <h3 className="font-medium mb-2">Pipe Measurements</h3>
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <p className="text-sm text-gray-500">Inner Diameter</p>
-                <p className="font-medium">{pipeMeasurements.inner_diameter} mm</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Outer Diameter</p>
-                <p className="font-medium">{pipeMeasurements.outer_diameter} mm</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Wall Thickness</p>
-                <p className="font-medium">{pipeMeasurements.wall_thickness} mm</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Updated Preprocessing Charts */}
-        {cell.type === 'preprocessing' && pipeMeasurements && (
-          <div className="w-full grid grid-cols-3 gap-4">
-            {Object.entries(pipeMeasurements).map(([key, value]: [string, number], index: number) => {
-              const formattedTitle = key
-                .split('_')
-                .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-                .join(' ');
-              
-              // Define standard deviation as a percentage based on measurement type
-              const stdDevPercentage = key.includes('thickness') ? 0.1 : 0.05; // 10% for thickness, 5% for diameters
-              
-              return (
-                <Card key={index} className="flex flex-col items-center p-2 bg-[#ffffff]">
-                  <div className="text-center mb-2 p-1 rounded w-full">
-                    <h2 className="text-sm font-semibold">
-                      {formattedTitle}
-                    </h2>
-                    <div className="text-xs">
-                      μ={formatNumber(value)}
-                      <br />
-                      σ={formatNumber(value * stdDevPercentage)}
-                    </div>
-                  </div>
-                  <div className="h-[200px] w-full">
-                    <DistributionChart 
-                      mean={value}
-                      stdDev={value * stdDevPercentage}
-                      type="normal"
-                      data={[]}
-                      height={200}
-                      className="mt-2"
-                    />
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Postprocessing Charts */}
-        {cell.type === 'postprocessing' && (
-          <div className="mt-4">
-            <PostProcessingChart data={resultsData} />
-          </div>
-        )}
-      </div>
-    )
-  );
-
   return (
     <Card className="mb-4 border-l-4 border-l-blue-500 w-full">
       <CardHeader className="flex flex-row items-center justify-between p-4">
@@ -310,8 +223,15 @@ const NotebookCell = ({ cell, isActive, onToggle }: NotebookCellProps) => {
             />
           )}
           
-          {/* STL viewer section with measurements and charts */}
-          <STLViewer />
+          {/* Visualization Section */}
+          {stlFile && pipeMeasurements && (
+            <VisualizationGrid 
+              cards={createVisualizationCards(stlFile, pipeMeasurements)}
+              cardsPerRow={3}
+            />
+          )}
+
+          {/* Error Message */}
           {errorMessage && (
             <div className="p-4 bg-red-50 text-red-500 rounded-lg">
               {errorMessage}

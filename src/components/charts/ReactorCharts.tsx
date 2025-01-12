@@ -229,20 +229,22 @@ export const DistributionChart: React.FC<DistributionChartProps> = ({
   const data = generateNormalDistribution(mean, stdDev);
   
   return (
-    <div className={`w-full ${className}`}>
-      <ResponsiveContainer width="100%" height={height}>
+    <div className={`w-full h-full ${className}`}>
+      <ResponsiveContainer width="100%" height="100%">
         <LineChart 
           data={data}
-          margin={{ top: 0, right: 0, bottom: -30, left: -60 }}
+          margin={{ top: 0, right: 0, bottom: 0, left: 0 }}
         >
           <XAxis 
             dataKey="x" 
             tick={false}
             domain={['dataMin', 'dataMax']}
+            height={20}
           />
           <YAxis 
             tick={false} 
             domain={['auto', 'auto']}
+            width={20}
           />
           <Line 
             type="monotone" 
