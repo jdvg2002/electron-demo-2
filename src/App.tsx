@@ -7,12 +7,19 @@ import { updateAppLanguage } from "./helpers/language_helpers";
 import { router } from "./routes/router";
 import { RouterProvider } from "@tanstack/react-router";
 import Demo from "./components/nuclear/demo";
+import Titlebar from './components/Titlebar';
 
 export default function App() {
+  return (
+    <>
+      <Titlebar />
+      <Demo />
+    </>
+  );
 }
 
 // Single render point
 const root = createRoot(document.getElementById("app")!);
 root.render(
-    <Demo />
+  <App />
 );

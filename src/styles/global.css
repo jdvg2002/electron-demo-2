@@ -2,6 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
+.titlebar {
+    -webkit-app-region: drag;
+    height: 32px;
+    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 50;
+    background: hsl(var(--background));
+    border-bottom: 1px solid hsl(var(--border));
+  }
+  
+  /* Adjust main content to account for titlebar */
+  #app {
+    margin-top: 32px;
+  }
+
 @layer base {
     @font-face {
         font-family: "Geist";
