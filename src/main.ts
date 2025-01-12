@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, ipcMain, screen } from "electron";
 import registerListeners from "./helpers/ipc/listeners-register";
 import path from "path";
 import { PythonShell } from 'python-shell';
@@ -9,15 +9,26 @@ const inDevelopment = process.env.NODE_ENV === "development";
 
 function createWindow() {
     const preload = path.join(__dirname, "preload.js");
+    
+    // Get the primary display's dimensions
+    const primaryDisplay = screen.getPrimaryDisplay();
+    const { width: displayWidth, height: displayHeight } = primaryDisplay.workAreaSize;
+    
+    // Calculate window dimensions
+    const windowHeight = Math.round(displayHeight * 0.95);  // 80% of display height
+    const windowWidth = Math.round(windowHeight * 1.5);   // 1.25x the height
+
     const mainWindow = new BrowserWindow({
-        width: 800,
-        height: 600,
+        width: windowWidth,
+        height: windowHeight,
+        minWidth: 800,       // Minimum width
+        minHeight: 640,      // Minimum height
+        center: true,
         webPreferences: {
             devTools: inDevelopment,
             contextIsolation: true,
             nodeIntegration: true,
             nodeIntegrationInSubFrames: false,
-
             preload: preload,
         },
         titleBarStyle: "hidden",
