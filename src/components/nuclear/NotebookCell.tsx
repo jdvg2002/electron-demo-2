@@ -289,13 +289,19 @@ const NotebookCell = ({ cell, isActive, onToggle }: NotebookCellProps) => {
   );
 
   return (
-    <Card className="mb-4 border-l-4 border-l-blue-500 w-full">
-      <CardHeader className="flex flex-row items-center justify-between p-4">
+    <Card 
+      className="mb-4 border-l-4 border-l-blue-500 w-full"
+      onClick={onToggle}
+      style={{ cursor: 'pointer' }}
+    >
+      <CardHeader 
+        className="flex flex-row items-center justify-between p-4"
+      >
         <div className="flex items-center gap-2">
           {renderCellIcon()}
           <CardTitle className="text-lg font-medium">{cell.title}</CardTitle>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
           <input
             type="file"
             ref={fileInputRef}
@@ -335,7 +341,10 @@ const NotebookCell = ({ cell, isActive, onToggle }: NotebookCellProps) => {
       </CardHeader>
       
       {isActive && (
-        <CardContent className="p-4 space-y-4">
+        <CardContent 
+          onClick={(e) => e.stopPropagation()} 
+          className="p-4 space-y-4"
+        >
           {/* External Tool */}
           {cell.type === 'external' && cell.tool && cell.input && (
             <ExternalTool
