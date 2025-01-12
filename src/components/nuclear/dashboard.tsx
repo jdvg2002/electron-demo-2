@@ -75,19 +75,19 @@ const DraggableCardsCanvas = () => {
     const mouseX = e.clientX - canvasRect.left;
     const mouseY = e.clientY - canvasRect.top;
     
-    if (!activeWire) {
-      // Starting a new wire - use click position for snap point
-      const snapPoint = getSnapPoint(
-        {
-          x: cardRect.left - canvasRect.left,
-          y: cardRect.top - canvasRect.top,
-          width: cardRect.width,
-          height: cardRect.height
-        },
-        mouseX,
-        mouseY
-      );
+    const snapPoint = getSnapPoint(
+      {
+        x: cardRect.left - canvasRect.left,
+        y: cardRect.top - canvasRect.top,
+        width: cardRect.width,
+        height: cardRect.height
+      },
+      mouseX,
+      mouseY
+    );
 
+    if (!activeWire) {
+      // Start new wire
       setActiveWire({
         startCard: cardId,
         startX: snapPoint.x,
@@ -96,83 +96,29 @@ const DraggableCardsCanvas = () => {
         startRelY: snapPoint.relY
       });
     } else {
-      // Completing the wire
-      const targetRect = {
-        x: cardRect.left - canvasRect.left,
-        y: cardRect.top - canvasRect.top,
-        width: cardRect.width,
-        height: cardRect.height
-      };
-
-      // Calculate distances from start point to each edge's midpoint
-      const leftMid = { x: targetRect.x, y: targetRect.y + targetRect.height / 2 };
-      const rightMid = { x: targetRect.x + targetRect.width, y: targetRect.y + targetRect.height / 2 };
-      const topMid = { x: targetRect.x + targetRect.width / 2, y: targetRect.y };
-      const bottomMid = { x: targetRect.x + targetRect.width / 2, y: targetRect.y + targetRect.height };
-
-      const distToLeft = Math.hypot(activeWire.startX - leftMid.x, activeWire.startY - leftMid.y);
-      const distToRight = Math.hypot(activeWire.startX - rightMid.x, activeWire.startY - rightMid.y);
-      const distToTop = Math.hypot(activeWire.startX - topMid.x, activeWire.startY - topMid.y);
-      const distToBottom = Math.hypot(activeWire.startX - bottomMid.x, activeWire.startY - bottomMid.y);
-
-      // Find the closest midpoint
-      const minDist = Math.min(distToLeft, distToRight, distToTop, distToBottom);
-      
-      let snapPoint;
-      if (minDist === distToLeft) {
-        // Connect to left edge middle
-        snapPoint = {
-          x: targetRect.x,
-          y: leftMid.y,
-          relX: 0,
-          relY: 0.5
-        };
-      } else if (minDist === distToRight) {
-        // Connect to right edge middle
-        snapPoint = {
-          x: targetRect.x + targetRect.width,
-          y: rightMid.y,
-          relX: 1,
-          relY: 0.5
-        };
-      } else if (minDist === distToTop) {
-        // Connect to top edge middle
-        snapPoint = {
-          x: topMid.x,
-          y: targetRect.y,
-          relX: 0.5,
-          relY: 0
-        };
-      } else {
-        // Connect to bottom edge middle
-        snapPoint = {
-          x: bottomMid.x,
-          y: targetRect.y + targetRect.height,
-          relX: 0.5,
-          relY: 1
-        };
-      }
-
-      // Check for same card and existing connections...
+      // Check if clicking the same card as start
       if (activeWire.startCard === cardId) {
+        // Cancel the wire
         setActiveWire(null);
         setIsWiring(false);
         return;
       }
 
+      // Check for existing connections in either direction
       const hasExistingConnection = wires.some(wire => 
         (wire.startCard === activeWire.startCard && wire.endCard === cardId) ||
         (wire.startCard === cardId && wire.endCard === activeWire.startCard)
       );
 
       if (hasExistingConnection) {
+        // Alert user and cancel the wire
         alert("These cards are already connected!");
         setActiveWire(null);
         setIsWiring(false);
         return;
       }
 
-      // Complete wire with the calculated snap point
+      // Complete wire
       setWires([...wires, {
         id: wires.length,
         startCard: activeWire.startCard,
@@ -181,6 +127,7 @@ const DraggableCardsCanvas = () => {
         startY: activeWire.startY,
         endX: snapPoint.x,
         endY: snapPoint.y,
+        // Store relative positions
         startRelX: activeWire.startRelX,
         startRelY: activeWire.startRelY,
         endRelX: snapPoint.relX,
@@ -208,39 +155,37 @@ const DraggableCardsCanvas = () => {
     // Handle card dragging
     const draggingCard = cards.find(card => card.isDragging);
     if (draggingCard) {
-      const cardElement = e.currentTarget.querySelector(`[data-card-id="${draggingCard.id}"]`);
-      const cardRect = cardElement.getBoundingClientRect();
-      
-      // Calculate new position based on mouse movement
+      const canvasRect = e.currentTarget.getBoundingClientRect();
       const newX = e.clientX - canvasRect.left - draggingCard.dragOffset.x;
       const newY = e.clientY - canvasRect.top - draggingCard.dragOffset.y;
-
-      // Clamp the position
-      const clampedX = Math.max(0, Math.min(newX, canvasRect.width - cardRect.width));
-      const clampedY = Math.max(0, Math.min(newY, canvasRect.height - cardRect.height));
 
       // Update card position
       setCards(cards.map(card =>
         card.id === draggingCard.id
-          ? { ...card, x: clampedX, y: clampedY }
+          ? { ...card, x: newX, y: newY }
           : card
       ));
 
       // Update connected wires
       setWires(wires.map(wire => {
         if (wire.startCard === draggingCard.id || wire.endCard === draggingCard.id) {
+          const cardElement = e.currentTarget.querySelector(`[data-card-id="${draggingCard.id}"]`);
+          const cardRect = cardElement.getBoundingClientRect();
+          const canvasRect = e.currentTarget.getBoundingClientRect();
           const relativeRect = {
-            x: clampedX,
-            y: clampedY,
+            x: newX,
+            y: newY,
             width: cardRect.width,
             height: cardRect.height
           };
           
           if (wire.startCard === draggingCard.id) {
+            // Calculate absolute position from relative coordinates
             const startX = relativeRect.x + (wire.startRelX * relativeRect.width);
             const startY = relativeRect.y + (wire.startRelY * relativeRect.height);
             return { ...wire, startX, startY };
           } else {
+            // Calculate absolute position from relative coordinates
             const endX = relativeRect.x + (wire.endRelX * relativeRect.width);
             const endY = relativeRect.y + (wire.endRelY * relativeRect.height);
             return { ...wire, endX, endY };
@@ -266,21 +211,10 @@ const DraggableCardsCanvas = () => {
         ? { ...card, isDragging: true, dragOffset: { x: offsetX, y: offsetY } }
         : card
     ));
-
-    document.body.classList.add('dragging');
-
-    // Add window event listeners
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
   };
 
   const handleMouseUp = () => {
     setCards(cards.map(card => ({ ...card, isDragging: false })));
-    document.body.classList.remove('dragging');
-
-    // Remove window event listeners
-    window.removeEventListener('mousemove', handleMouseMove);
-    window.removeEventListener('mouseup', handleMouseUp);
   };
 
   const addNewCard = () => {
@@ -312,12 +246,6 @@ const DraggableCardsCanvas = () => {
 
   return (
     <div className="w-full h-full flex flex-col gap-4 p-4">
-      <style jsx global>{`
-        .dragging {
-          user-select: none;
-          -webkit-user-select: none;
-        }
-      `}</style>
       <div className="flex gap-4">
         <button 
           onClick={addNewCard}
@@ -339,6 +267,8 @@ const DraggableCardsCanvas = () => {
       <div 
         className="w-full h-96 bg-white border-2 border-gray-200 rounded-lg relative"
         onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
       >
         {/* Render wires */}
         <svg className="absolute inset-0 w-full h-full pointer-events-none">

@@ -24,5 +24,5 @@ export default function App() {
 // Single render point
 const root = createRoot(document.getElementById("app")!);
 root.render(
-  <App />
+  <Dashboard />
 );
