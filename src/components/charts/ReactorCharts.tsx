@@ -228,34 +228,28 @@ export const DistributionChart: React.FC<DistributionChartProps> = ({
 }) => {
   const data = generateNormalDistribution(mean, stdDev);
   
-  const formatNumber = (value: number): string => {
-    if (Math.abs(value) < 10) {
-      return value.toFixed(2);
-    }
-    return new Intl.NumberFormat('en-US').format(Math.round(value));
-  };
-
   return (
     <div className={`w-full ${className}`}>
       <ResponsiveContainer width="100%" height={height}>
-        <LineChart data={data} margin={{ left: 0, right: 0, top: 5, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" />
+        <LineChart 
+          data={data}
+          margin={{ top: 0, right: 0, bottom: -30, left: -60 }}
+        >
           <XAxis 
             dataKey="x" 
-            tickFormatter={formatNumber}
+            tick={false}
             domain={['dataMin', 'dataMax']}
           />
-          <YAxis tick={false} width={20} />
-          <Tooltip 
-            formatter={(value: number) => [formatNumber(value), 'Probability']}
-            labelFormatter={(label: number) => `Value: ${formatNumber(label)}`}
+          <YAxis 
+            tick={false} 
+            domain={['auto', 'auto']}
           />
           <Line 
             type="monotone" 
             dataKey="y" 
             stroke={chartConfig.colors.flux} 
             dot={false}
-            name="Distribution"
+            strokeWidth={2}
           />
         </LineChart>
       </ResponsiveContainer>
