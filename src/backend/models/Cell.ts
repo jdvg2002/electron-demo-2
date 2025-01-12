@@ -45,4 +45,14 @@ export interface CellData {
   // Track additional fields needed
   uploadedFilePath?: string;
   executionResult?: any;
+  stlFile?: {
+    name: string;
+    data: string;  // Base64 encoded STL data
+    type: string;
+  };
+  pipeMeasurements?: {
+    inner_diameter: number;
+    outer_diameter: number;
+    wall_thickness: number;
+  };
 } 

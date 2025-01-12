@@ -14,11 +14,8 @@ import resultsData from '@/data/results.json';
 import ExternalTool from './ExternalTool';
 import CellVisualization from './CellVisualization';
 import VisualizationGrid, { createVisualizationCards } from './CellVisualization';
-<<<<<<< HEAD
 import FileRenderInfo, { RenderedFileInfo } from './FileRenderInfo';
-=======
 import { CellData } from '@/backend/models/Cell';
->>>>>>> bbfa92a (refactor)
 
 interface CellFile {
   name: string;
@@ -89,6 +86,26 @@ const NotebookCell: React.FC<NotebookCellProps> = ({
   const [renderedFile, setRenderedFile] = useState<RenderedFileInfo | null>(null);
   const [stepFileData, setStepFileData] = useState<StepFileData | null>(null);
 
+  useEffect(() => {
+    if (cell.stlFile?.data) {
+      // Convert base64 back to File object
+      const byteString = atob(cell.stlFile.data.split(',')[1]);
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+      }
+      const blob = new Blob([ab], { type: cell.stlFile.type });
+      const file = new File([blob], cell.stlFile.name, { type: cell.stlFile.type });
+      
+      setStlFile(file);
+      if (cell.pipeMeasurements) {
+        setPipeMeasurements(cell.pipeMeasurements);
+      }
+      setViewState('viewing');
+    }
+  }, [cell.stlFile]);
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -101,12 +118,21 @@ const NotebookCell: React.FC<NotebookCellProps> = ({
         timestamp: new Date().toISOString()
       });
       setViewState('viewing');
-      setRenderedFile({
-        file,
-        timestamp: new Date().toISOString(),
-        success: true,
-        originalFileName: file.name
-      });
+      
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64data = reader.result as string;
+        const updatedCell: CellData = {
+          ...cell,
+          stlFile: {
+            name: file.name,
+            data: base64data,
+            type: 'model/stl'
+          }
+        };
+        onCellChange(updatedCell);
+      };
+      reader.readAsDataURL(file);
     } 
     else if (file.name.toLowerCase().endsWith('.step') || file.name.toLowerCase().endsWith('.stp')) {
       setViewState('loading');
@@ -127,12 +153,31 @@ const NotebookCell: React.FC<NotebookCellProps> = ({
           });
           
           setViewState('viewing');
+<<<<<<< HEAD
           setRenderedFile({
             file: stlFile,
             timestamp: new Date().toISOString(),
             success: true,
             originalFileName: file.name
           });
+=======
+
+          const reader = new FileReader();
+          reader.onload = () => {
+            const base64data = reader.result as string;
+            const updatedCell: CellData = {
+              ...cell,
+              stlFile: {
+                name: 'converted.stl',
+                data: base64data,
+                type: 'model/stl'
+              },
+              pipeMeasurements: result.pipe_measurements
+            };
+            onCellChange(updatedCell);
+          };
+          reader.readAsDataURL(stlFile);
+>>>>>>> 6c11e33 (fix persistence)
         } else {
           setErrorMessage(result.error || 'Failed to convert STEP file');
           setViewState('error');
