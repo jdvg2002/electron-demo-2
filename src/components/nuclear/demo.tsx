@@ -136,8 +136,10 @@ const Demo = ({ className = '' }: { className?: string }) => {
     // Update the cell in memory
     moduleObj?.updateCell(updatedCell);
 
-    // Also tell the manager to persist it
-    manager.updateCell(moduleObj.card.id, updatedCell);
+    // Update the entire cells array instead of trying to update a single cell
+    if (moduleObj) {
+      manager.updateModuleCells(moduleObj.card.id, moduleObj.cells);
+    }
   }
 
   return (
