@@ -108,30 +108,23 @@ const NotebookCell = ({ cell, isActive, onToggle }: NotebookCellProps) => {
     else if (file.name.toLowerCase().endsWith('.step') || file.name.toLowerCase().endsWith('.stp')) {
       setViewState('loading');
       try {
-        const formData = new FormData();
-        formData.append('file', file);
+        const buffer = await file.arrayBuffer();
+        const tempPath = await window.electronWindow.saveTempFile(buffer);
+        const result = await window.stepConverter.convertStep(tempPath);
         
-        const response = await fetch('http://localhost:5001/convert', {
-          method: 'POST',
-          body: formData,
-        });
-        
-        const data = await response.json();
-        if (data.success) {
-          const stlBlob = new Blob([data.stl_data], { type: 'model/stl' });
+        if (result.success) {
+          const stlBlob = new Blob([result.stl_data], { type: 'model/stl' });
           const stlFile = new File([stlBlob], 'converted.stl', { type: 'model/stl' });
           setStlFile(stlFile);
-          console.log("Pipe measurements:", data.pipe_measurements);
-          setPipeMeasurements(data.pipe_measurements);
+          setPipeMeasurements(result.pipe_measurements);
           setViewState('viewing');
         } else {
-          setErrorMessage(data.error || 'Failed to convert STEP file');
+          setErrorMessage(result.error || 'Failed to convert STEP file');
           setViewState('error');
         }
       } catch (error) {
-        setErrorMessage('Error connecting to conversion server');
+        setErrorMessage(error instanceof Error ? error.message : 'Error converting file');
         setViewState('error');
-        console.error(error);
       }
     } else {
       setErrorMessage('Please upload an STL or STEP file');

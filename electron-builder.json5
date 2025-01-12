@@ -1,0 +1,8 @@
+{
+  "files": [
+    "dist",
+    "bundled-python/**/*",
+    "server/**/*"
+  ],
+  // ... other config
+} 

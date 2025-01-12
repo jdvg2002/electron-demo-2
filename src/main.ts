@@ -1,8 +1,11 @@
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, ipcMain } from "electron";
 import registerListeners from "./helpers/ipc/listeners-register";
 // "electron-squirrel-startup" seems broken when packaging with vite
 //import started from "electron-squirrel-startup";
 import path from "path";
+import { PythonShell } from 'python-shell';
+import fs from 'fs';
+import os from 'os';
 
 const inDevelopment = process.env.NODE_ENV === "development";
 
@@ -47,3 +50,59 @@ app.on("activate", () => {
     }
 });
 //osX only ends
+
+// Add this near your other IPC handlers
+ipcMain.handle('convert-step', async (_event, filePath) => {
+  try {
+    const result = await convert_step_to_stl(filePath);
+    return result;
+  } catch (error) {
+    console.error('Conversion error:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+});
+
+ipcMain.handle('save-temp-file', async (_event, fileBuffer) => {
+  const tempDir = os.tmpdir();
+  const tempFile = path.join(tempDir, `temp-${Date.now()}.step`);
+  await fs.promises.writeFile(tempFile, Buffer.from(fileBuffer));
+  console.log('Saved temp file:', tempFile);
+  return tempFile;
+});
+
+// Replace the direct import with a function that calls Python
+async function convert_step_to_stl(filePath: string) {
+  return new Promise((resolve, reject) => {
+    const scriptPath = path.join(process.cwd(), 'server', 'server.py');
+    const pythonPath = path.join(
+      process.cwd(), 
+      'bundled-python', 
+      'envs', 
+      'occ',
+      os.platform() === 'win32' 
+        ? 'python.exe' 
+        : path.join('bin', 'python')
+    );
+    
+    if (!fs.existsSync(pythonPath)) {
+      return {
+        success: false,
+        error: 'Python environment not properly configured'
+      };
+    }
+    
+    PythonShell.run(scriptPath, {
+      args: [filePath],
+      mode: 'json',
+      pythonPath: pythonPath,
+      pythonOptions: ['-u']
+    }).then(results => {
+      resolve(results[0]);
+    }).catch(error => {
+      reject(error);
+    });
+  });
+}
