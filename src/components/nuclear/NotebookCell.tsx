@@ -14,6 +14,7 @@ import resultsData from '@/data/results.json';
 import ExternalTool from './ExternalTool';
 import CellVisualization from './CellVisualization';
 import VisualizationGrid, { createVisualizationCards } from './CellVisualization';
+import FileRenderInfo, { RenderedFileInfo } from './FileRenderInfo';
 
 interface CellFile {
   name: string;
@@ -64,6 +65,13 @@ interface PipeMeasurements {
   wall_thickness: number;
 }
 
+interface StepFileData {
+  stlFile: File;
+  pipeMeasurements: PipeMeasurements;
+  originalFileName: string;
+  timestamp: string;
+}
+
 const formatNumber = (value: number): string => {
   if (Math.abs(value) < 10) {
     return value.toFixed(2);
@@ -80,6 +88,8 @@ const NotebookCell = ({ cell, isActive, onToggle }: NotebookCellProps) => {
   const [executionResult, setExecutionResult] = useState<any>(null);
   const [viewState, setViewState] = useState<'idle' | 'loading' | 'viewing' | 'error'>('idle');
   const [pipeMeasurements, setPipeMeasurements] = useState<PipeMeasurements | null>(null);
+  const [renderedFile, setRenderedFile] = useState<RenderedFileInfo | null>(null);
+  const [stepFileData, setStepFileData] = useState<StepFileData | null>(null);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -88,6 +98,12 @@ const NotebookCell = ({ cell, isActive, onToggle }: NotebookCellProps) => {
     if (file.name.toLowerCase().endsWith('.stl')) {
       setStlFile(file);
       setViewState('viewing');
+      setRenderedFile({
+        file,
+        timestamp: new Date().toISOString(),
+        success: true,
+        originalFileName: file.name
+      });
     } 
     else if (file.name.toLowerCase().endsWith('.step') || file.name.toLowerCase().endsWith('.stp')) {
       setViewState('loading');
@@ -102,6 +118,12 @@ const NotebookCell = ({ cell, isActive, onToggle }: NotebookCellProps) => {
           setStlFile(stlFile);
           setPipeMeasurements(result.pipe_measurements);
           setViewState('viewing');
+          setRenderedFile({
+            file: stlFile,
+            timestamp: new Date().toISOString(),
+            success: true,
+            originalFileName: file.name
+          });
         } else {
           setErrorMessage(result.error || 'Failed to convert STEP file');
           setViewState('error');
@@ -214,6 +236,23 @@ const NotebookCell = ({ cell, isActive, onToggle }: NotebookCellProps) => {
       
       {isActive && (
         <CardContent className="p-2 space-y-4 w-full">
+          {/* Rendered File Info Component */}
+          {renderedFile && (
+            <FileRenderInfo 
+              fileInfo={renderedFile}
+              onClear={() => {
+                setRenderedFile(null);
+                setStlFile(null);
+                setPipeMeasurements(null);
+                setViewState('idle');
+                setErrorMessage(null);
+                if (fileInputRef.current) {
+                  fileInputRef.current.value = '';
+                }
+              }}
+            />
+          )}
+
           {/* External Tool */}
           {cell.type === 'external' && cell.tool && cell.input && (
             <ExternalTool
