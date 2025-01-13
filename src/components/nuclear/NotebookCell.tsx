@@ -9,6 +9,7 @@ import VisualizationGrid, { createVisualizationCards } from './CellVisualization
 import FileRenderInfo, { RenderedFileInfo } from './FileRenderInfo';
 import { CellData } from '@/backend/models/Cell';
 import FileUploadHandler from './FileUploadHandler';
+import { GlobalFileManager } from '@/backend/models/GlobalFiles';
 
 interface NotebookCellProps {
   cell: CellData;
@@ -36,6 +37,7 @@ const NotebookCell: React.FC<NotebookCellProps> = ({
   onToggle,
   onCellChange
 }) => {
+  const fileManager = GlobalFileManager.getInstance();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [localCode, setLocalCode] = useState(cell.code || '');
   const [isExecuting, setIsExecuting] = useState(false);
@@ -47,41 +49,126 @@ const NotebookCell: React.FC<NotebookCellProps> = ({
   const { fileInputRef, handleFileUpload } = FileUploadHandler({
     cell,
     onCellChange,
-    onStepFileDataChange: setStepFileData,
+    onStepFileDataChange: (newStepData) => {
+      setStepFileData(newStepData);
+      
+      // Create a new global file entry when uploading directly to cell
+      if (cell.type === 'preprocessing') {
+        const globalFile = {
+          id: Date.now().toString(),
+          stlFile: {
+            name: newStepData.stlFile.name,
+            data: '', // Will be set after file read
+            type: newStepData.stlFile.type
+          },
+          pipeMeasurements: newStepData.pipeMeasurements,
+          timestamp: new Date().toISOString(),
+          originalFileName: newStepData.originalFileName
+        };
+
+        // Read and store the file
+        const reader = new FileReader();
+        reader.onload = () => {
+          globalFile.stlFile.data = reader.result as string;
+          fileManager.addFile(globalFile);
+        };
+        reader.readAsDataURL(newStepData.stlFile);
+      }
+    },
     onRenderedFileChange: setRenderedFile,
     onViewStateChange: setViewState,
     onErrorChange: setErrorMessage
   });
 
+  // Load global file data on mount and when cell changes
   useEffect(() => {
-    if (cell.stlFile?.data) {
-      // Convert base64 back to File object
-      const byteString = atob(cell.stlFile.data.split(',')[1]);
-      const ab = new ArrayBuffer(byteString.length);
-      const ia = new Uint8Array(ab);
-      for (let i = 0; i < byteString.length; i++) {
-        ia[i] = byteString.charCodeAt(i);
-      }
-      const blob = new Blob([ab], { type: cell.stlFile.type });
-      const file = new File([blob], cell.stlFile.name, { type: cell.stlFile.type });
+    if (cell.type === 'preprocessing' && cell.globalFileId) {
+      const allFiles = fileManager.getAllFiles();
+      const globalFile = allFiles.find(f => f.id === cell.globalFileId);
       
-      setStepFileData({
-        stlFile: file,
-        pipeMeasurements: cell.pipeMeasurements || null,
-        originalFileName: cell.stlFile.name,
-        timestamp: new Date().toISOString()
-      });
+      if (globalFile) {
+        // Convert base64 back to File object
+        const byteString = atob(globalFile.stlFile.data.split(',')[1]);
+        const ab = new ArrayBuffer(byteString.length);
+        const ia = new Uint8Array(ab);
+        for (let i = 0; i < byteString.length; i++) {
+          ia[i] = byteString.charCodeAt(i);
+        }
+        const blob = new Blob([ab], { type: globalFile.stlFile.type });
+        const file = new File([blob], globalFile.stlFile.name, { type: globalFile.stlFile.type });
+        
+        setStepFileData({
+          stlFile: file,
+          pipeMeasurements: globalFile.pipeMeasurements,
+          originalFileName: globalFile.originalFileName,
+          timestamp: globalFile.timestamp
+        });
 
-      setRenderedFile({
-        file: file,
-        timestamp: new Date().toISOString(),
-        success: true,
-        originalFileName: cell.stlFile.name
-      });
-      
-      setViewState('viewing');
+        setRenderedFile({
+          name: globalFile.originalFileName,
+          size: `${(globalFile.stlFile.data.length * 0.75) / 1024} KB`,
+          format: globalFile.stlFile.type,
+          timestamp: globalFile.timestamp
+        });
+        
+        setViewState('viewing');
+      }
     }
-  }, [cell.stlFile]);
+  }, [cell]);
+
+  // Listen for new global file updates
+  useEffect(() => {
+    const unsubscribe = fileManager.addListener(() => {
+      if (cell.type === 'preprocessing' && !cell.globalFileId) {
+        const unprocessedFiles = fileManager.getUnprocessedFiles();
+        
+        if (unprocessedFiles.length > 0 && !stepFileData) {
+          const firstFile = unprocessedFiles[0];
+          
+          // Convert base64 back to File object
+          const byteString = atob(firstFile.stlFile.data.split(',')[1]);
+          const ab = new ArrayBuffer(byteString.length);
+          const ia = new Uint8Array(ab);
+          for (let i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+          }
+          const blob = new Blob([ab], { type: firstFile.stlFile.type });
+          const file = new File([blob], firstFile.stlFile.name, { type: firstFile.stlFile.type });
+          
+          setStepFileData({
+            stlFile: file,
+            pipeMeasurements: firstFile.pipeMeasurements,
+            originalFileName: firstFile.originalFileName,
+            timestamp: firstFile.timestamp
+          });
+
+          setRenderedFile({
+            name: firstFile.originalFileName,
+            size: `${(firstFile.stlFile.data.length * 0.75) / 1024} KB`,
+            format: firstFile.stlFile.type,
+            timestamp: firstFile.timestamp
+          });
+          
+          setViewState('viewing');
+
+          // Update the cell data
+          const updatedCell: CellData = {
+            ...cell,
+            stlFile: firstFile.stlFile,
+            pipeMeasurements: firstFile.pipeMeasurements,
+            globalFileId: firstFile.id,
+            timestamp: firstFile.timestamp
+          };
+          onCellChange(updatedCell);
+
+          // Mark the file as processed
+          fileManager.markFileAsProcessed(firstFile.id);
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, [cell, stepFileData, onCellChange]);
 
   const handleCodeChange = (value: string | undefined) => {
     if (value !== undefined) {

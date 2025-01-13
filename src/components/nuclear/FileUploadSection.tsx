@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import FileUploadHandler from './FileUploadHandler';
 import VisualizationGrid, { createVisualizationCards } from './CellVisualization';
 import FileRenderInfo, { RenderedFileInfo } from './FileRenderInfo';
+import { ModuleManager } from '@/backend/manager/ModuleManager';
+import { GlobalFileManager } from '@/backend/models/GlobalFiles';
 
 const FileUploadSection: React.FC = () => {
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -9,12 +11,52 @@ const FileUploadSection: React.FC = () => {
   const [renderedFiles, setRenderedFiles] = useState<RenderedFileInfo[]>([]);
   const [stepFilesData, setStepFilesData] = useState<any[]>([]);
 
+  const moduleManager = ModuleManager.getInstance();
+  const fileManager = GlobalFileManager.getInstance();
+
   const { fileInputRef, handleFileUpload } = FileUploadHandler({
     cell: null,
-    onCellChange: (updatedCell) => {
-    },
+    onCellChange: () => {},
     onStepFileDataChange: (newStepData) => {
-      setStepFilesData(prev => [...prev, newStepData]);
+      const processFile = async () => {
+        try {
+          setViewState('loading');
+          
+          const globalFile = {
+            id: Date.now().toString(),
+            stlFile: {
+              name: newStepData.stlFile.name,
+              data: '',
+              type: newStepData.stlFile.type
+            },
+            pipeMeasurements: newStepData.pipeMeasurements,
+            timestamp: new Date().toISOString(),
+            originalFileName: newStepData.originalFileName
+          };
+
+          const reader = new FileReader();
+          reader.readAsDataURL(newStepData.stlFile);
+          
+          reader.onload = () => {
+            globalFile.stlFile.data = reader.result as string;
+            fileManager.addFile(globalFile);
+            moduleManager.createPreprocessingModule(globalFile);
+            setStepFilesData(prev => [...prev, newStepData]);
+            setViewState('viewing');
+          };
+
+          reader.onerror = () => {
+            throw new Error('Failed to read file');
+          };
+
+        } catch (error) {
+          console.error('Error processing file:', error);
+          setUploadError('Failed to process file');
+          setViewState('error');
+        }
+      };
+
+      processFile();
     },
     onRenderedFileChange: (newRenderedFile) => {
       setRenderedFiles(prev => [...prev, newRenderedFile]);
@@ -24,14 +66,12 @@ const FileUploadSection: React.FC = () => {
   });
 
   const handleFiles = (files: FileList) => {
-    Array.from(files).forEach(file => {
-      if (fileInputRef.current) {
-        const dataTransfer = new DataTransfer();
-        dataTransfer.items.add(file);
-        fileInputRef.current.files = dataTransfer.files;
-        handleFileUpload({ target: fileInputRef.current } as any);
-      }
-    });
+    if (files.length > 0 && fileInputRef.current) {
+      const dataTransfer = new DataTransfer();
+      dataTransfer.items.add(files[0]);
+      fileInputRef.current.files = dataTransfer.files;
+      handleFileUpload({ target: fileInputRef.current } as any);
+    }
   };
 
   const clearAllFiles = () => {

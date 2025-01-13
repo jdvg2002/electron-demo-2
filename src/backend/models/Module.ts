@@ -8,7 +8,7 @@ export class Module {
   public card: ModuleCard;
   public cells: CellData[];
 
-  constructor(card: ModuleCard, cells: CellData[]) {
+  constructor(card: ModuleCard, cells: CellData[] = []) {
     this.card = card;
     this.cells = cells;
   }
@@ -52,5 +52,15 @@ export class Module {
         cell.output = {};
       }
     });
+  }
+
+  // Add method to add a cell
+  addCell(cell: CellData) {
+    this.cells.push(cell);
+  }
+
+  // Add method to get preprocessing cell
+  getPreprocessingCell(): CellData | undefined {
+    return this.cells.find(cell => cell.type === 'preprocessing');
   }
 } 

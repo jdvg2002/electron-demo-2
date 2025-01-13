@@ -19,12 +19,6 @@ export interface CellOutput {
     status: string;
     key_metrics: SummaryMetric[];
   };
-  // Add any additional fields you need (e.g. visualizations) here
-  // visualizations?: Array<{
-  //   title: string;
-  //   description: string;
-  //   type: string;
-  // }>;
 }
 
 export interface CellInput {
@@ -42,7 +36,6 @@ export interface CellData {
   tool?: string;
   input?: CellInput;
   output?: CellOutput;
-  // Track additional fields needed
   uploadedFilePath?: string;
   executionResult?: any;
   stlFile?: {
@@ -55,4 +48,7 @@ export interface CellData {
     outer_diameter: number;
     wall_thickness: number;
   };
+  globalFileId?: string;  // Reference to the original global file
+  processed?: boolean;    // Track if this cell has been processed
+  timestamp?: string;     // When the cell was created/modified
 } 

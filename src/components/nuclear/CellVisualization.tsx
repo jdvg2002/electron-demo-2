@@ -120,13 +120,20 @@ const VisualizationGrid: React.FC<VisualizationGridProps> = ({
 
 // Helper function to create visualization cards from STEP file data
 export const createVisualizationCards = (
-  stlFile: File,
+  stlFile: File | { name: string; data: string; type: string },
   measurements: Record<string, number>
 ): VisualizationCard[] => {
   const cards: VisualizationCard[] = [
     {
       title: '3D Model',
-      content: { type: 'stl', file: stlFile }
+      content: { 
+        type: 'stl', 
+        file: stlFile instanceof File ? stlFile : new File(
+          [Buffer.from(stlFile.data.split(',')[1], 'base64')],
+          stlFile.name,
+          { type: stlFile.type }
+        )
+      }
     },
     {
       title: 'Measurements',
