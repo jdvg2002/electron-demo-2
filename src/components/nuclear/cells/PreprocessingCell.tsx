@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CellData } from '@/backend/models/Cell';
-import { FileModuleManager } from '@/backend/manager/FileModuleManager';
+import { GlobalFileManager } from '@/backend/models/GlobalFiles';
 import CellExecutionManager from '../managers/CellExecutionManager';
 import CellCodeEditor from './shared/CellCodeEditor';
 import FileUploadHandler from './shared/FileUploadHandler';
@@ -22,7 +22,7 @@ const PreprocessingCell: React.FC<PreprocessingCellProps> = ({
   cell,
   onCellChange
 }) => {
-  const fileModuleManager = FileModuleManager.getInstance();
+  const globalFileManager = GlobalFileManager.getInstance();
   const cellExecutionManager = CellExecutionManager.getInstance();
   
   const [localCode, setLocalCode] = useState(cell.code || '');
@@ -32,11 +32,10 @@ const PreprocessingCell: React.FC<PreprocessingCellProps> = ({
   const [stepFilesData, setStepFilesData] = useState<any[]>([]);
 
   useEffect(() => {
-    // Load existing file data if available
     if (cell.globalFileIds?.length) {
       const filesData = cell.globalFileIds
-        .map(id => fileModuleManager.getFileById(id))
-        .filter((file): file is GlobalFileData => file !== undefined)
+        .map(id => globalFileManager.getFileById(id))
+        .filter(file => file !== undefined)
         .map(file => ({
           stlFile: file.stlFile,
           pipeMeasurements: file.pipeMeasurements,
@@ -51,7 +50,7 @@ const PreprocessingCell: React.FC<PreprocessingCellProps> = ({
   const handleFileSelect = async (file: File) => {
     try {
       setErrorMessage(null);
-      const globalFileId = await fileModuleManager.addFileFromUpload(
+      const globalFileId = await globalFileManager.addFileFromUpload(
         file,
         { inner_diameter: 0, outer_diameter: 0, wall_thickness: 0 },
         file.name

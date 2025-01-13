@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef } from 'react';
 import { createFileUploadHandler } from './FileUploadHandler';
 import VisualizationGrid, { createVisualizationCards } from './CellVisualization';
 import FileRenderInfo, { RenderedFileInfo } from './FileRenderInfo';
-import { FileModuleManager } from '@/backend/manager/FileModuleManager';
+import { GlobalFileManager } from '@/backend/models/GlobalFiles';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const FileUploadSection: React.FC = () => {
@@ -13,7 +13,7 @@ const FileUploadSection: React.FC = () => {
   const [stepFilesData, setStepFilesData] = useState<any[]>([]);
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const fileModuleManager = FileModuleManager.getInstance();
+  const globalFileManager = GlobalFileManager.getInstance();
 
   const handleFileUpload = useMemo(() => createFileUploadHandler({
     cell: null,
@@ -23,7 +23,7 @@ const FileUploadSection: React.FC = () => {
         try {
           setViewState('loading');
           
-          await fileModuleManager.createModuleFromFile(
+          await globalFileManager.addFileFromUpload(
             newStepData.stlFile,
             newStepData.pipeMeasurements,
             newStepData.originalFileName
@@ -45,7 +45,7 @@ const FileUploadSection: React.FC = () => {
     },
     onViewStateChange: setViewState,
     onErrorChange: setUploadError
-  }), [fileModuleManager]);
+  }), [globalFileManager]);
 
   const handleFiles = (files: FileList) => {
     if (files.length > 0 && fileInputRef.current) {

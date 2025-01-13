@@ -1,23 +1,9 @@
-export interface GlobalFileData {
-  id: string;
-  stlFile: {
-    name: string;
-    data: string;  // Base64 encoded STL data
-    type: string;
-  };
-  pipeMeasurements: {
-    inner_diameter: number;
-    outer_diameter: number;
-    wall_thickness: number;
-  };
-  timestamp: string;
-  originalFileName: string;
-}
+import { GlobalFileData } from './types';
 
 export class GlobalFileManager {
   private static instance: GlobalFileManager;
-  private files: GlobalFileData[] = [];
-  private listeners: (() => void)[] = [];
+  private files: Map<string, GlobalFileData> = new Map();
+  private listeners: Set<() => void> = new Set();
 
   private constructor() {}
 
@@ -28,33 +14,61 @@ export class GlobalFileManager {
     return GlobalFileManager.instance;
   }
 
-  addFile(file: GlobalFileData) {
-    this.files.push(file);
-    this.notifyListeners();
+  async addFileFromUpload(
+    file: File,
+    measurements: GlobalFileData['pipeMeasurements'],
+    originalFileName: string
+  ): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      
+      reader.onload = () => {
+        try {
+          const id = crypto.randomUUID();
+          const fileData: GlobalFileData = {
+            id,
+            stlFile: {
+              data: reader.result as string,
+              name: file.name,
+              type: file.type
+            },
+            pipeMeasurements: measurements,
+            originalFileName,
+            timestamp: new Date().toISOString()
+          };
+          
+          this.files.set(id, fileData);
+          this.notifyListeners();
+          resolve(id);
+        } catch (error) {
+          reject(error);
+        }
+      };
+
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
   }
 
-  removeFile(id: string) {
-    this.files = this.files.filter(f => f.id !== id);
-    this.notifyListeners();
+  getFileById(id: string): GlobalFileData | undefined {
+    return this.files.get(id);
   }
 
   getAllFiles(): GlobalFileData[] {
-    return [...this.files];
+    return Array.from(this.files.values());
   }
 
-  clearFiles() {
-    this.files = [];
+  removeFile(id: string): void {
+    this.files.delete(id);
     this.notifyListeners();
   }
 
-  addListener(listener: () => void) {
-    this.listeners.push(listener);
-    return () => {
-      this.listeners = this.listeners.filter(l => l !== listener);
-    };
+  addListener(callback: () => void): () => void {
+    this.listeners.add(callback);
+    return () => this.listeners.delete(callback);
   }
 
-  private notifyListeners() {
-    this.listeners.forEach(listener => listener());
+  private notifyListeners(): void {
+    this.listeners.forEach(callback => callback());
   }
 } 

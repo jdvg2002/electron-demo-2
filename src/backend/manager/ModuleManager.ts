@@ -141,10 +141,8 @@ export class ModuleManager {
         id: Date.now(),
         type: 'preprocessing',
         title: 'Input Preprocessing',
-        stlFile: files[0]?.stlFile,
-        pipeMeasurements: files[0]?.pipeMeasurements,
         globalFileIds: files.map(f => f.id),
-        timestamp: files[0]?.timestamp
+        timestamp: new Date().toISOString()
       },
       {
         id: Date.now() + 1,
