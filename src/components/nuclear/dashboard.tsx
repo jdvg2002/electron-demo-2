@@ -36,6 +36,23 @@ const DraggableCardsCanvas = () => {
     manager.setWires(wires);
   }, [wires]);
 
+  useEffect(() => {
+    const handleGlobalMouseUp = () => {
+      setDragStart(null);
+      setPendingDragCard(null);
+      const anyDragging = modules.some(m => m.card.isDragging);
+      if (anyDragging) {
+        setRecentlyDragged(true);
+        setTimeout(() => setRecentlyDragged(false), 100);
+      }
+      modules.forEach(m => m.card.isDragging = false);
+      setModules([...modules]);
+    };
+
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+    return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
+  }, [modules]);
+
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (dragStart && pendingDragCard) {
       const dx = Math.abs(e.clientX - dragStart.x);
@@ -65,8 +82,16 @@ const DraggableCardsCanvas = () => {
 
     const draggingModule = modules.find(m => m.card.isDragging);
     if (draggingModule) {
-      const newX = mouseX - draggingModule.card.dragOffset.x;
-      const newY = mouseY - draggingModule.card.dragOffset.y;
+      const cardWidth = 256; // w-64 = 16rem = 256px
+      const cardHeight = 100; // Approximate height of card
+      
+      // Calculate new position with boundaries
+      let newX = mouseX - draggingModule.card.dragOffset.x;
+      let newY = mouseY - draggingModule.card.dragOffset.y;
+      
+      // Constrain to canvas boundaries
+      newX = Math.max(0, Math.min(newX, canvasRect.width - cardWidth));
+      newY = Math.max(0, Math.min(newY, canvasRect.height - cardHeight));
 
       draggingModule.updateCardPosition(newX, newY);
       setModules([...modules]);
@@ -75,15 +100,7 @@ const DraggableCardsCanvas = () => {
   };
 
   const handleMouseUp = () => {
-    setDragStart(null);
-    setPendingDragCard(null);
-    const anyDragging = modules.some(m => m.card.isDragging);
-    if (anyDragging) {
-      setRecentlyDragged(true);
-      setTimeout(() => setRecentlyDragged(false), 100);
-    }
-    modules.forEach(m => m.card.isDragging = false);
-    setModules([...modules]);
+    // Only handle canvas-specific cleanup if needed
   };
 
   const updateConnectedWirePositions = (
@@ -300,7 +317,21 @@ const DraggableCardsCanvas = () => {
   };
 
   return (
-    <div className="w-full h-full flex flex-col gap-4 p-4">
+    <div className="w-full h-full flex flex-col gap-6 p-4">
+      <div className="w-full p-6 bg-white border-2 border-gray-200 rounded-lg">
+        <div className="flex flex-col items-center gap-4">
+          <h2 className="text-xl font-semibold text-gray-700">Upload Nuclear Data File</h2>
+          <div className="w-full max-w-xl h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
+            <div className="text-center">
+              <p className="text-gray-600">Drag and drop your file here, or</p>
+              <button className="mt-2 text-blue-500 hover:text-blue-600 font-medium">
+                Browse Files
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="flex gap-4">
         <button
           onClick={addNewCard}
@@ -321,7 +352,9 @@ const DraggableCardsCanvas = () => {
       </div>
 
       <div
-        className="w-full h-96 bg-white border-2 border-gray-200 rounded-lg relative"
+        className={`w-full h-96 bg-white border-2 border-gray-200 rounded-lg relative ${
+          modules.some(m => m.card.isDragging) ? 'select-none' : ''
+        }`}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
@@ -375,105 +408,72 @@ const DraggableCardsCanvas = () => {
           )}
         </svg>
 
-        {modules.map(mod => (
-          <Card
-            key={mod.card.id}
-            data-card-id={mod.card.id}
-            className="absolute w-64 cursor-move shadow-lg"
-            style={{
-              transform: `translate(${mod.card.x}px, ${mod.card.y}px)`,
-              zIndex: mod.card.isDragging ? 10 : 1,
-            }}
-            onMouseDown={(e) => handleMouseDown(e, mod.card.id)}
-            onClick={(e) => handleCardClick(e, mod.card.id)}
-          >
-            <div className="p-4 space-y-2">
-              <div className="relative">
-                <span
-                  className="absolute inset-0 cursor-text"
-                  style={{
-                    width: mod.card.title.length + 'ch',
-                    minWidth: '4ch'
-                  }}
-                >
-                  <input
-                    type="text"
-                    value={mod.card.title}
-                    onChange={(e) => updateCardText(mod.card.id, 'title', e.target.value)}
-                    onFocus={() => setEditingCard(mod.card.id)}
-                    onBlur={() => setEditingCard(null)}
-                    className="font-semibold bg-transparent w-full border-none focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 cursor-text"
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                </span>
-                <span className="font-semibold invisible">
-                  {mod.card.title || ' '}
-                </span>
-              </div>
-              <div className="relative">
-                <span
-                  className="absolute inset-0 cursor-text inline-block"
-                  style={{
-                    width: Math.max(mod.card.content.length, 4) + 'ch',
-                    minHeight: '1.5em',
-                    height: 'auto'
-                  }}
-                >
-                  <textarea
-                    value={mod.card.content}
-                    onChange={(e) => updateCardText(mod.card.id, 'content', e.target.value)}
-                    onFocus={() => setEditingCard(mod.card.id)}
-                    onBlur={() => setEditingCard(null)}
-                    className="w-full min-h-[1.5em] bg-transparent border-none resize-none focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 cursor-text"
-                    style={{ height: '100%' }}
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                </span>
-                <span className="invisible whitespace-pre-wrap block">
-                  {mod.card.content || ' '}
-                </span>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
+        {modules.map(mod => {
+          const cellWithMeasurements = mod.cells.find(cell => cell.pipeMeasurements);
+          const measurements = cellWithMeasurements?.pipeMeasurements;
 
-      <div className="w-full mt-4 bg-white border rounded-lg">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                From
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                To
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {wires.map(wire => {
-              const startModule = modules.find(m => m.card.id === wire.startCard);
-              const endModule = modules.find(m => m.card.id === wire.endCard);
-              return (
-                <tr key={wire.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {startModule ? startModule.card.title : `Card ${wire.startCard}`}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {endModule ? endModule.card.title : `Card ${wire.endCard}`}
-                  </td>
-                </tr>
-              );
-            })}
-            {wires.length === 0 && (
-              <tr>
-                <td colSpan={2} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                  No connections yet
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+          return (
+            <Card
+              key={mod.card.id}
+              data-card-id={mod.card.id}
+              className="absolute w-64 cursor-move shadow-lg"
+              style={{
+                transform: `translate(${mod.card.x}px, ${mod.card.y}px)`,
+                zIndex: mod.card.isDragging ? 10 : 1,
+              }}
+              onMouseDown={(e) => handleMouseDown(e, mod.card.id)}
+              onClick={(e) => handleCardClick(e, mod.card.id)}
+            >
+              <div className="p-4 space-y-2">
+                <div className="relative">
+                  <span
+                    className="absolute inset-0 cursor-text"
+                    style={{
+                      width: mod.card.title.length + 'ch',
+                      minWidth: '4ch'
+                    }}
+                  >
+                    <input
+                      type="text"
+                      value={mod.card.title}
+                      onChange={(e) => updateCardText(mod.card.id, 'title', e.target.value)}
+                      onFocus={() => setEditingCard(mod.card.id)}
+                      onBlur={() => setEditingCard(null)}
+                      className="font-semibold bg-transparent w-full border-none focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 cursor-text"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </span>
+                  <span className="font-semibold invisible">
+                    {mod.card.title || ' '}
+                  </span>
+                </div>
+                
+                <div className="text-sm space-y-1">
+                  {measurements ? (
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Inner Diameter:</span>
+                        <span className="font-medium">{measurements.inner_diameter} mm</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Outer Diameter:</span>
+                        <span className="font-medium">{measurements.outer_diameter} mm</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Wall Thickness:</span>
+                        <span className="font-medium">{measurements.wall_thickness} mm</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-gray-500 italic">
+                      No measurements available
+                    </div>
+                  )}
+                </div>
+              </div>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
