@@ -227,9 +227,20 @@ const NotebookCell: React.FC<NotebookCellProps> = ({
     }
   };
 
+  const handleHeaderClick = (e: React.MouseEvent) => {
+    // Only toggle if clicking the header area and not on other interactive elements
+    const target = e.target as HTMLElement;
+    if (!target.closest('button') && !target.closest('input')) {
+      onToggle();
+    }
+  };
+
   return (
     <Card className="mb-4 border-l-4 border-l-blue-500 w-full">
-      <CardHeader className="flex flex-row items-center justify-between p-4">
+      <CardHeader 
+        className="flex flex-row items-center justify-between p-4 cursor-pointer" 
+        onClick={handleHeaderClick}
+      >
         <div className="flex items-center gap-2">
           {renderCellIcon()}
           <CardTitle className="text-lg font-medium">{cell.title}</CardTitle>
@@ -274,7 +285,18 @@ const NotebookCell: React.FC<NotebookCellProps> = ({
       </CardHeader>
       
       {isActive && (
-        <CardContent className="p-2 space-y-4 w-full">
+        <CardContent 
+          className="p-2 space-y-4 w-full"
+          onClick={(e) => {
+            // Only close if clicking the top portion of the expanded content
+            const target = e.target as HTMLElement;
+            const rect = target.getBoundingClientRect();
+            const clickY = e.clientY - rect.top;
+            if (clickY < 50 && !target.closest('button') && !target.closest('input')) {
+              onToggle();
+            }
+          }}
+        >
           {/* Rendered File Info Component */}
           {renderedFile && (
             <FileRenderInfo 
