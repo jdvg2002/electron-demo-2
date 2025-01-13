@@ -8,6 +8,7 @@ import ExternalTool from './ExternalTool';
 import VisualizationGrid, { createVisualizationCards } from './CellVisualization';
 import FileRenderInfo, { RenderedFileInfo } from './FileRenderInfo';
 import { CellData } from '@/backend/models/Cell';
+import FileUploadHandler from './FileUploadHandler';
 
 interface NotebookCellProps {
   cell: CellData;
@@ -35,7 +36,6 @@ const NotebookCell: React.FC<NotebookCellProps> = ({
   onToggle,
   onCellChange
 }) => {
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [localCode, setLocalCode] = useState(cell.code || '');
   const [isExecuting, setIsExecuting] = useState(false);
@@ -43,6 +43,15 @@ const NotebookCell: React.FC<NotebookCellProps> = ({
   const [viewState, setViewState] = useState<'idle' | 'loading' | 'viewing' | 'error'>('idle');
   const [renderedFile, setRenderedFile] = useState<RenderedFileInfo | null>(null);
   const [stepFileData, setStepFileData] = useState<StepFileData | null>(null);
+
+  const { fileInputRef, handleFileUpload } = FileUploadHandler({
+    cell,
+    onCellChange,
+    onStepFileDataChange: setStepFileData,
+    onRenderedFileChange: setRenderedFile,
+    onViewStateChange: setViewState,
+    onErrorChange: setErrorMessage
+  });
 
   useEffect(() => {
     if (cell.stlFile?.data) {
@@ -73,108 +82,6 @@ const NotebookCell: React.FC<NotebookCellProps> = ({
       setViewState('viewing');
     }
   }, [cell.stlFile]);
-
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    if (file.name.toLowerCase().endsWith('.stl')) {
-      const newStepFileData = {
-        stlFile: file,
-        pipeMeasurements: null,
-        originalFileName: file.name,
-        timestamp: new Date().toISOString()
-      };
-      
-      const jsonData = JSON.stringify({
-        pipeMeasurements: newStepFileData.pipeMeasurements,
-        originalFileName: newStepFileData.originalFileName,
-        timestamp: newStepFileData.timestamp
-      }, null, 2);
-      console.log('STL File Data as JSON:', jsonData);
-      
-      setStepFileData(newStepFileData);
-      setViewState('viewing');
-      
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64data = reader.result as string;
-        const updatedCell: CellData = {
-          ...cell,
-          stlFile: {
-            name: file.name,
-            data: base64data,
-            type: 'model/stl'
-          }
-        };
-        onCellChange(updatedCell);
-      };
-      reader.readAsDataURL(file);
-    } 
-    else if (file.name.toLowerCase().endsWith('.step') || file.name.toLowerCase().endsWith('.stp')) {
-      setViewState('loading');
-      try {
-        const buffer = await file.arrayBuffer();
-        const tempPath = await window.electronWindow.saveTempFile(buffer);
-        const result = await window.stepConverter.convertStep(tempPath);
-        
-        if (result.success) {
-          const stlBlob = new Blob([result.stl_data], { type: 'model/stl' });
-          const newFileName = file.name.replace(/\.(step|stp)$/i, '.stl');
-          const stlFile = new File([stlBlob], newFileName, { type: 'model/stl' });
-          
-          const newStepFileData = {
-            stlFile,
-            pipeMeasurements: result.pipe_measurements,
-            originalFileName: file.name,
-            timestamp: new Date().toISOString()
-          };
-
-          const jsonData = JSON.stringify({
-            pipeMeasurements: newStepFileData.pipeMeasurements,
-            originalFileName: newStepFileData.originalFileName,
-            timestamp: newStepFileData.timestamp
-          }, null, 2);
-          console.log('STEP File Data as JSON:', jsonData);
-          
-          setStepFileData(newStepFileData);
-          
-          setViewState('viewing');
-          setRenderedFile({
-            file: stlFile,
-            timestamp: new Date().toISOString(),
-            success: true,
-            originalFileName: file.name
-          });
-
-          const reader = new FileReader();
-          reader.onload = () => {
-            const base64data = reader.result as string;
-            const updatedCell: CellData = {
-              ...cell,
-              stlFile: {
-                name: newFileName,
-                data: base64data,
-                type: 'model/stl'
-              },
-              pipeMeasurements: result.pipe_measurements
-            };
-            onCellChange(updatedCell);
-          };
-          reader.readAsDataURL(stlFile);
-        } else {
-          setErrorMessage(result.error || 'Failed to convert STEP file');
-          setViewState('error');
-        }
-      } catch (error) {
-        setErrorMessage(error instanceof Error ? error.message : 'Error converting file');
-        setViewState('error');
-      }
-    } else {
-      setErrorMessage('Please upload an STL or STEP file');
-      setViewState('error');
-    }
-  };
 
   const handleCodeChange = (value: string | undefined) => {
     if (value !== undefined) {

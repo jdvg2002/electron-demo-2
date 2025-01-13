@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/card';
 import { ModuleManager } from '@/backend/manager/ModuleManager';
 import { motion, AnimatePresence } from 'framer-motion';
 import Demo from './demo';
+import FileUploadSection from './FileUploadSection';
 
 const DraggableCardsCanvas = () => {
   const manager = ModuleManager.getInstance();
@@ -348,20 +349,8 @@ const DraggableCardsCanvas = () => {
 
   return (
     <div className="w-full h-full flex flex-col gap-6 p-4">
-      <div className="w-full p-6 bg-white border-2 border-gray-200 rounded-lg">
-        <div className="flex flex-col items-center gap-4">
-          <h2 className="text-xl font-semibold text-gray-700">Upload Nuclear Data File</h2>
-          <div className="w-full max-w-xl h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
-            <div className="text-center">
-              <p className="text-gray-600">Drag and drop your file here, or</p>
-              <button className="mt-2 text-blue-500 hover:text-blue-600 font-medium">
-                Browse Files
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
+      <FileUploadSection />
+      
       <div className="flex gap-4">
         <button
           onClick={addNewCard}
