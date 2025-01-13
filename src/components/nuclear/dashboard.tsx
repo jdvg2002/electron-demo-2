@@ -546,10 +546,32 @@ const DraggableCardsCanvas = () => {
                 ) : (
                   <Card
                     data-card-id={mod.card.id}
-                    className="w-full cursor-move shadow-lg"
+                    className="w-full cursor-move shadow-lg relative"
                     onMouseDown={(e) => handleMouseDown(e, mod.card.id)}
                     onClick={(e) => handleCardClick(e, mod.card.id)}
                   >
+                    <div 
+                      className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExpandedCard(mod.card.id);
+                      }}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+                      </svg>
+                    </div>
+                    
                     <div className="p-4 space-y-2">
                       <div className="relative">
                         <span
