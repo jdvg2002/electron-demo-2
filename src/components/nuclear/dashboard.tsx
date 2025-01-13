@@ -86,24 +86,26 @@ const DraggableCardsCanvas = () => {
 
     const draggingModule = modules.find(m => m.card.isDragging);
     if (draggingModule) {
+      const canvasRect = e.currentTarget.getBoundingClientRect();
       const cardWidth = 256; // w-64 = 16rem = 256px
       const cardHeight = 100; // Approximate height of card
       
       // Calculate new position with boundaries
-      let newX = mouseX - draggingModule.card.dragOffset.x;
-      let newY = mouseY - draggingModule.card.dragOffset.y;
+      let newX = e.clientX - canvasRect.left - draggingModule.card.dragOffset.x;
+      let newY = e.clientY - canvasRect.top - draggingModule.card.dragOffset.y;
       
       // Constrain to canvas boundaries
       newX = Math.max(0, Math.min(newX, canvasRect.width - cardWidth));
       newY = Math.max(0, Math.min(newY, canvasRect.height - cardHeight));
 
-      // Update module position
-      draggingModule.updateCardPosition(newX, newY);
+      // Update module position directly on the card object
+      draggingModule.card.x = newX;
+      draggingModule.card.y = newY;
       
       // Update wires immediately before re-rendering modules
       updateConnectedWirePositions(draggingModule.card.id, newX, newY, e.currentTarget);
       
-      // Update modules state after wire positions are updated
+      // Update modules state
       setModules([...modules]);
     }
   };
@@ -156,6 +158,7 @@ const DraggableCardsCanvas = () => {
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>, cardId: number) => {
     if (editingCard !== null || isWiring) return;
+    
     const found = modules.find(m => m.card.id === cardId);
     if (!found) return;
 
@@ -166,7 +169,6 @@ const DraggableCardsCanvas = () => {
     const offsetX = e.clientX - rect.left;
     const offsetY = e.clientY - rect.top;
 
-    found.card.isDragging = false;
     found.card.dragOffset = { x: offsetX, y: offsetY };
     setModules([...modules]);
   };
@@ -203,8 +205,20 @@ const DraggableCardsCanvas = () => {
     cardId: number, 
     canvasRef: HTMLDivElement
   ) => {
-    const canvasRect = canvasRef.getBoundingClientRect();
+    console.log('Wire Logic Called:', { 
+      cardId, 
+      isWiring, 
+      activeWire: activeWire ? { ...activeWire } : null,
+      existingWires: wires.length 
+    });
 
+    // If we're not in wiring mode, don't do anything
+    if (!isWiring) {
+      console.log('Not in wiring mode, returning');
+      return;
+    }
+
+    const canvasRect = canvasRef.getBoundingClientRect();
     const cardElement = e.currentTarget as HTMLDivElement;
     const cardRect = cardElement.getBoundingClientRect();
     
@@ -220,6 +234,8 @@ const DraggableCardsCanvas = () => {
     const snapPoint = getSnapPoint(localCardRect, mouseX, mouseY);
 
     if (!activeWire) {
+      console.log('Starting new wire from card:', cardId);
+      // Starting a new wire
       setActiveWire({
         startCard: cardId,
         startX: snapPoint.x,
@@ -228,22 +244,34 @@ const DraggableCardsCanvas = () => {
         startRelY: snapPoint.relY
       });
     } else {
+      console.log('Completing wire:', { 
+        startCard: activeWire.startCard, 
+        endCard: cardId 
+      });
+      
+      // Completing a wire
       if (activeWire.startCard === cardId) {
+        console.log('Clicked same card, canceling wire');
         setActiveWire(null);
         setIsWiring(false);
         return;
       }
+
       const hasExistingConnection = wires.some(
         wire =>
           (wire.startCard === activeWire.startCard && wire.endCard === cardId) ||
           (wire.startCard === cardId && wire.endCard === activeWire.startCard)
       );
+
       if (hasExistingConnection) {
+        console.log('Connection already exists');
         alert('These cards are already connected!');
         setActiveWire(null);
         setIsWiring(false);
         return;
       }
+
+      // Create the new wire
       const newWire = {
         id: wires.length,
         startCard: activeWire.startCard,
@@ -257,8 +285,12 @@ const DraggableCardsCanvas = () => {
         endRelX: snapPoint.relX,
         endRelY: snapPoint.relY
       };
+
+      console.log('Creating new wire:', newWire);
       setWires([...wires, newWire]);
-      manager.addWire(newWire);
+      
+      // Reset wiring state
+      console.log('Resetting wiring state');
       setActiveWire(null);
       setIsWiring(false);
     }
@@ -353,6 +385,7 @@ const DraggableCardsCanvas = () => {
   };
 
   const startWiring = () => {
+    console.log('Starting wiring mode');
     setIsWiring(true);
     setActiveWire(null);
   };
