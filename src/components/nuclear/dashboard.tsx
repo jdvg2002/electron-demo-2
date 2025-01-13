@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
-import { router } from '@/routes/router';
 import { ModuleManager } from '@/backend/manager/ModuleManager';
-import { ModuleCard } from '@/backend/models/ModuleCard';
+import { motion, AnimatePresence } from 'framer-motion';
+import Demo from './demo';
 
 const DraggableCardsCanvas = () => {
   const manager = ModuleManager.getInstance();
@@ -23,6 +23,7 @@ const DraggableCardsCanvas = () => {
   const [recentlyDragged, setRecentlyDragged] = useState(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
   const [pendingDragCard, setPendingDragCard] = useState<number | null>(null);
+  const [expandedCard, setExpandedCard] = useState<number | null>(null);
 
   // Reflect changes from manager if storing wires/modules somewhere else
   useEffect(() => {
@@ -93,9 +94,14 @@ const DraggableCardsCanvas = () => {
       newX = Math.max(0, Math.min(newX, canvasRect.width - cardWidth));
       newY = Math.max(0, Math.min(newY, canvasRect.height - cardHeight));
 
+      // Update module position
       draggingModule.updateCardPosition(newX, newY);
-      setModules([...modules]);
+      
+      // Update wires immediately before re-rendering modules
       updateConnectedWirePositions(draggingModule.card.id, newX, newY, e.currentTarget);
+      
+      // Update modules state after wire positions are updated
+      setModules([...modules]);
     }
   };
 
@@ -109,32 +115,39 @@ const DraggableCardsCanvas = () => {
     newY: number,
     canvasElement: HTMLDivElement
   ) => {
-    // Recalculate wires that connect to this card
     const updated = wires.map(wire => {
       if (wire.startCard === cardId || wire.endCard === cardId) {
-        const cardElement = canvasElement.querySelector(`[data-card-id="${cardId}"]`) as HTMLDivElement | null;
+        // Get the card's dimensions from its element
+        const cardElement = canvasElement.querySelector(`[data-card-id="${cardId}"]`) as HTMLDivElement;
         if (!cardElement) return wire;
 
-        const cardRect = cardElement.getBoundingClientRect();
-        const canvasRect = canvasElement.getBoundingClientRect();
-        const relativeRect = {
+        // Use the actual dimensions of the card
+        const cardRect = {
           x: newX,
           y: newY,
-          width: cardRect.width,
-          height: cardRect.height
+          width: cardElement.offsetWidth,
+          height: cardElement.offsetHeight
         };
+
         if (wire.startCard === cardId) {
-          const startX = relativeRect.x + wire.startRelX * relativeRect.width;
-          const startY = relativeRect.y + wire.startRelY * relativeRect.height;
-          return { ...wire, startX, startY };
+          // Update start position using relative coordinates
+          return {
+            ...wire,
+            startX: cardRect.x + (wire.startRelX * cardRect.width),
+            startY: cardRect.y + (wire.startRelY * cardRect.height)
+          };
         } else {
-          const endX = relativeRect.x + wire.endRelX * relativeRect.width;
-          const endY = relativeRect.y + wire.endRelY * relativeRect.height;
-          return { ...wire, endX, endY };
+          // Update end position using relative coordinates
+          return {
+            ...wire,
+            endX: cardRect.x + (wire.endRelX * cardRect.width),
+            endY: cardRect.y + (wire.endRelY * cardRect.height)
+          };
         }
       }
       return wire;
     });
+
     setWires(updated);
   };
 
@@ -160,7 +173,11 @@ const DraggableCardsCanvas = () => {
     cardId: number
   ) => {
     if (isWiring) {
-      wireLogic(e, cardId);
+      // Get the canvas element and pass it to wireLogic
+      const canvasElement = e.currentTarget.closest('[data-canvas]') as HTMLDivElement;
+      if (canvasElement) {
+        wireLogic(e, cardId, canvasElement);
+      }
       return;
     }
     const found = modules.find(m => m.card.id === cardId);
@@ -171,29 +188,33 @@ const DraggableCardsCanvas = () => {
     }
     if (editingCard !== null) return;
 
-    router.navigate({ to: '/demo/$cardId', params: { cardId: cardId.toString() } });
+    setExpandedCard(cardId);
   };
 
-  const wireLogic = (e: React.MouseEvent<HTMLDivElement>, cardId: number) => {
-    const cardElement = e.currentTarget as HTMLDivElement;
-    const canvasRect = cardElement.parentElement?.getBoundingClientRect();
-    if (!canvasRect) return;
+  const handleClose = () => {
+    setExpandedCard(null);
+  };
 
+  const wireLogic = (
+    e: React.MouseEvent<HTMLDivElement>, 
+    cardId: number, 
+    canvasRef: HTMLDivElement
+  ) => {
+    const canvasRect = canvasRef.getBoundingClientRect();
+
+    const cardElement = e.currentTarget as HTMLDivElement;
     const cardRect = cardElement.getBoundingClientRect();
+    
     const mouseX = e.clientX - canvasRect.left;
     const mouseY = e.clientY - canvasRect.top;
 
-    // Snap to nearest edge
-    const snapPoint = getSnapPoint(
-      {
-        x: cardRect.left - canvasRect.left,
-        y: cardRect.top - canvasRect.top,
-        width: cardRect.width,
-        height: cardRect.height
-      },
-      mouseX,
-      mouseY
-    );
+    const localCardRect = {
+      x: cardRect.left - canvasRect.left,
+      y: cardRect.top - canvasRect.top,
+      width: cardRect.width,
+      height: cardRect.height
+    };
+    const snapPoint = getSnapPoint(localCardRect, mouseX, mouseY);
 
     if (!activeWire) {
       setActiveWire({
@@ -283,18 +304,27 @@ const DraggableCardsCanvas = () => {
   };
 
   const addNewCard = () => {
-    // You can generate an ID from something else or just keep a running count
     const newId = modules.length ? Math.max(...modules.map(m => m.card.id)) + 1 : 1;
-
+    
+    // Calculate grid position based on number of existing cards
+    const cardsPerRow = 3;
+    const cardWidth = 300; // 16rem + some margin
+    const cardHeight = 150; // Approximate height + margin
+    const baseOffset = 20;
+    
+    const column = (modules.length) % cardsPerRow;
+    const row = Math.floor(modules.length / cardsPerRow);
+    
     const newCard: ModuleCard = {
       id: newId,
-      x: 100,
-      y: 100,
+      x: baseOffset + (column * cardWidth),
+      y: baseOffset + (row * cardHeight),
       isDragging: false,
       dragOffset: { x: 0, y: 0 },
       title: `Card ${newId}`,
       content: 'Edit this text!'
     };
+    
     const newModule = manager.createModule(newCard, []);
     setModules([...modules, newModule]);
   };
@@ -352,6 +382,7 @@ const DraggableCardsCanvas = () => {
       </div>
 
       <div
+        data-canvas
         className={`w-full h-96 bg-white border-2 border-gray-200 rounded-lg relative ${
           modules.some(m => m.card.isDragging) ? 'select-none' : ''
         }`}
@@ -364,20 +395,25 @@ const DraggableCardsCanvas = () => {
             const dx = wire.endX - wire.startX;
             const dy = wire.endY - wire.startY;
             const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            // Adjust control point distance based on wire length
             const controlDistance = Math.min(distance * 0.5, 100);
-
+            
+            // Determine control points based on relative positions
             let c1x, c1y, c2x, c2y;
+            
+            // If start is to the left of end
             if (wire.startX < wire.endX) {
               c1x = wire.startX + controlDistance;
-              c1y = wire.startY;
               c2x = wire.endX - controlDistance;
-              c2y = wire.endY;
             } else {
               c1x = wire.startX - controlDistance;
-              c1y = wire.startY;
               c2x = wire.endX + controlDistance;
-              c2y = wire.endY;
             }
+            
+            // Keep vertical positions aligned with endpoints
+            c1y = wire.startY;
+            c2y = wire.endY;
 
             const path = `M ${wire.startX} ${wire.startY}
               C ${c1x} ${c1y},
@@ -408,72 +444,114 @@ const DraggableCardsCanvas = () => {
           )}
         </svg>
 
-        {modules.map(mod => {
-          const cellWithMeasurements = mod.cells.find(cell => cell.pipeMeasurements);
-          const measurements = cellWithMeasurements?.pipeMeasurements;
-
-          return (
-            <Card
-              key={mod.card.id}
-              data-card-id={mod.card.id}
-              className="absolute w-64 cursor-move shadow-lg"
-              style={{
-                transform: `translate(${mod.card.x}px, ${mod.card.y}px)`,
-                zIndex: mod.card.isDragging ? 10 : 1,
-              }}
-              onMouseDown={(e) => handleMouseDown(e, mod.card.id)}
-              onClick={(e) => handleCardClick(e, mod.card.id)}
-            >
-              <div className="p-4 space-y-2">
-                <div className="relative">
-                  <span
-                    className="absolute inset-0 cursor-text"
-                    style={{
-                      width: mod.card.title.length + 'ch',
-                      minWidth: '4ch'
-                    }}
-                  >
-                    <input
-                      type="text"
-                      value={mod.card.title}
-                      onChange={(e) => updateCardText(mod.card.id, 'title', e.target.value)}
-                      onFocus={() => setEditingCard(mod.card.id)}
-                      onBlur={() => setEditingCard(null)}
-                      className="font-semibold bg-transparent w-full border-none focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 cursor-text"
-                      onClick={(e) => e.stopPropagation()}
+        <AnimatePresence>
+          {modules.map(mod => {
+            const isExpanded = mod.card.id === expandedCard;
+            
+            return (
+              <motion.div
+                key={mod.card.id}
+                layout
+                initial={false}
+                animate={isExpanded ? {
+                  position: 'fixed',
+                  top: '10%',
+                  left: '15%',
+                  width: '70%',
+                  height: '80%',
+                  zIndex: 50,
+                  backgroundColor: 'white',
+                  borderRadius: '0.5rem',
+                  boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                } : {
+                  position: 'absolute',
+                  top: mod.card.y,
+                  left: mod.card.x,
+                  width: '16rem',
+                  height: 'auto',
+                  zIndex: mod.card.isDragging ? 10 : 1,
+                }}
+                transition={{ duration: 0.3 }}
+              >
+                {isExpanded ? (
+                  <>
+                    <div 
+                      className="fixed inset-0 bg-black/30"
+                      style={{ zIndex: 40 }}
+                      onClick={handleClose}
                     />
-                  </span>
-                  <span className="font-semibold invisible">
-                    {mod.card.title || ' '}
-                  </span>
-                </div>
-                
-                <div className="text-sm space-y-1">
-                  {measurements ? (
-                    <>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Inner Diameter:</span>
-                        <span className="font-medium">{measurements.inner_diameter} mm</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Outer Diameter:</span>
-                        <span className="font-medium">{measurements.outer_diameter} mm</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Wall Thickness:</span>
-                        <span className="font-medium">{measurements.wall_thickness} mm</span>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="text-gray-500 italic">
-                      No measurements available
+                    <div className="fixed inset-0 backdrop-blur-sm" style={{ zIndex: 41 }} />
+                    <div className="bg-white rounded-lg shadow-xl h-full overflow-auto relative" style={{ zIndex: 42 }}>
+                      <button
+                        onClick={handleClose}
+                        className="absolute top-4 right-4 z-50 bg-gray-100 hover:bg-gray-200 rounded-full p-2"
+                      >
+                        <span className="sr-only">Close</span>
+                        ✕
+                      </button>
+                      <Demo className="bg-white" cardId={mod.card.id} />
                     </div>
-                  )}
-                </div>
-              </div>
-            </Card>
-          );
-        })}
+                  </>
+                ) : (
+                  <Card
+                    data-card-id={mod.card.id}
+                    className="w-full cursor-move shadow-lg"
+                    onMouseDown={(e) => handleMouseDown(e, mod.card.id)}
+                    onClick={(e) => handleCardClick(e, mod.card.id)}
+                  >
+                    <div className="p-4 space-y-2">
+                      <div className="relative">
+                        <span
+                          className="absolute inset-0 cursor-text"
+                          style={{
+                            width: mod.card.title.length + 'ch',
+                            minWidth: '4ch'
+                          }}
+                        >
+                          <input
+                            type="text"
+                            value={mod.card.title}
+                            onChange={(e) => updateCardText(mod.card.id, 'title', e.target.value)}
+                            onFocus={() => setEditingCard(mod.card.id)}
+                            onBlur={() => setEditingCard(null)}
+                            className="font-semibold bg-transparent w-full border-none focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 cursor-text"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </span>
+                        <span className="font-semibold invisible">
+                          {mod.card.title || ' '}
+                        </span>
+                      </div>
+                      
+                      <div className="text-sm space-y-1">
+                        {mod.cells.find(cell => cell.pipeMeasurements) ? (
+                          <>
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Inner Diameter:</span>
+                              <span className="font-medium">{mod.cells.find(cell => cell.pipeMeasurements)?.pipeMeasurements.inner_diameter} mm</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Outer Diameter:</span>
+                              <span className="font-medium">{mod.cells.find(cell => cell.pipeMeasurements)?.pipeMeasurements.outer_diameter} mm</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Wall Thickness:</span>
+                              <span className="font-medium">{mod.cells.find(cell => cell.pipeMeasurements)?.pipeMeasurements.wall_thickness} mm</span>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="text-gray-500 italic">
+                            No measurements available
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                )}
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
       </div>
     </div>
   );

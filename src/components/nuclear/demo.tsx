@@ -1,23 +1,23 @@
 import React, { useState } from 'react';
 import NotebookCell from '@/components/nuclear/NotebookCell';
-import { useParams } from '@tanstack/react-router';
 import { ModuleManager } from '@/backend/manager/ModuleManager';
 import { CellData } from '@/backend/models/Cell';
 import { Module } from '@/backend/models/Module';
 
-const Demo = ({ className = '' }: { className?: string }) => {
-  const { cardId } = useParams({ from: '/demo/$cardId' });
+interface DemoProps {
+  className?: string;
+  cardId?: number;
+}
+
+const Demo = ({ className = '', cardId }: DemoProps) => {
   const manager = ModuleManager.getInstance();
   const [activeCells, setActiveCells] = useState<number[]>([]);
 
-  // Try to retrieve an existing module, if any
   let moduleObj: Module | undefined;
   if (cardId) {
-    const parsedId = parseInt(cardId, 10);
-    moduleObj = manager.getModuleById(parsedId);
+    moduleObj = manager.getModuleById(cardId);
   }
 
-  // The fully populated cells, including visualizations and all subcomponents
   const defaultCells: CellData[] = [
     {
       id: parseInt(cardId || '0') * 3 + 1,
@@ -25,7 +25,6 @@ const Demo = ({ className = '' }: { className?: string }) => {
       title: 'Input Preprocessing',
       code: 'import numpy as np\n\n# Process reactor data\ndef process_data(input):\n    return np.mean(input)',
       output: {
-        // Example visualizations from the old snippet
         visualizations: [
           {
             title: 'Temperature Distribution',
@@ -96,7 +95,6 @@ const Demo = ({ className = '' }: { className?: string }) => {
     }
   ];
 
-  // If no module is found for this card, create it with default cells
   if (!moduleObj && cardId) {
     const parsedId = parseInt(cardId, 10);
     moduleObj = manager.createModule(
@@ -113,13 +111,11 @@ const Demo = ({ className = '' }: { className?: string }) => {
     );
   }
 
-  // If a module was found but it has no cells yet, seed it with default cells
   if (moduleObj && moduleObj.cells.length === 0) {
     moduleObj.setCells(defaultCells);
     manager.updateModuleCells(moduleObj.card.id, defaultCells);
   }
 
-  // If it's still not found, fallback
   if (!moduleObj) {
     return (
       <div className={`max-w-6xl mx-auto p-6 ${className}`}>
@@ -131,12 +127,9 @@ const Demo = ({ className = '' }: { className?: string }) => {
 
   const filteredCells = moduleObj.cells;
 
-  // Define a callback that gets invoked whenever NotebookCell updates
   function handleCellChange(updatedCell: CellData) {
-    // Update the cell in memory
     moduleObj?.updateCell(updatedCell);
 
-    // Update the entire cells array instead of trying to update a single cell
     if (moduleObj) {
       manager.updateModuleCells(moduleObj.card.id, moduleObj.cells);
     }
