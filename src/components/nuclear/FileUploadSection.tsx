@@ -76,7 +76,7 @@ const FileUploadSection: React.FC = () => {
   };
 
   return (
-    <div className="w-full p-6 bg-white border-2 border-gray-200 rounded-lg">
+    <div className="w-full p-6 bg-[#f6f6f6] border-2 border-gray-200 rounded-lg">
       <input
         type="file"
         ref={fileInputRef}
@@ -139,7 +139,7 @@ const FileUploadSection: React.FC = () => {
 
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="ml-auto px-3 py-1.5 text-xs font-medium text-white bg-blue-500 hover:bg-blue-600 rounded-md"
+                className="ml-auto px-3 py-1.5 text-xs font-medium text-white bg-[#0086bb] hover:bg-[#4fcdff] rounded-md"
               >
                 Upload More
               </button>

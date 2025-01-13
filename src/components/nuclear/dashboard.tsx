@@ -393,13 +393,13 @@ const DraggableCardsCanvas = () => {
   };
 
   return (
-    <div className="w-full h-full flex flex-col gap-6 p-4">
+    <div className="w-full h-full bg-[#003449] flex flex-col gap-6 p-4">
       <FileUploadSection />
       
       <div className="flex gap-4">
         <button
           onClick={addNewCard}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded w-32"
+          className="bg-[#0086bb] hover:bg-[#4fcdff] text-white px-4 py-2 rounded w-32"
         >
           Add Card
         </button>
@@ -408,7 +408,7 @@ const DraggableCardsCanvas = () => {
           className={`px-4 py-2 rounded w-32 ${
             isWiring
               ? 'bg-green-500 hover:bg-green-600 text-white'
-              : 'bg-blue-500 hover:bg-blue-600 text-white'
+              : 'bg-[#0086bb] hover:bg-[#4fcdff] text-white'
           }`}
         >
           {isWiring ? 'Wiring...' : 'Add Wire'}
@@ -417,7 +417,7 @@ const DraggableCardsCanvas = () => {
 
       <div
         data-canvas
-        className={`w-full h-96 bg-white border-2 border-gray-200 rounded-lg relative ${
+        className={`w-full h-96 bg-[#f6f6f6] border-2 border-gray-200 rounded-lg relative ${
           modules.some(m => m.card.isDragging) ? 'select-none' : ''
         }`}
         onMouseMove={handleMouseMove}
