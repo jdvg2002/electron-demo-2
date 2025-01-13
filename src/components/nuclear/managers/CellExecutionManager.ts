@@ -40,8 +40,6 @@ export class CellExecutionManager {
 import os
 
 script_path = os.path.join('${projectRoot}', 'server', 'fatigue_crack_init.py')
-print(f"Executing script at: {script_path}")
-
 sys.path.append(os.path.dirname(script_path))
 
 from fatigue_crack_init import main

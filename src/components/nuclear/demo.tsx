@@ -139,7 +139,7 @@ const Demo = ({ className = '', cardId }: DemoProps) => {
     <div className={`max-w-6xl mx-auto p-6 ${className}`}>
       <div className="mb-6">
         <h1 className="text-2xl font-bold mb-2">
-          {cardId ? `Card ${cardId} Analysis` : 'Nuclear Safety Analysis Notebook'}
+          {moduleObj?.card.title || 'Nuclear Safety Analysis Notebook'}
         </h1>
         <p className="text-gray-600">
           Interactive workflow for nuclear reactor safety calculations
