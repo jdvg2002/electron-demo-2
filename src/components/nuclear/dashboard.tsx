@@ -365,7 +365,6 @@ const DraggableCardsCanvas = () => {
         isDragging: false,
         dragOffset: { x: 0, y: 0 },
         title: `Card ${newId}`,
-        content: 'Edit this text!'
       };
       
       const newModule = manager.createModule(newCard, []);
@@ -575,27 +574,27 @@ const DraggableCardsCanvas = () => {
                         </span>
                       </div>
                       
-                      <div className="text-sm space-y-1">
-                        {mod.cells.find(cell => cell.pipeMeasurements) ? (
-                          <>
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Inner Diameter:</span>
-                              <span className="font-medium">{mod.cells.find(cell => cell.pipeMeasurements)?.pipeMeasurements.inner_diameter} mm</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Outer Diameter:</span>
-                              <span className="font-medium">{mod.cells.find(cell => cell.pipeMeasurements)?.pipeMeasurements.outer_diameter} mm</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Wall Thickness:</span>
-                              <span className="font-medium">{mod.cells.find(cell => cell.pipeMeasurements)?.pipeMeasurements.wall_thickness} mm</span>
-                            </div>
-                          </>
-                        ) : (
-                          <div className="text-gray-500 italic">
-                            No measurements available
-                          </div>
-                        )}
+                      <div className="text-sm relative w-full">
+                        <textarea
+                          value={mod.card.content}
+                          placeholder="Enter description"
+                          onChange={(e) => {
+                            e.target.style.height = 'auto';
+                            e.target.style.height = e.target.scrollHeight + 'px';
+                            updateCardText(mod.card.id, 'content', e.target.value);
+                          }}
+                          onFocus={() => setEditingCard(mod.card.id)}
+                          onBlur={(e) => {
+                            setEditingCard(null);
+                            if (!e.target.value.trim()) {
+                              updateCardText(mod.card.id, 'content', "Enter description");
+                            }
+                          }}
+                          className="w-[calc(100%-8px)] bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-blue-500 rounded cursor-text resize-none mx-1 overflow-hidden"
+                          onClick={(e) => e.stopPropagation()}
+                          rows={1}
+                          style={{ minHeight: '1.5em' }}
+                        />
                       </div>
                     </div>
                   </Card>

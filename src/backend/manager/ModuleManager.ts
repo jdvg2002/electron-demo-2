@@ -88,7 +88,6 @@ export class ModuleManager {
       isDragging: false,
       dragOffset: { x: 0, y: 0 },
       title: files[0]?.originalFileName || `Card ${newId}`,
-      content: 'Nuclear Analysis Module'
     };
 
     const cells: CellData[] = [
