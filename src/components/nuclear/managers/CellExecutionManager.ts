@@ -33,19 +33,37 @@ export class CellExecutionManager {
     /**
      * Executes external tools with specific configurations
      */
-    public async runExternalTool(tool: string, projectRoot: string) {
+    public async runExternalTool(tool: string, projectRoot: string, analysisType: string) {
       try {
+        let scriptPath;
+        switch (analysisType) {
+          case 'pipeFailure':
+            scriptPath = 'handler.py';
+            break;
+          case 'fatigueCrackInit':
+            scriptPath = 'fatigue_crack_init.py';
+            break;
+          case 'ansys':
+            scriptPath = 'ansys_fracture.py';
+            break;
+          case 'relap':
+            scriptPath = 'relap_analysis.py';
+            break;
+          default:
+            throw new Error('Invalid analysis type');
+        }
+
         const result = await window.electronWindow.executePython(
-`import sys
+          `import sys
 import os
 
-script_path = os.path.join('${projectRoot}', 'server', 'fatigue_crack_init.py')
+script_path = os.path.join('${projectRoot}', 'server', '${scriptPath}')
 sys.path.append(os.path.dirname(script_path))
 
-from fatigue_crack_init import main
+from ${scriptPath.replace('.py', '')} import main
 main()`
         );
-  
+
         if (!result.success) {
           throw new Error(result.error);
         }

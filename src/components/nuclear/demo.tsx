@@ -48,7 +48,7 @@ const Demo = ({ className = '', cardId }: DemoProps) => {
     {
       id: parseInt(cardId || '0') * 3 + 2,
       type: 'external',
-      title: 'External Tool Execution',
+      title: 'Analysis',
       status: 'ready',
       tool: 'REACTOR_SIM_V2.1',
       input: {
