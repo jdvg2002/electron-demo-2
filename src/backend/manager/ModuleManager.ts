@@ -161,4 +161,14 @@ export class ModuleManager {
 
     return this.createModule(card, cells);
   }
+
+  public updateModuleCard(moduleId: number, updates: Partial<ModuleCard>): void {
+    const module = this.modules.get(moduleId);
+    if (module) {
+      module.card = {
+        ...module.card,
+        ...updates
+      };
+    }
+  }
 } 

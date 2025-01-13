@@ -375,11 +375,13 @@ const DraggableCardsCanvas = () => {
   const updateCardText = (moduleId: number, field: 'title' | 'content', value: string) => {
     const targetModule = modules.find(m => m.card.id === moduleId);
     if (!targetModule) return;
+
     if (field === 'title') {
-      targetModule.updateCardTitle(value);
+      targetModule.card.title = value;
     } else {
-      targetModule.updateCardContent(value);
+      targetModule.card.content = value;
     }
+    
     manager.updateModuleCard(moduleId, { [field]: value });
     setModules([...modules]);
   };
@@ -536,7 +538,7 @@ const DraggableCardsCanvas = () => {
                         <span
                           className="absolute inset-0 cursor-text"
                           style={{
-                            width: mod.card.title.length + 'ch',
+                            width: Math.max(mod.card.title.length, 4) + 'ch',
                             minWidth: '4ch'
                           }}
                         >
@@ -550,8 +552,8 @@ const DraggableCardsCanvas = () => {
                             onClick={(e) => e.stopPropagation()}
                           />
                         </span>
-                        <span className="font-semibold invisible">
-                          {mod.card.title || ' '}
+                        <span className="font-semibold invisible whitespace-pre">
+                          {mod.card.title || '\u00A0\u00A0\u00A0\u00A0'}
                         </span>
                       </div>
                       
