@@ -51,6 +51,15 @@ const FileUploadSection: React.FC = () => {
 
   return (
     <div className="w-full p-6 bg-white border-2 border-gray-200 rounded-lg">
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={(e) => e.target.files && handleFiles(e.target.files)}
+        accept=".stl,.step,.stp"
+        className="hidden"
+        multiple
+      />
+      
       <div className="flex flex-col items-center gap-4">
         {stepFilesData.length === 0 ? (
           <>
@@ -71,14 +80,6 @@ const FileUploadSection: React.FC = () => {
                     "Drag and drop your files here, or"
                   )}
                 </p>
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={(e) => e.target.files && handleFiles(e.target.files)}
-                  accept=".stl,.step,.stp"
-                  className="hidden"
-                  multiple
-                />
                 <button 
                   className="mt-2 text-blue-500 hover:text-blue-600 font-medium"
                   onClick={() => fileInputRef.current?.click()}
@@ -104,21 +105,31 @@ const FileUploadSection: React.FC = () => {
                   onClear={() => removeFile(index)}
                 />
               ))}
-              {renderedFiles.length > 1 && (
-                <button
-                  onClick={clearAllFiles}
-                  className="text-red-500 hover:text-red-600 text-sm"
-                >
-                  Clear All Files
-                </button>
-              )}
             </div>
+            
             <VisualizationGrid 
               cards={stepFilesData.flatMap(data => 
                 createVisualizationCards(data.stlFile, data.pipeMeasurements)
               )}
               cardsPerRow={5}
             />
+
+            <div className="mt-4 flex justify-between items-center">
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+              >
+                Upload More Files
+              </button>
+              {renderedFiles.length > 1 && (
+                <button
+                  onClick={clearAllFiles}
+                  className="text-red-500 hover:text-red-600"
+                >
+                  Clear All Files
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>
