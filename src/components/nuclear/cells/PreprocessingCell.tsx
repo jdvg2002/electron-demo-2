@@ -33,6 +33,8 @@ const PreprocessingCell: React.FC<PreprocessingCellProps> = ({
 
   useEffect(() => {
     if (cell.globalFileIds?.length) {
+      console.log('CHECK FOR cell.globalFileIds', cell.globalFileIds);
+      console.log('CHECK FOR globalFileManager', globalFileManager);
       const filesData = cell.globalFileIds
         .map(id => globalFileManager.getFileById(id))
         .filter(file => file !== undefined)

@@ -1,4 +1,22 @@
-import { GlobalFileData } from './types';
+export interface DistributionData {
+  label: string;
+  mean: number;
+  stdDev: number;
+  timestamp: string;
+}
+
+export interface GlobalFileData {
+  id: string;
+  stlFile: {
+    data: string;
+    name: string;
+    type: string;
+  };
+  pipeMeasurements: Record<string, number>;
+  distributions?: Record<string, DistributionData>;
+  originalFileName: string;
+  timestamp: string;
+}
 
 export class GlobalFileManager {
   private static instance: GlobalFileManager;
@@ -34,7 +52,8 @@ export class GlobalFileManager {
             },
             pipeMeasurements: measurements,
             originalFileName,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            distributions: {} // Initialize empty distributions object
           };
           
           this.files.set(id, fileData);
@@ -48,6 +67,33 @@ export class GlobalFileManager {
       reader.onerror = () => reject(reader.error);
       reader.readAsDataURL(file);
     });
+  }
+
+  addDistribution(
+    fileId: string,
+    label: string,
+    mean: number,
+    stdDev: number
+  ): void {
+    const file = this.files.get(fileId);
+    if (!file) {
+      console.warn(`File with ID ${fileId} not found`);
+      return;
+    }
+
+    if (!file.distributions) {
+      file.distributions = {};
+    }
+
+    file.distributions[label] = {
+      label,
+      mean,
+      stdDev,
+      timestamp: new Date().toISOString()
+    };
+
+    this.files.set(fileId, file);
+    this.notifyListeners();
   }
 
   getFileById(id: string): GlobalFileData | undefined {

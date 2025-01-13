@@ -12,6 +12,7 @@ const FileUploadSection: React.FC = () => {
   const [renderedFiles, setRenderedFiles] = useState<RenderedFileInfo[]>([]);
   const [stepFilesData, setStepFilesData] = useState<any[]>([]);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [fileIds, setFileIds] = useState<string[]>([]);
 
   const globalFileManager = GlobalFileManager.getInstance();
 
@@ -23,13 +24,14 @@ const FileUploadSection: React.FC = () => {
         try {
           setViewState('loading');
           
-          await globalFileManager.addFileFromUpload(
+          const fileId = await globalFileManager.addFileFromUpload(
             newStepData.stlFile,
             newStepData.pipeMeasurements,
             newStepData.originalFileName
           );
 
-          setStepFilesData(prev => [...prev, newStepData]);
+          setFileIds(prev => [...prev, fileId]);
+          setStepFilesData(prev => [...prev, { ...newStepData, id: fileId }]);
           setViewState('viewing');
           setIsExpanded(true);
         } catch (error) {
@@ -70,6 +72,7 @@ const FileUploadSection: React.FC = () => {
   const removeFile = (index: number) => {
     setRenderedFiles(prev => prev.filter((_, i) => i !== index));
     setStepFilesData(prev => prev.filter((_, i) => i !== index));
+    setFileIds(prev => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -162,10 +165,11 @@ const FileUploadSection: React.FC = () => {
                 >
                   <div className="mt-4">
                     <VisualizationGrid 
-                      cards={stepFilesData.flatMap(data => 
+                      cards={stepFilesData.flatMap((data, index) => 
                         createVisualizationCards(data.stlFile, data.pipeMeasurements)
                       )}
                       cardsPerRow={6}
+                      fileId={fileIds[0]}
                     />
                   </div>
                 </motion.div>
