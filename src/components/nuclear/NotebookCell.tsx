@@ -86,7 +86,13 @@ const NotebookCell: React.FC<NotebookCellProps> = ({
         timestamp: new Date().toISOString()
       };
       
-      console.log('STL File Data:', newStepFileData);
+      const jsonData = JSON.stringify({
+        pipeMeasurements: newStepFileData.pipeMeasurements,
+        originalFileName: newStepFileData.originalFileName,
+        timestamp: newStepFileData.timestamp
+      }, null, 2);
+      console.log('STL File Data as JSON:', jsonData);
+      
       setStepFileData(newStepFileData);
       setViewState('viewing');
       
@@ -123,7 +129,14 @@ const NotebookCell: React.FC<NotebookCellProps> = ({
             originalFileName: file.name,
             timestamp: new Date().toISOString()
           };
-          console.log('STEP File Data:', newStepFileData);
+
+          const jsonData = JSON.stringify({
+            pipeMeasurements: newStepFileData.pipeMeasurements,
+            originalFileName: newStepFileData.originalFileName,
+            timestamp: newStepFileData.timestamp
+          }, null, 2);
+          console.log('STEP File Data as JSON:', jsonData);
+          
           setStepFileData(newStepFileData);
           
           setViewState('viewing');
