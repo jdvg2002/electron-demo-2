@@ -1,7 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { StlViewer } from 'react-stl-viewer';
 import { DistributionChart } from '../charts/ReactorCharts';
 import { Card } from '@/components/ui/card';
+import { BarChart2 } from 'lucide-react';
+import { DistributionSelector } from './DistributionSelector';
 
 // Define possible card content types
 type CardContent = 
@@ -19,7 +21,13 @@ interface VisualizationGridProps {
   cardsPerRow?: number;
 }
 
-const CardRenderer: React.FC<{ content: CardContent }> = React.memo(({ content }) => {
+interface CardRendererProps {
+  content: CardContent;
+  cards: VisualizationCard[];
+  onAddDistribution?: (key: string, value: number, stdDev?: number) => void;
+}
+
+const CardRenderer: React.FC<CardRendererProps> = React.memo(({ content, cards, onAddDistribution }) => {
   const formatNumber = (value: number): string => {
     return Math.abs(value) < 10 ? value.toFixed(2) : 
       new Intl.NumberFormat('en-US').format(Math.round(value));
@@ -87,16 +95,40 @@ const CardRenderer: React.FC<{ content: CardContent }> = React.memo(({ content }
     case 'measurements':
       return (
         <div className="grid grid-rows-3 h-full gap-4 -ml-2 -mr-2 -mb-2">
-          {Object.entries(content.data).map(([key, value]) => (
-            <div key={key} className="flex flex-col justify-center px-4">
-              <p className="text-sm text-gray-500">
-                {key.split('_').map(word => 
-                  word.charAt(0).toUpperCase() + word.slice(1)
-                ).join(' ')}
-              </p>
-              <p className="font-medium">{formatNumber(value)} mm</p>
-            </div>
-          ))}
+          {Object.entries(content.data).map(([key, value]) => {
+            // Find if there's an existing distribution for this measurement
+            const existingDistribution = cards.find(
+              card => 
+                card.content.type === 'distribution' && 
+                'label' in card.content && 
+                card.content.label === key
+            );
+
+            return (
+              <div key={key} className="flex justify-between items-center px-4">
+                <div>
+                  <p className="text-sm text-gray-500">
+                    {key.split('_').map(word => 
+                      word.charAt(0).toUpperCase() + word.slice(1)
+                    ).join(' ')}
+                  </p>
+                  <p className="font-medium">{formatNumber(value)} mm</p>
+                </div>
+                <button
+                  onClick={() => onAddDistribution?.(
+                    key, 
+                    value, 
+                    existingDistribution?.content.type === 'distribution' 
+                      ? existingDistribution.content.stdDev 
+                      : undefined
+                  )}
+                  className="p-1 hover:bg-gray-100 rounded"
+                >
+                  <BarChart2 className="w-4 h-4" />
+                </button>
+              </div>
+            );
+          })}
         </div>
       );
 
@@ -110,6 +142,11 @@ const CardRenderer: React.FC<{ content: CardContent }> = React.memo(({ content }
             data={[]}
             height="100%"
             className="w-full h-full"
+            onChartClick={() => {
+              if (onAddDistribution) {
+                onAddDistribution(content.label, content.mean, content.stdDev);
+              }
+            }}
           />
         </div>
       );
@@ -131,37 +168,112 @@ const CardRenderer: React.FC<{ content: CardContent }> = React.memo(({ content }
 // Memoize the VisualizationCard component
 const VisualizationCard = React.memo<{ 
   card: VisualizationCard;
+  cards: VisualizationCard[];
   index: number;
-}>(({ card, index }) => {
+  onAddDistribution?: (key: string, value: number, stdDev?: number) => void;
+}>(({ card, cards, index, onAddDistribution }) => {
   const isStlViewer = card.content.type === 'stl';
   
   return (
     <Card className="aspect-square p-2 min-w-[150px] overflow-hidden">
       <h3 className="font-medium mb-1 px-2 text-sm">{card.title}</h3>
       <div className="h-[calc(100%-1.5rem)] w-full">
-        <CardRenderer content={card.content} />
+        <CardRenderer 
+          content={card.content}
+          cards={cards}
+          onAddDistribution={onAddDistribution}
+        />
       </div>
     </Card>
   );
 });
 
-const VisualizationGrid: React.FC<VisualizationGridProps> = ({ 
-  cards,
-  cardsPerRow = 7
-}) => {
+const VisualizationGrid: React.FC<VisualizationGridProps> = ({ cards: initialCards, cardsPerRow = 3 }) => {
+  const [cards, setCards] = useState(initialCards);
+  const [selectedMeasurement, setSelectedMeasurement] = useState<{
+    key: string;
+    value: number;
+    stdDev?: number;
+  } | null>(null);
+
+  const handleAddDistribution = (key: string, value: number, stdDev?: number) => {
+    setSelectedMeasurement({ key, value, stdDev });
+  };
+
+  const handleDistributionCreated = (mean: number, stdDev: number) => {
+    if (!selectedMeasurement) return;
+
+    // Check if a distribution already exists for this measurement
+    const existingDistributionIndex = cards.findIndex(
+      card => card.content.type === 'distribution' && 
+      'label' in card.content && 
+      card.content.label === selectedMeasurement.key
+    );
+
+    if (existingDistributionIndex !== -1) {
+      // Update existing distribution
+      const updatedCards = [...cards];
+      updatedCards[existingDistributionIndex] = {
+        title: `${selectedMeasurement.key.split('_').map(word => 
+          word.charAt(0).toUpperCase() + word.slice(1)
+        ).join(' ')} Distribution`,
+        content: {
+          type: 'distribution',
+          mean,
+          stdDev,
+          label: selectedMeasurement.key
+        }
+      };
+      setCards(updatedCards);
+    } else {
+      // Create new distribution
+      const newCard: VisualizationCard = {
+        title: `${selectedMeasurement.key.split('_').map(word => 
+          word.charAt(0).toUpperCase() + word.slice(1)
+        ).join(' ')} Distribution`,
+        content: {
+          type: 'distribution',
+          mean,
+          stdDev,
+          label: selectedMeasurement.key
+        }
+      };
+      setCards([...cards, newCard]);
+    }
+    setSelectedMeasurement(null);
+  };
+
   return (
-    <div className="w-full grid gap-3 auto-rows-fr"
-      style={{ 
-        gridTemplateColumns: `repeat(${cardsPerRow}, minmax(150px, 1fr))`
+    <>
+      <div className="grid gap-4" style={{
+        gridTemplateColumns: `repeat(${cardsPerRow}, minmax(0, 1fr))`
       }}>
-      {cards.map((card, index) => (
-        <VisualizationCard 
-          key={index} 
-          card={card} 
-          index={index}
+        {cards.map((card, index) => (
+          <VisualizationCard
+            key={index}
+            card={card}
+            cards={cards}
+            index={index}
+            onAddDistribution={handleAddDistribution}
+          />
+        ))}
+      </div>
+
+      {selectedMeasurement && (
+        <DistributionSelector
+          value={selectedMeasurement.value}
+          currentStdDev={selectedMeasurement.stdDev}
+          onAdd={handleDistributionCreated}
+          onClose={() => setSelectedMeasurement(null)}
+          isUpdating={cards.some(
+            card => 
+              card.content.type === 'distribution' && 
+              'label' in card.content && 
+              card.content.label === selectedMeasurement.key
+          )}
         />
-      ))}
-    </div>
+      )}
+    </>
   );
 };
 
@@ -170,13 +282,13 @@ export const createVisualizationCards = (
   stlFile: File | { name: string; data: string; type: string },
   measurements: Record<string, number>
 ): VisualizationCard[] => {
-  const cards: VisualizationCard[] = [
+  return [
     {
       title: '3D Model',
       content: { 
         type: 'stl', 
         file: stlFile instanceof File ? stlFile : new File(
-          [Uint8Array.from(atob(stlFile.data.split(',')[1]), c => c.charCodeAt(0))],
+          [new Uint8Array(Buffer.from(stlFile.data.split(',')[1], 'base64'))],
           stlFile.name,
           { type: stlFile.type }
         )
@@ -187,23 +299,6 @@ export const createVisualizationCards = (
       content: { type: 'measurements', data: measurements }
     }
   ];
-
-  // Add distribution charts for each measurement
-  Object.entries(measurements).forEach(([key, value]) => {
-    cards.push({
-      title: `${key.split('_').map(word => 
-        word.charAt(0).toUpperCase() + word.slice(1)
-      ).join(' ')} Distribution`,
-      content: {
-        type: 'distribution',
-        mean: value,
-        stdDev: value * 0.05,
-        label: key
-      }
-    });
-  });
-
-  return cards;
 };
 
 export default VisualizationGrid; 
