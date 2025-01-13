@@ -1,5 +1,6 @@
 import React from 'react';
-import { Check } from 'lucide-react';
+import { Check, X, FileText } from 'lucide-react';
+import { Tooltip } from '@/components/ui/tooltip';
 
 export interface RenderedFileInfo {
   file: File;
@@ -15,23 +16,24 @@ interface FileRenderInfoProps {
 
 const FileRenderInfo: React.FC<FileRenderInfoProps> = ({ fileInfo, onClear }) => {
   return (
-    <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
-      <div className="flex items-center gap-3">
-        <Check className="w-5 h-5 text-green-500" />
-        <div>
-          <p className="font-medium text-green-700">{fileInfo.originalFileName}</p>
-          <p className="text-sm text-green-600">
-            {new Date(fileInfo.timestamp).toLocaleString()}
-          </p>
-        </div>
+    <Tooltip content={`Uploaded: ${new Date(fileInfo.timestamp).toLocaleString()}`}>
+      <div className="flex items-center gap-2 px-2 py-1 bg-gray-50 rounded border border-gray-200 text-xs">
+        <FileText className="w-3 h-3 text-gray-500" />
+        <span className="truncate max-w-[120px]" title={fileInfo.originalFileName}>
+          {fileInfo.originalFileName}
+        </span>
+        {fileInfo.success ? (
+          <Check className="w-3 h-3 text-green-500 flex-shrink-0" />
+        ) : null}
+        <button
+          onClick={onClear}
+          className="ml-auto p-1 hover:bg-gray-200 rounded-sm"
+          title="Remove file"
+        >
+          <X className="w-3 h-3 text-gray-400 hover:text-gray-600" />
+        </button>
       </div>
-      <button
-        onClick={onClear}
-        className="px-3 py-1 text-sm text-green-700 hover:bg-green-100 rounded"
-      >
-        Clear
-      </button>
-    </div>
+    </Tooltip>
   );
 };
 

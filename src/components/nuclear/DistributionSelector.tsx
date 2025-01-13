@@ -18,7 +18,12 @@ export const DistributionSelector: React.FC<DistributionSelectorProps> = ({
   isUpdating = false
 }) => {
   const [mean] = useState(value);
-  const [stdDev, setStdDev] = useState(currentStdDev || value * 0.05);
+  const [stdDev, setStdDev] = useState(() => {
+    const defaultStdDev = value * 0.05;
+    // Round to 2 significant figures
+    const magnitude = Math.floor(Math.log10(Math.abs(defaultStdDev)));
+    return Number((Math.round(defaultStdDev / Math.pow(10, magnitude - 1)) * Math.pow(10, magnitude - 1)).toFixed(10));
+  });
   const [error, setError] = useState<string | null>(null);
 
   const handleStdDevChange = (e: React.ChangeEvent<HTMLInputElement>) => {

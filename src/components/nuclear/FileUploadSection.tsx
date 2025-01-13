@@ -31,6 +31,7 @@ const FileUploadSection: React.FC = () => {
 
           setStepFilesData(prev => [...prev, newStepData]);
           setViewState('viewing');
+          setIsExpanded(true);
         } catch (error) {
           console.error('Error creating file:', error);
           setUploadError(error instanceof Error ? error.message : 'Failed to create file');
@@ -115,12 +116,40 @@ const FileUploadSection: React.FC = () => {
           </>
         ) : (
           <div className="w-full">
-            <button
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded w-full"
-            >
-              Global Variables {isExpanded ? '▼' : '▶'}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-md border border-gray-200"
+              >
+                Global Variables {isExpanded ? '▼' : '▶'}
+              </button>
+
+              <div className="flex flex-wrap gap-2">
+                {renderedFiles.map((fileInfo, index) => (
+                  <FileRenderInfo 
+                    key={index}
+                    fileInfo={fileInfo}
+                    onClear={() => removeFile(index)}
+                  />
+                ))}
+              </div>
+
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="ml-auto px-3 py-1.5 text-xs font-medium text-white bg-blue-500 hover:bg-blue-600 rounded-md"
+              >
+                Upload More
+              </button>
+              
+              {renderedFiles.length > 1 && (
+                <button
+                  onClick={clearAllFiles}
+                  className="text-xs font-medium text-red-500 hover:text-red-600"
+                >
+                  Clear All
+                </button>
+              )}
+            </div>
 
             <AnimatePresence>
               {isExpanded && (
@@ -128,43 +157,16 @@ const FileUploadSection: React.FC = () => {
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.3 }}
+                  transition={{ duration: 0.2 }}
                   className="overflow-hidden"
                 >
                   <div className="mt-4">
-                    <div className="mb-4 space-y-2">
-                      {renderedFiles.map((fileInfo, index) => (
-                        <FileRenderInfo 
-                          key={index}
-                          fileInfo={fileInfo}
-                          onClear={() => removeFile(index)}
-                        />
-                      ))}
-                    </div>
-                    
                     <VisualizationGrid 
                       cards={stepFilesData.flatMap(data => 
                         createVisualizationCards(data.stlFile, data.pipeMeasurements)
                       )}
                       cardsPerRow={6}
                     />
-
-                    <div className="mt-4 flex justify-between items-center">
-                      <button
-                        onClick={() => fileInputRef.current?.click()}
-                        className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
-                      >
-                        Upload More Files
-                      </button>
-                      {renderedFiles.length > 1 && (
-                        <button
-                          onClick={clearAllFiles}
-                          className="text-red-500 hover:text-red-600"
-                        >
-                          Clear All Files
-                        </button>
-                      )}
-                    </div>
                   </div>
                 </motion.div>
               )}
