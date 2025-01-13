@@ -21,7 +21,7 @@ const PostprocessingCell: React.FC<PostprocessingCellProps> = ({
 }) => {
   const cellExecutionManager = CellExecutionManager.getInstance();
   
-  const [localCode, setLocalCode] = useState(cell.code || '');
+  const [localCode, setLocalCode] = useState(cell.code || 'import numpy as np\n\n# Process reactor data\ndef process_data(input):\n    return np.mean(input)');
   const [isExecuting, setIsExecuting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [executionResult, setExecutionResult] = useState<any>(null);

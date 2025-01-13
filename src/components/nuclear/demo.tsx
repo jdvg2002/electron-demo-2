@@ -23,75 +23,16 @@ const Demo = ({ className = '', cardId }: DemoProps) => {
       id: parseInt(cardId || '0') * 3 + 1,
       type: 'preprocessing',
       title: 'Input Preprocessing',
-      code: 'import numpy as np\n\n# Process reactor data\ndef process_data(input):\n    return np.mean(input)',
-      output: {
-        visualizations: [
-          {
-            title: 'Temperature Distribution',
-            description: 'Distribution of normalized temperature values',
-            type: 'temperature'
-          },
-          {
-            title: 'Neutron Flux Map',
-            description: '2D visualization of neutron flux distribution',
-            type: 'flux'
-          }
-        ],
-        file: {
-          name: 'preprocessed_reactor_data.inp',
-          size: '2.4 MB',
-          format: 'INP',
-          timestamp: new Date().toISOString()
-        }
-      }
     },
     {
       id: parseInt(cardId || '0') * 3 + 2,
       type: 'external',
       title: 'Analysis',
-      status: 'ready',
-      tool: 'REACTOR_SIM_V2.1',
-      input: {
-        file: 'preprocessed_reactor_data.inp',
-        status: 'validated',
-        checksum: 'sha256:8f4e9b...'
-      },
-      output: {}
     },
     {
       id: parseInt(cardId || '0') * 3 + 3,
       type: 'postprocessing',
       title: 'Output Analysis',
-      code: 'import pandas as pd\n\n# Analyze results\ndef analyze_results(data):\n    return pd.DataFrame(data).describe()',
-      output: {
-        visualizations: [
-          {
-            title: 'Thermal Safety Margins',
-            description: 'Core temperature distribution relative to safety limits',
-            type: 'safety'
-          },
-          {
-            title: 'Coolant Flow Status',
-            description: 'Coolant flow rates and temperature gradients',
-            type: 'coolant'
-          }
-        ],
-        file: {
-          name: 'safety_analysis_report.pdf',
-          size: '4.2 MB',
-          format: 'PDF',
-          timestamp: new Date().toISOString()
-        },
-        summary: {
-          status: 'PASS',
-          key_metrics: [
-            { label: 'Peak Temperature Margin', value: '42.3°C', status: 'safe' },
-            { label: 'Max Neutron Flux', value: '2.4E15 n/cm²·s', status: 'safe' },
-            { label: 'Min Coolant Flow', value: '103.2 kg/s', status: 'warning' },
-            { label: 'Overall Safety Rating', value: 'A-', status: 'safe' }
-          ]
-        }
-      }
     }
   ];
 

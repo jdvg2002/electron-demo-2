@@ -77,51 +77,6 @@ export class ModuleManager {
     });
   }
 
-  /**
-   * Creates a new module pre-configured with preprocessing, external, and postprocessing cells
-   */
-  public createPreprocessingModule(fileData: GlobalFileData): Module {
-    const newId = this.getAllModules().length ? 
-      Math.max(...this.getAllModules().map(m => m.card.id)) + 1 : 1;
-    
-    const card: ModuleCard = {
-      id: newId,
-      x: 20 + (this.getAllModules().length % 3) * 300,
-      y: 20 + Math.floor(this.getAllModules().length / 3) * 150,
-      isDragging: false,
-      dragOffset: { x: 0, y: 0 },
-      title: fileData.originalFileName,
-      content: 'Nuclear Analysis Module'
-    };
-
-    const cells: CellData[] = [
-      {
-        id: Date.now(),
-        type: 'preprocessing',
-        title: 'Input Preprocessing',
-        stlFile: fileData.stlFile,
-        pipeMeasurements: fileData.pipeMeasurements,
-        globalFileIds: [fileData.id],  // Using array instead of single globalFileId
-        timestamp: fileData.timestamp
-      },
-      {
-        id: Date.now() + 1,
-        type: 'external',
-        title: 'External Analysis',
-        tool: 'nuclear_analysis',
-        status: 'pending'
-      },
-      {
-        id: Date.now() + 2,
-        type: 'postprocessing',
-        title: 'Results Analysis',
-        code: '# Analyze results here\n'
-      }
-    ];
-
-    return this.createModule(card, cells);
-  }
-
   public createPreprocessingModuleWithGlobalFiles(files: GlobalFileData[]): Module {
     const newId = this.getAllModules().length ? 
       Math.max(...this.getAllModules().map(m => m.card.id)) + 1 : 1;
@@ -155,7 +110,6 @@ export class ModuleManager {
         id: Date.now() + 2,
         type: 'postprocessing',
         title: 'Results Analysis',
-        code: '# Analyze results here\n'
       }
     ];
 
