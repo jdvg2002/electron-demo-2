@@ -7,6 +7,7 @@ interface FileOutputProps {
     size: string;
     format: string;
     timestamp: string;
+    data?: any;
   };
   className?: string;
   onDownload?: () => void;
@@ -14,7 +15,23 @@ interface FileOutputProps {
 
 const FileOutput = ({ file, className = '', onDownload }: FileOutputProps) => {
   const handleDownload = () => {
-    onDownload?.();
+    if (file.data) {
+      const jsonString = JSON.stringify(file.data, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file.name.endsWith('.json') ? file.name : `${file.name}.json`;
+      
+      document.body.appendChild(a);
+      a.click();
+      
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } else {
+      onDownload?.();
+    }
   };
 
   return (

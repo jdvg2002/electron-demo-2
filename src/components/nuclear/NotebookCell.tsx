@@ -328,11 +328,17 @@ const NotebookCell: React.FC<NotebookCellProps> = ({
             />
           )}
           
-          {/* Output File - Now conditional on stepFileData */}
+          {/* Output File - Now with JSON data */}
           {cell.output?.file && stepFileData && (
             <FileOutput
-              file={cell.output.file}
-              onDownload={() => {/* Handle download */}}
+              file={{
+                ...cell.output.file,
+                data: {
+                  pipeMeasurements: stepFileData.pipeMeasurements,
+                  originalFileName: stepFileData.originalFileName,
+                  timestamp: stepFileData.timestamp
+                }
+              }}
             />
           )}
           
