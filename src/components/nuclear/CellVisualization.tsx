@@ -322,9 +322,10 @@ const VisualizationGrid: React.FC<VisualizationGridProps> = ({
 // Helper function to create visualization cards from STEP file data
 export const createVisualizationCards = (
   stlFile: File | { name: string; data: string; type: string },
-  measurements: Record<string, number>
+  measurements: Record<string, number>,
+  distributions?: Record<string, DistributionData>
 ): VisualizationCard[] => {
-  return [
+  const cards: VisualizationCard[] = [
     {
       title: '3D Model',
       content: { 
@@ -341,6 +342,25 @@ export const createVisualizationCards = (
       content: { type: 'measurements', data: measurements }
     }
   ];
+
+  // Add distribution cards if they exist
+  if (distributions) {
+    Object.values(distributions).forEach(dist => {
+      cards.push({
+        title: `${dist.label.split('_').map(word => 
+          word.charAt(0).toUpperCase() + word.slice(1)
+        ).join(' ')} Distribution`,
+        content: {
+          type: 'distribution',
+          mean: dist.mean,
+          stdDev: dist.stdDev,
+          label: dist.label
+        }
+      });
+    });
+  }
+
+  return cards;
 };
 
 export default VisualizationGrid; 

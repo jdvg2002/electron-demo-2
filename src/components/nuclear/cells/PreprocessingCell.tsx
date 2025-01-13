@@ -33,14 +33,13 @@ const PreprocessingCell: React.FC<PreprocessingCellProps> = ({
 
   useEffect(() => {
     if (cell.globalFileIds?.length) {
-      console.log('CHECK FOR cell.globalFileIds', cell.globalFileIds);
-      console.log('CHECK FOR globalFileManager', globalFileManager);
       const filesData = cell.globalFileIds
         .map(id => globalFileManager.getFileById(id))
         .filter(file => file !== undefined)
         .map(file => ({
           stlFile: file.stlFile,
           pipeMeasurements: file.pipeMeasurements,
+          distributions: file.distributions,
           originalFileName: file.originalFileName,
           timestamp: file.timestamp
         }));
@@ -106,8 +105,13 @@ const PreprocessingCell: React.FC<PreprocessingCellProps> = ({
       {stepFilesData.map((fileData, index) => (
         <VisualizationGrid 
           key={index}
-          cards={createVisualizationCards(fileData.stlFile, fileData.pipeMeasurements)}
+          cards={createVisualizationCards(
+            fileData.stlFile, 
+            fileData.pipeMeasurements,
+            fileData.distributions
+          )}
           cardsPerRow={6}
+          fileId={cell.globalFileIds[index]}
         />
       ))}
 
