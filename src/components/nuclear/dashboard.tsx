@@ -4,9 +4,11 @@ import { ModuleManager } from '@/backend/manager/ModuleManager';
 import { motion, AnimatePresence } from 'framer-motion';
 import Demo from './demo';
 import FileUploadSection from './FileUploadSection';
+import { FileModuleManager } from '@/backend/manager/FileModuleManager';
 
 const DraggableCardsCanvas = () => {
   const manager = ModuleManager.getInstance();
+  const fileManager = FileModuleManager.getInstance();
   const [modules, setModules] = useState(manager.getAllModules());
   const [wires, setWires] = useState(manager.getAllWires());
   const [isWiring, setIsWiring] = useState(false);
@@ -305,29 +307,39 @@ const DraggableCardsCanvas = () => {
   };
 
   const addNewCard = () => {
-    const newId = modules.length ? Math.max(...modules.map(m => m.card.id)) + 1 : 1;
+    const unprocessedFiles = fileManager.getUnprocessedFiles();
     
-    // Calculate grid position based on number of existing cards
-    const cardsPerRow = 3;
-    const cardWidth = 300; // 16rem + some margin
-    const cardHeight = 150; // Approximate height + margin
-    const baseOffset = 20;
-    
-    const column = (modules.length) % cardsPerRow;
-    const row = Math.floor(modules.length / cardsPerRow);
-    
-    const newCard: ModuleCard = {
-      id: newId,
-      x: baseOffset + (column * cardWidth),
-      y: baseOffset + (row * cardHeight),
-      isDragging: false,
-      dragOffset: { x: 0, y: 0 },
-      title: `Card ${newId}`,
-      content: 'Edit this text!'
-    };
-    
-    const newModule = manager.createModule(newCard, []);
-    setModules([...modules, newModule]);
+    if (unprocessedFiles.length > 0) {
+      // Use the first unprocessed file to create a preprocessing module
+      const fileData = unprocessedFiles[0];
+      const newModule = manager.createPreprocessingModule(fileData);
+      setModules([...modules, newModule]);
+      fileManager.markFileAsProcessed(fileData.id);
+    } else {
+      // Fall back to creating an empty module if no unprocessed files
+      const newId = modules.length ? Math.max(...modules.map(m => m.card.id)) + 1 : 1;
+      
+      const cardsPerRow = 3;
+      const cardWidth = 300;
+      const cardHeight = 150;
+      const baseOffset = 20;
+      
+      const column = (modules.length) % cardsPerRow;
+      const row = Math.floor(modules.length / cardsPerRow);
+      
+      const newCard: ModuleCard = {
+        id: newId,
+        x: baseOffset + (column * cardWidth),
+        y: baseOffset + (row * cardHeight),
+        isDragging: false,
+        dragOffset: { x: 0, y: 0 },
+        title: `Card ${newId}`,
+        content: 'Edit this text!'
+      };
+      
+      const newModule = manager.createModule(newCard, []);
+      setModules([...modules, newModule]);
+    }
   };
 
   const updateCardText = (moduleId: number, field: 'title' | 'content', value: string) => {
