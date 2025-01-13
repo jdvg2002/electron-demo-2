@@ -2,8 +2,7 @@ import React, { useState, useMemo, useRef } from 'react';
 import { createFileUploadHandler } from './FileUploadHandler';
 import VisualizationGrid, { createVisualizationCards } from './CellVisualization';
 import FileRenderInfo, { RenderedFileInfo } from './FileRenderInfo';
-import { ModuleManager } from '@/backend/manager/ModuleManager';
-import { GlobalFileManager } from '@/backend/models/GlobalFiles';
+import { FileModuleManager } from '@/backend/manager/FileModuleManager';
 
 const FileUploadSection: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -12,8 +11,7 @@ const FileUploadSection: React.FC = () => {
   const [renderedFiles, setRenderedFiles] = useState<RenderedFileInfo[]>([]);
   const [stepFilesData, setStepFilesData] = useState<any[]>([]);
 
-  const moduleManager = useMemo(() => ModuleManager.getInstance(), []);
-  const fileManager = useMemo(() => GlobalFileManager.getInstance(), []);
+  const fileModuleManager = FileModuleManager.getInstance();
 
   const handleFileUpload = useMemo(() => createFileUploadHandler({
     cell: null,
@@ -21,54 +19,16 @@ const FileUploadSection: React.FC = () => {
     onStepFileDataChange: async (newStepData) => {
       const processFile = async () => {
         try {
-          console.log('Processing file:', {
-            name: newStepData.stlFile.name,
-            size: newStepData.stlFile.size,
-            type: newStepData.stlFile.type
-          });
+          setViewState('loading');
+          
+          await fileModuleManager.createModuleFromFile(
+            newStepData.stlFile,
+            newStepData.pipeMeasurements,
+            newStepData.originalFileName
+          );
 
-          // Check if this is a STEP file that needs conversion
-          if (newStepData.stlFile.name.toLowerCase().endsWith('.step') || 
-              newStepData.stlFile.name.toLowerCase().endsWith('.stp')) {
-            // Where was your STEP to STL conversion happening before?
-            // We need to add that back in here
-            console.log('Need to convert STEP to STL first');
-            return;
-          }
-
-          // Continue with STL processing
-          setStepFilesData(prev => {
-            console.log('Setting stepFilesData:', newStepData);
-            return [...prev, newStepData];
-          });
+          setStepFilesData(prev => [...prev, newStepData]);
           setViewState('viewing');
-
-          // Read file data
-          const reader = new FileReader();
-          reader.onload = () => {
-            const globalFile = {
-              id: Date.now().toString(),
-              stlFile: {
-                name: newStepData.stlFile.name,
-                data: '',
-                type: newStepData.stlFile.type
-              },
-              pipeMeasurements: newStepData.pipeMeasurements,
-              timestamp: new Date().toISOString(),
-              originalFileName: newStepData.originalFileName
-            };
-
-            globalFile.stlFile.data = reader.result as string;
-            fileManager.addFile(globalFile);
-            moduleManager.createPreprocessingModule(globalFile);
-          };
-
-          reader.onerror = () => {
-            throw new Error('Failed to read file');
-          };
-
-          reader.readAsDataURL(newStepData.stlFile);
-
         } catch (error) {
           console.error('Error processing file:', error);
           setUploadError(error instanceof Error ? error.message : 'Failed to process file');
@@ -83,7 +43,7 @@ const FileUploadSection: React.FC = () => {
     },
     onViewStateChange: setViewState,
     onErrorChange: setUploadError
-  }), [fileManager, moduleManager]);
+  }), [fileModuleManager]);
 
   const handleFiles = (files: FileList) => {
     if (files.length > 0 && fileInputRef.current) {

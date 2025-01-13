@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StlViewer } from 'react-stl-viewer';
 import { DistributionChart } from '../charts/ReactorCharts';
 import { Card } from '@/components/ui/card';
@@ -19,11 +19,28 @@ interface VisualizationGridProps {
   cardsPerRow?: number;
 }
 
-const CardRenderer: React.FC<{ content: CardContent }> = ({ content }) => {
+const CardRenderer: React.FC<{ content: CardContent }> = React.memo(({ content }) => {
   const formatNumber = (value: number): string => {
     return Math.abs(value) < 10 ? value.toFixed(2) : 
       new Intl.NumberFormat('en-US').format(Math.round(value));
   };
+
+  // For STL files, memoize the URL creation
+  const stlUrl = useMemo(() => {
+    if (content.type === 'stl') {
+      return URL.createObjectURL(content.file);
+    }
+    return null;
+  }, [content.type === 'stl' ? content.file : null]);
+
+  // Cleanup URL when component unmounts
+  React.useEffect(() => {
+    return () => {
+      if (stlUrl) {
+        URL.revokeObjectURL(stlUrl);
+      }
+    };
+  }, [stlUrl]);
 
   // Create and manage URL for STL files
   const [objectUrl, setObjectUrl] = React.useState<string | null>(null);
@@ -56,7 +73,7 @@ const CardRenderer: React.FC<{ content: CardContent }> = ({ content }) => {
             style={{ width: '100%', height: '100%' }}
             orbitControls
             shadows
-            url={objectUrl}
+            url={URL.createObjectURL(content.file)}
             modelProps={{
               scale: 1.25,
               rotationX: 0,
@@ -100,12 +117,22 @@ const CardRenderer: React.FC<{ content: CardContent }> = ({ content }) => {
     default:
       return null;
   }
-};
+}, (prevProps, nextProps) => {
+  // Custom comparison for memoization
+  if (prevProps.content.type !== nextProps.content.type) return false;
+  
+  if (prevProps.content.type === 'stl' && nextProps.content.type === 'stl') {
+    return prevProps.content.file === nextProps.content.file;
+  }
+  
+  return JSON.stringify(prevProps.content) === JSON.stringify(nextProps.content);
+});
 
-const VisualizationCard: React.FC<{ 
+// Memoize the VisualizationCard component
+const VisualizationCard = React.memo<{ 
   card: VisualizationCard;
-  index: number; // Add index prop to determine if it's the STL viewer
-}> = ({ card, index }) => {
+  index: number;
+}>(({ card, index }) => {
   const isStlViewer = card.content.type === 'stl';
   
   return (
@@ -119,7 +146,7 @@ const VisualizationCard: React.FC<{
       </div>
     </Card>
   );
-};
+});
 
 const VisualizationGrid: React.FC<VisualizationGridProps> = ({ 
   cards,

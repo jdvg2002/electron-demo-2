@@ -9,7 +9,7 @@ import VisualizationGrid, { createVisualizationCards } from './CellVisualization
 import FileRenderInfo, { RenderedFileInfo } from './FileRenderInfo';
 import { CellData } from '@/backend/models/Cell';
 import FileUploadHandler from './FileUploadHandler';
-import { GlobalFileManager } from '@/backend/models/GlobalFiles';
+import { FileModuleManager } from '@/backend/manager/FileModuleManager';
 
 interface NotebookCellProps {
   cell: CellData;
@@ -37,7 +37,7 @@ const NotebookCell: React.FC<NotebookCellProps> = ({
   onToggle,
   onCellChange
 }) => {
-  const fileManager = GlobalFileManager.getInstance();
+  const fileModuleManager = FileModuleManager.getInstance();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [localCode, setLocalCode] = useState(cell.code || '');
   const [isExecuting, setIsExecuting] = useState(false);
@@ -49,30 +49,16 @@ const NotebookCell: React.FC<NotebookCellProps> = ({
   const { fileInputRef, handleFileUpload } = FileUploadHandler({
     cell,
     onCellChange,
-    onStepFileDataChange: (newStepData) => {
+    onStepFileDataChange: async (newStepData) => {
       setStepFileData(newStepData);
       
       // Create a new global file entry when uploading directly to cell
       if (cell.type === 'preprocessing') {
-        const globalFile = {
-          id: Date.now().toString(),
-          stlFile: {
-            name: newStepData.stlFile.name,
-            data: '', // Will be set after file read
-            type: newStepData.stlFile.type
-          },
-          pipeMeasurements: newStepData.pipeMeasurements,
-          timestamp: new Date().toISOString(),
-          originalFileName: newStepData.originalFileName
-        };
-
-        // Read and store the file
-        const reader = new FileReader();
-        reader.onload = () => {
-          globalFile.stlFile.data = reader.result as string;
-          fileManager.addFile(globalFile);
-        };
-        reader.readAsDataURL(newStepData.stlFile);
+        const globalFileId = await fileModuleManager.addFileFromUpload(
+          newStepData.stlFile,
+          newStepData.pipeMeasurements,
+          newStepData.originalFileName
+        );
       }
     },
     onRenderedFileChange: setRenderedFile,
@@ -83,8 +69,7 @@ const NotebookCell: React.FC<NotebookCellProps> = ({
   // Load global file data on mount and when cell changes
   useEffect(() => {
     if (cell.type === 'preprocessing' && cell.globalFileId) {
-      const allFiles = fileManager.getAllFiles();
-      const globalFile = allFiles.find(f => f.id === cell.globalFileId);
+      const globalFile = fileModuleManager.getFileById(cell.globalFileId);
       
       if (globalFile) {
         // Convert base64 back to File object
@@ -118,9 +103,9 @@ const NotebookCell: React.FC<NotebookCellProps> = ({
 
   // Listen for new global file updates
   useEffect(() => {
-    const unsubscribe = fileManager.addListener(() => {
+    const unsubscribe = fileModuleManager.addListener(() => {
       if (cell.type === 'preprocessing' && !cell.globalFileId) {
-        const unprocessedFiles = fileManager.getUnprocessedFiles();
+        const unprocessedFiles = fileModuleManager.getUnprocessedFiles();
         
         if (unprocessedFiles.length > 0 && !stepFileData) {
           const firstFile = unprocessedFiles[0];
@@ -162,7 +147,7 @@ const NotebookCell: React.FC<NotebookCellProps> = ({
           onCellChange(updatedCell);
 
           // Mark the file as processed
-          fileManager.markFileAsProcessed(firstFile.id);
+          fileModuleManager.markFileAsProcessed(firstFile.id);
         }
       }
     });
