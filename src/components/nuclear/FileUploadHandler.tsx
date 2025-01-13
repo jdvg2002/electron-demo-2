@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { CellData } from '@/backend/models/Cell';
 import { RenderedFileInfo } from './FileRenderInfo';
 
@@ -15,26 +15,17 @@ interface StepFileData {
   timestamp: string;
 }
 
-interface FileUploadHandlerProps {
-  cell: CellData;
+interface FileUploadHandlerConfig {
+  cell: CellData | null;
   onCellChange: (updatedCell: CellData) => void;
-  onStepFileDataChange: (data: StepFileData | null) => void;
-  onRenderedFileChange: (file: RenderedFileInfo | null) => void;
+  onStepFileDataChange: (data: StepFileData) => void;
+  onRenderedFileChange: (file: RenderedFileInfo) => void;
   onViewStateChange: (state: 'idle' | 'loading' | 'viewing' | 'error') => void;
   onErrorChange: (error: string | null) => void;
 }
 
-const FileUploadHandler: React.FC<FileUploadHandlerProps> = ({
-  cell,
-  onCellChange,
-  onStepFileDataChange,
-  onRenderedFileChange,
-  onViewStateChange,
-  onErrorChange,
-}) => {
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
-
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+export const createFileUploadHandler = (config: FileUploadHandlerConfig) => {
+  return async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -44,12 +35,12 @@ const FileUploadHandler: React.FC<FileUploadHandlerProps> = ({
     else if (file.name.toLowerCase().endsWith('.step') || file.name.toLowerCase().endsWith('.stp')) {
       await handleStepUpload(file);
     } else {
-      onErrorChange('Please upload an STL or STEP file');
-      onViewStateChange('error');
+      config.onErrorChange('Please upload an STL or STEP file');
+      config.onViewStateChange('error');
     }
   };
 
-  const handleStlUpload = (file: File) => {
+  function handleStlUpload(file: File) {
     const newStepFileData = {
       stlFile: file,
       pipeMeasurements: null,
@@ -57,27 +48,29 @@ const FileUploadHandler: React.FC<FileUploadHandlerProps> = ({
       timestamp: new Date().toISOString()
     };
     
-    onStepFileDataChange(newStepFileData);
-    onViewStateChange('viewing');
+    config.onStepFileDataChange(newStepFileData);
+    config.onViewStateChange('viewing');
     
-    const reader = new FileReader();
-    reader.onload = () => {
-      const base64data = reader.result as string;
-      const updatedCell: CellData = {
-        ...cell,
-        stlFile: {
-          name: file.name,
-          data: base64data,
-          type: 'model/stl'
-        }
+    if (config.cell) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64data = reader.result as string;
+        const updatedCell: CellData = {
+          ...config.cell,
+          stlFile: {
+            name: file.name,
+            data: base64data,
+            type: 'model/stl'
+          }
+        };
+        config.onCellChange(updatedCell);
       };
-      onCellChange(updatedCell);
-    };
-    reader.readAsDataURL(file);
-  };
+      reader.readAsDataURL(file);
+    }
+  }
 
-  const handleStepUpload = async (file: File) => {
-    onViewStateChange('loading');
+  async function handleStepUpload(file: File) {
+    config.onViewStateChange('loading');
     try {
       const buffer = await file.arrayBuffer();
       const tempPath = await window.electronWindow.saveTempFile(buffer);
@@ -95,44 +88,41 @@ const FileUploadHandler: React.FC<FileUploadHandlerProps> = ({
           timestamp: new Date().toISOString()
         };
 
-        onStepFileDataChange(newStepFileData);
-        onViewStateChange('viewing');
-        onRenderedFileChange({
+        config.onStepFileDataChange(newStepFileData);
+        config.onViewStateChange('viewing');
+        config.onRenderedFileChange({
           file: stlFile,
           timestamp: new Date().toISOString(),
           success: true,
           originalFileName: file.name
         });
 
-        const reader = new FileReader();
-        reader.onload = () => {
-          const base64data = reader.result as string;
-          const updatedCell: CellData = {
-            ...cell,
-            stlFile: {
-              name: newFileName,
-              data: base64data,
-              type: 'model/stl'
-            },
-            pipeMeasurements: result.pipe_measurements
+        if (config.cell) {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const base64data = reader.result as string;
+            const updatedCell: CellData = {
+              ...config.cell,
+              stlFile: {
+                name: newFileName,
+                data: base64data,
+                type: 'model/stl'
+              },
+              pipeMeasurements: result.pipe_measurements
+            };
+            config.onCellChange(updatedCell);
           };
-          onCellChange(updatedCell);
-        };
-        reader.readAsDataURL(stlFile);
+          reader.readAsDataURL(stlFile);
+        }
       } else {
-        onErrorChange(result.error || 'Failed to convert STEP file');
-        onViewStateChange('error');
+        config.onErrorChange(result.error || 'Failed to convert STEP file');
+        config.onViewStateChange('error');
       }
     } catch (error) {
-      onErrorChange(error instanceof Error ? error.message : 'Error converting file');
-      onViewStateChange('error');
+      config.onErrorChange(error instanceof Error ? error.message : 'Error converting file');
+      config.onViewStateChange('error');
     }
-  };
-
-  return {
-    fileInputRef,
-    handleFileUpload
-  };
+  }
 };
 
-export default FileUploadHandler;
+export default createFileUploadHandler;

@@ -25,15 +25,38 @@ const CardRenderer: React.FC<{ content: CardContent }> = ({ content }) => {
       new Intl.NumberFormat('en-US').format(Math.round(value));
   };
 
+  // Create and manage URL for STL files
+  const [objectUrl, setObjectUrl] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (content.type === 'stl') {
+      console.log('STL content:', {
+        file: content.file,
+        size: content.file.size,
+        type: content.file.type
+      });
+      
+      const url = URL.createObjectURL(content.file);
+      console.log('Created URL:', url);
+      setObjectUrl(url);
+      return () => {
+        console.log('Cleaning up URL:', url);
+        URL.revokeObjectURL(url);
+      };
+    }
+  }, [content]);
+
   switch (content.type) {
     case 'stl':
+      console.log('Rendering STL with URL:', objectUrl);
+      if (!objectUrl) return <div>Loading...</div>;
       return (
         <div className="w-full h-full -ml-2 -mr-2 -mb-2">
           <StlViewer
             style={{ width: '100%', height: '100%' }}
             orbitControls
             shadows
-            url={URL.createObjectURL(content.file)}
+            url={objectUrl}
             modelProps={{
               scale: 1.25,
               rotationX: 0,
