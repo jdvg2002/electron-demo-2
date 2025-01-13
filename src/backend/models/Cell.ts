@@ -1,54 +1,44 @@
-export type CellType = 'preprocessing' | 'external' | 'postprocessing';
+export interface Visualization {
+  title: string;
+  description: string;
+  type: string;
+}
 
 export interface FileInfo {
   name: string;
   size: string;
   format: string;
   timestamp: string;
+  data?: any;
 }
 
-export interface SummaryMetric {
+export interface KeyMetric {
   label: string;
   value: string;
   status: 'safe' | 'warning' | 'danger';
 }
 
 export interface CellOutput {
+  visualizations?: Visualization[];
   file?: FileInfo;
   summary?: {
     status: string;
-    key_metrics: SummaryMetric[];
+    key_metrics: KeyMetric[];
   };
-}
-
-export interface CellInput {
-  file: string;
-  status: string;
-  checksum?: string;
+  result?: any;
 }
 
 export interface CellData {
   id: number;
-  type: CellType;
+  type: 'preprocessing' | 'external' | 'postprocessing';
   title: string;
   code?: string;
-  status?: string;
   tool?: string;
-  input?: CellInput;
+  status?: string;
+  input?: any;
   output?: CellOutput;
-  uploadedFilePath?: string;
-  executionResult?: any;
-  stlFile?: {
-    name: string;
-    data: string;  // Base64 encoded STL data
-    type: string;
-  };
-  pipeMeasurements?: {
-    inner_diameter: number;
-    outer_diameter: number;
-    wall_thickness: number;
-  };
-  globalFileId?: string;  // Reference to the original global file
-  processed?: boolean;    // Track if this cell has been processed
-  timestamp?: string;     // When the cell was created/modified
+  globalFileIds?: string[];
+  stlFile?: any;
+  pipeMeasurements?: any;
+  timestamp?: string;
 } 

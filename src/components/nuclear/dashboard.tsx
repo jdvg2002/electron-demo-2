@@ -10,7 +10,7 @@ const DraggableCardsCanvas = () => {
   const manager = ModuleManager.getInstance();
   const fileManager = FileModuleManager.getInstance();
   const [modules, setModules] = useState(manager.getAllModules());
-  const [wires, setWires] = useState(manager.getAllWires());
+  const [wires, setWires] = useState([]);
   const [isWiring, setIsWiring] = useState(false);
   const [activeWire, setActiveWire] = useState<{
     startCard: number;
@@ -32,12 +32,12 @@ const DraggableCardsCanvas = () => {
   useEffect(() => {
     const storedModules = manager.getAllModules();
     setModules([...storedModules]);
-    setWires([...manager.getAllWires()]);
   }, []);
 
   useEffect(() => {
     // Keep wires in internal state synchronized
-    manager.setWires(wires);
+    // Comment out or remove wire-related code for now
+    // manager.setWires(wires);
   }, [wires]);
 
   useEffect(() => {

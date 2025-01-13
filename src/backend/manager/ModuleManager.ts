@@ -1,44 +1,99 @@
-import { Module } from '../models/Module';
-import { ModuleCard } from '../models/ModuleCard';
-import { CellData } from '../models/Cell';
-import { GlobalFileData } from '../models/GlobalFiles';
+import { Module } from '@/backend/models/Module';
+import { CellData } from '@/backend/models/Cell';
+import { GlobalFileData } from '@/backend/models/GlobalFiles';
 
+interface ModuleCard {
+  id: number;
+  x: number;
+  y: number;
+  isDragging: boolean;
+  dragOffset: { x: number; y: number };
+  title: string;
+  content: string;
+}
+
+/**
+ * Manages modules and their associated cells
+ */
 export class ModuleManager {
   private static instance: ModuleManager;
-  private modules: Module[] = [];
-  private wires: any[] = [];
+  private modules: Map<number, Module>;
 
-  private constructor() {}
+  private constructor() {
+    this.modules = new Map();
+  }
 
-  static getInstance(): ModuleManager {
+  public static getInstance(): ModuleManager {
     if (!ModuleManager.instance) {
       ModuleManager.instance = new ModuleManager();
     }
     return ModuleManager.instance;
   }
 
-  createModule(card: ModuleCard, cells: CellData[] = []): Module {
+  public getModuleById(id: number): Module | undefined {
+    return this.modules.get(id);
+  }
+
+  public createModule(card: ModuleCard, cells: CellData[] = []): Module {
     const module = new Module(card, cells);
-    this.modules.push(module);
+    this.modules.set(card.id, module);
     return module;
   }
 
-  // Create a complete module with all three cell types
-  createPreprocessingModule(fileData: GlobalFileData): Module {
-    const newId = this.modules.length ? Math.max(...this.modules.map(m => m.card.id)) + 1 : 1;
+  public updateModuleCells(moduleId: number, cells: CellData[]): void {
+    const module = this.modules.get(moduleId);
+    if (module) {
+      module.setCells(cells);
+    }
+  }
+
+  public deleteModule(moduleId: number): void {
+    this.modules.delete(moduleId);
+  }
+
+  public getAllModules(): Module[] {
+    return Array.from(this.modules.values());
+  }
+
+  /**
+   * Adds a global file reference to all preprocessing cells across all modules
+   */
+  public applyGlobalFileToAllModules(globalFileId: string): void {
+    this.getAllModules().forEach(module => {
+      const preprocessingCells = module.cells.filter(cell => cell.type === 'preprocessing');
+      preprocessingCells.forEach(cell => {
+        const globalFileIds = cell.globalFileIds || [];
+        if (!globalFileIds.includes(globalFileId)) {
+          const updatedCell = {
+            ...cell,
+            globalFileIds: [...globalFileIds, globalFileId]
+          };
+          this.updateModuleCells(module.card.id, [
+            updatedCell,
+            ...module.cells.filter(c => c.id !== cell.id)
+          ]);
+        }
+      });
+    });
+  }
+
+  /**
+   * Creates a new module pre-configured with preprocessing, external, and postprocessing cells
+   */
+  public createPreprocessingModule(fileData: GlobalFileData): Module {
+    const newId = this.getAllModules().length ? 
+      Math.max(...this.getAllModules().map(m => m.card.id)) + 1 : 1;
     
-    // Create the card
     const card: ModuleCard = {
       id: newId,
-      x: 20 + (this.modules.length % 3) * 300,
-      y: 20 + Math.floor(this.modules.length / 3) * 150,
+      x: 20 + (this.getAllModules().length % 3) * 300,
+      y: 20 + Math.floor(this.getAllModules().length / 3) * 150,
       isDragging: false,
       dragOffset: { x: 0, y: 0 },
       title: fileData.originalFileName,
       content: 'Nuclear Analysis Module'
     };
 
-    // Create all three cells
     const cells: CellData[] = [
       {
         id: Date.now(),
@@ -46,7 +101,7 @@ export class ModuleManager {
         title: 'Input Preprocessing',
         stlFile: fileData.stlFile,
         pipeMeasurements: fileData.pipeMeasurements,
-        globalFileId: fileData.id,
+        globalFileIds: [fileData.id],  // Using array instead of single globalFileId
         timestamp: fileData.timestamp
       },
       {
@@ -65,67 +120,5 @@ export class ModuleManager {
     ];
 
     return this.createModule(card, cells);
-  }
-
-  getAllModules(): Module[] {
-    return [...this.modules];
-  }
-
-  public getModuleById(id: number): Module | undefined {
-    return this.modules.find(m => m.card.id === id);
-  }
-
-  public updateModule(moduleId: number, updatedCard?: ModuleCard, updatedCells?: CellData[]) {
-    const existingModule = this.getModuleById(moduleId);
-    if (!existingModule) return;
-
-    if (updatedCard) {
-      existingModule.card = updatedCard;
-    }
-    if (updatedCells) {
-      existingModule.cells = updatedCells;
-    }
-  }
-
-  public deleteModule(moduleId: number) {
-    this.modules = this.modules.filter((m) => m.card.id !== moduleId);
-  }
-
-  public updateModuleCard(moduleId: number, partialCard: Partial<ModuleCard>) {
-    const existingModule = this.getModuleById(moduleId);
-    if (!existingModule) return;
-
-    existingModule.card = { ...existingModule.card, ...partialCard };
-  }
-
-  public updateModuleCells(moduleId: number, newCells: CellData[]) {
-    const existingModule = this.getModuleById(moduleId);
-    if (!existingModule) return;
-
-    existingModule.cells = newCells;
-  }
-
-  public getAllWires() {
-    return this.wires;
-  }
-
-  public setWires(newWires: typeof this.wires) {
-    this.wires = newWires;
-  }
-
-  public addWire(wire: {
-    id: number;
-    startCard: number;
-    endCard: number;
-    startX: number;
-    startY: number;
-    endX: number;
-    endY: number;
-    startRelX: number;
-    startRelY: number;
-    endRelX: number;
-    endRelY: number;
-  }) {
-    this.wires.push(wire);
   }
 } 

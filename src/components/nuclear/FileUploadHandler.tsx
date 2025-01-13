@@ -1,3 +1,4 @@
+import { FileModuleManager } from '@/backend/manager/FileModuleManager';
 import React from 'react';
 import { CellData } from '@/backend/models/Cell';
 import { RenderedFileInfo } from './FileRenderInfo';
