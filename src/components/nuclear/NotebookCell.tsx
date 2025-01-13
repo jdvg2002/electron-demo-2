@@ -306,7 +306,7 @@ const NotebookCell: React.FC<NotebookCellProps> = ({
             <div className="w-full">
               <VisualizationGrid 
                 cards={createVisualizationCards(stepFileData.stlFile, stepFileData.pipeMeasurements)}
-                cardsPerRow={5}
+                cardsPerRow={7}
               />
             </div>
           )}
