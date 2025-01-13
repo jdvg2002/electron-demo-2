@@ -1,46 +1,13 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { FileText, Play, ChevronDown, BarChart2, Box, Upload } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { 
-  DistributionChart 
-} from '../charts/ReactorCharts';
 import CodeBlock from './CodeBlock';
 import FileOutput from './FileOutput';
 import AnalysisSummary from './AnalysisSummary';
-import { temperatureData, fluxData, safetyMarginData, coolantData } from '../../data/nuclearData';
-import { StlViewer } from 'react-stl-viewer';
-import PostProcessingChart from './PostProcessingChart';
-import resultsData from '@/data/results.json';
 import ExternalTool from './ExternalTool';
-import CellVisualization from './CellVisualization';
 import VisualizationGrid, { createVisualizationCards } from './CellVisualization';
 import FileRenderInfo, { RenderedFileInfo } from './FileRenderInfo';
 import { CellData } from '@/backend/models/Cell';
-
-interface CellFile {
-  name: string;
-  size: string;
-  format: string;
-  timestamp: string;
-}
-
-interface CellInput {
-  file: string;
-  status: string;
-  checksum: string;
-}
-
-interface CellOutput {
-  file?: CellFile;
-  summary?: {
-    status: string;
-    key_metrics: {
-      label: string;
-      value: string;
-      status: 'safe' | 'warning' | 'danger';
-    }[];
-  };
-}
 
 interface NotebookCellProps {
   cell: CellData;
@@ -48,8 +15,6 @@ interface NotebookCellProps {
   onToggle(): void;
   onCellChange: (updatedCell: CellData) => void;
 }
-
-type DistributionType = 'normal' | 'uniform' | 'exponential';
 
 interface PipeMeasurements {
   inner_diameter: number;
@@ -63,13 +28,6 @@ interface StepFileData {
   originalFileName: string;
   timestamp: string;
 }
-
-const formatNumber = (value: number): string => {
-  if (Math.abs(value) < 10) {
-    return value.toFixed(2);
-  }
-  return new Intl.NumberFormat('en-US').format(Math.round(value));
-};
 
 const NotebookCell: React.FC<NotebookCellProps> = ({
   cell,
