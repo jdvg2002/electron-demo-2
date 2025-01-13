@@ -4,11 +4,11 @@ import { ModuleManager } from '@/backend/manager/ModuleManager';
 import { motion, AnimatePresence } from 'framer-motion';
 import Demo from './demo';
 import FileUploadSection from './FileUploadSection';
-import { FileModuleManager } from '@/backend/manager/FileModuleManager';
+import { GlobalFileManager } from '@/backend/models/GlobalFiles';
 
 const DraggableCardsCanvas = () => {
   const manager = ModuleManager.getInstance();
-  const fileManager = FileModuleManager.getInstance();
+  const fileManager = GlobalFileManager.getInstance();
   const [modules, setModules] = useState(manager.getAllModules());
   const [wires, setWires] = useState([]);
   const [isWiring, setIsWiring] = useState(false);
@@ -307,16 +307,14 @@ const DraggableCardsCanvas = () => {
   };
 
   const addNewCard = () => {
-    const unprocessedFiles = fileManager.getUnprocessedFiles();
+    const globalFiles = fileManager.getAllFiles();
     
-    if (unprocessedFiles.length > 0) {
-      // Use the first unprocessed file to create a preprocessing module
-      const fileData = unprocessedFiles[0];
-      const newModule = manager.createPreprocessingModule(fileData);
+    if (globalFiles.length > 0) {
+      // Create a new module with all global files
+      const newModule = manager.createPreprocessingModuleWithGlobalFiles(globalFiles);
       setModules([...modules, newModule]);
-      fileManager.markFileAsProcessed(fileData.id);
     } else {
-      // Fall back to creating an empty module if no unprocessed files
+      // Fall back to creating an empty module if no global files
       const newId = modules.length ? Math.max(...modules.map(m => m.card.id)) + 1 : 1;
       
       const cardsPerRow = 3;

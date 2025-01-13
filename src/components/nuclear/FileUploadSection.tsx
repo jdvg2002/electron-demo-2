@@ -19,7 +19,7 @@ const FileUploadSection: React.FC = () => {
     cell: null,
     onCellChange: () => {},
     onStepFileDataChange: async (newStepData) => {
-      const processFile = async () => {
+      const handleFileCreation = async () => {
         try {
           setViewState('loading');
           
@@ -32,13 +32,13 @@ const FileUploadSection: React.FC = () => {
           setStepFilesData(prev => [...prev, newStepData]);
           setViewState('viewing');
         } catch (error) {
-          console.error('Error processing file:', error);
-          setUploadError(error instanceof Error ? error.message : 'Failed to process file');
+          console.error('Error creating file:', error);
+          setUploadError(error instanceof Error ? error.message : 'Failed to create file');
           setViewState('error');
         }
       };
 
-      processFile();
+      handleFileCreation();
     },
     onRenderedFileChange: (newRenderedFile) => {
       setRenderedFiles(prev => [...prev, newRenderedFile]);

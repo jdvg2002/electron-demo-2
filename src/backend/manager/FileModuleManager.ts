@@ -15,7 +15,6 @@ interface FileData {
   };
   originalFileName: string;
   timestamp: string;
-  processed: boolean;
 }
 
 export class FileModuleManager {
@@ -66,8 +65,7 @@ export class FileModuleManager {
             },
             pipeMeasurements: measurements,
             originalFileName,
-            timestamp: new Date().toISOString(),
-            processed: false
+            timestamp: new Date().toISOString()
           };
           
           this.files.set(id, fileData);
@@ -94,20 +92,6 @@ export class FileModuleManager {
 
   public getFileById(id: string): FileData | undefined {
     return this.files.get(id);
-  }
-
-  public getUnprocessedFiles(): FileData[] {
-    return Array.from(this.files.values())
-      .filter(file => !file.processed);
-  }
-
-  public markFileAsProcessed(id: string): void {
-    const file = this.files.get(id);
-    if (file) {
-      file.processed = true;
-      this.files.set(id, file);
-      this.notifyListeners();
-    }
   }
 
   public deleteFile(id: string): void {

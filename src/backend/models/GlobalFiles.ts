@@ -12,7 +12,6 @@ export interface GlobalFileData {
   };
   timestamp: string;
   originalFileName: string;
-  processed?: boolean;
 }
 
 export class GlobalFileManager {
@@ -30,11 +29,7 @@ export class GlobalFileManager {
   }
 
   addFile(file: GlobalFileData) {
-    const fileWithProcessed = {
-      ...file,
-      processed: false
-    };
-    this.files.push(fileWithProcessed);
+    this.files.push(file);
     this.notifyListeners();
   }
 
@@ -52,7 +47,6 @@ export class GlobalFileManager {
     this.notifyListeners();
   }
 
-  // Add listener functionality for React components
   addListener(listener: () => void) {
     this.listeners.push(listener);
     return () => {
@@ -62,17 +56,5 @@ export class GlobalFileManager {
 
   private notifyListeners() {
     this.listeners.forEach(listener => listener());
-  }
-
-  markFileAsProcessed(id: string) {
-    const file = this.files.find(f => f.id === id);
-    if (file) {
-      file.processed = true;
-      this.notifyListeners();
-    }
-  }
-
-  getUnprocessedFiles(): GlobalFileData[] {
-    return this.files.filter(f => !f.processed);
   }
 } 
