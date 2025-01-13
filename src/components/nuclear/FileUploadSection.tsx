@@ -3,6 +3,7 @@ import { createFileUploadHandler } from './FileUploadHandler';
 import VisualizationGrid, { createVisualizationCards } from './CellVisualization';
 import FileRenderInfo, { RenderedFileInfo } from './FileRenderInfo';
 import { FileModuleManager } from '@/backend/manager/FileModuleManager';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const FileUploadSection: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -10,6 +11,7 @@ const FileUploadSection: React.FC = () => {
   const [viewState, setViewState] = useState<'idle' | 'loading' | 'viewing' | 'error'>('idle');
   const [renderedFiles, setRenderedFiles] = useState<RenderedFileInfo[]>([]);
   const [stepFilesData, setStepFilesData] = useState<any[]>([]);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const fileModuleManager = FileModuleManager.getInstance();
 
@@ -111,44 +113,62 @@ const FileUploadSection: React.FC = () => {
               </div>
             </div>
           </>
-        ) : null}
+        ) : (
+          <div className="w-full">
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded w-full"
+            >
+              Global Variables {isExpanded ? '▼' : '▶'}
+            </button>
 
-        {/* Visualization Section */}
-        {stepFilesData.length > 0 && (
-          <div className="w-full mt-4">
-            <div className="mb-4 space-y-2">
-              {renderedFiles.map((fileInfo, index) => (
-                <FileRenderInfo 
-                  key={index}
-                  fileInfo={fileInfo}
-                  onClear={() => removeFile(index)}
-                />
-              ))}
-            </div>
-            
-            <VisualizationGrid 
-              cards={stepFilesData.flatMap(data => 
-                createVisualizationCards(data.stlFile, data.pipeMeasurements)
-              )}
-              cardsPerRow={7}
-            />
-
-            <div className="mt-4 flex justify-between items-center">
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
-              >
-                Upload More Files
-              </button>
-              {renderedFiles.length > 1 && (
-                <button
-                  onClick={clearAllFiles}
-                  className="text-red-500 hover:text-red-600"
+            <AnimatePresence>
+              {isExpanded && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="overflow-hidden"
                 >
-                  Clear All Files
-                </button>
+                  <div className="mt-4">
+                    <div className="mb-4 space-y-2">
+                      {renderedFiles.map((fileInfo, index) => (
+                        <FileRenderInfo 
+                          key={index}
+                          fileInfo={fileInfo}
+                          onClear={() => removeFile(index)}
+                        />
+                      ))}
+                    </div>
+                    
+                    <VisualizationGrid 
+                      cards={stepFilesData.flatMap(data => 
+                        createVisualizationCards(data.stlFile, data.pipeMeasurements)
+                      )}
+                      cardsPerRow={7}
+                    />
+
+                    <div className="mt-4 flex justify-between items-center">
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+                      >
+                        Upload More Files
+                      </button>
+                      {renderedFiles.length > 1 && (
+                        <button
+                          onClick={clearAllFiles}
+                          className="text-red-500 hover:text-red-600"
+                        >
+                          Clear All Files
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
               )}
-            </div>
+            </AnimatePresence>
           </div>
         )}
       </div>
