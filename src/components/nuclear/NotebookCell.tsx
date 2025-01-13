@@ -357,8 +357,8 @@ const NotebookCell: React.FC<NotebookCellProps> = ({
             />
           )}
           
-          {/* Output File */}
-          {cell.output?.file && (
+          {/* Output File - Now conditional on stepFileData */}
+          {cell.output?.file && stepFileData && (
             <FileOutput
               file={cell.output.file}
               onDownload={() => {/* Handle download */}}
