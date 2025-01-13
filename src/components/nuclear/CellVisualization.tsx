@@ -176,7 +176,7 @@ export const createVisualizationCards = (
       content: { 
         type: 'stl', 
         file: stlFile instanceof File ? stlFile : new File(
-          [Buffer.from(stlFile.data.split(',')[1], 'base64')],
+          [Uint8Array.from(atob(stlFile.data.split(',')[1]), c => c.charCodeAt(0))],
           stlFile.name,
           { type: stlFile.type }
         )
