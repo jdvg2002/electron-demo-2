@@ -27,6 +27,7 @@ const DraggableCardsCanvas = () => {
   const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
   const [pendingDragCard, setPendingDragCard] = useState<number | null>(null);
   const [expandedCard, setExpandedCard] = useState<number | null>(null);
+  const [dashboardTitle, setDashboardTitle] = useState("Pipe Stress Analysis");
 
   // Reflect changes from manager if storing wires/modules somewhere else
   useEffect(() => {
@@ -394,6 +395,23 @@ const DraggableCardsCanvas = () => {
 
   return (
     <div className="w-full h-full bg-[#003449] flex flex-col gap-6 p-4">
+      <div className="relative w-1/2">
+        <span
+          className="absolute inset-0 cursor-text flex"
+        >
+          <textarea
+            value={dashboardTitle}
+            onChange={(e) => setDashboardTitle(e.target.value)}
+            className="text-2xl font-bold text-white bg-transparent w-full border-none focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 cursor-text break-words resize-none overflow-hidden"
+            rows={1}
+            style={{ height: 'auto' }}
+          />
+        </span>
+        <span className="text-2xl font-bold text-white invisible whitespace-pre-wrap break-words">
+          {dashboardTitle || '\u00A0'.repeat(10)}
+        </span>
+      </div>
+
       <FileUploadSection />
       
       <div className="flex gap-4">
