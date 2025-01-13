@@ -96,7 +96,7 @@ const CardRenderer: React.FC<CardRendererProps> = React.memo(({ content, cards, 
       return (
         <div className="h-full px-2">
           <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-            <div className="flex flex-col gap-3 py-2">
+            <div className="flex flex-col gap-1 py-1">
               {Object.entries(content.data).map(([key, value]) => {
                 const existingDistribution = cards.find(
                   card => 
@@ -108,24 +108,18 @@ const CardRenderer: React.FC<CardRendererProps> = React.memo(({ content, cards, 
                 return (
                   <div key={key} className="flex justify-between items-center">
                     <div>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-xs text-gray-500 leading-tight">
                         {key.split('_').map(word => 
                           word.charAt(0).toUpperCase() + word.slice(1)
                         ).join(' ')}
                       </p>
-                      <p className="font-medium">{formatNumber(value)} mm</p>
+                      <p className="font-medium text-sm leading-tight">{formatNumber(value)} mm</p>
                     </div>
                     <button
-                      onClick={() => onAddDistribution?.(
-                        key, 
-                        value, 
-                        existingDistribution?.content.type === 'distribution' 
-                          ? existingDistribution.content.stdDev 
-                          : undefined
-                      )}
+                      onClick={() => onAddDistribution?.(key, value, existingDistribution?.content.type === 'distribution' ? existingDistribution.content.stdDev : undefined)}
                       className="p-1 hover:bg-gray-100 rounded flex-shrink-0"
                     >
-                      <BarChart2 className="w-4 h-4" />
+                      <BarChart2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 );
