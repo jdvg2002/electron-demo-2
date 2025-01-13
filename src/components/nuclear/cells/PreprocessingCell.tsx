@@ -105,7 +105,7 @@ const PreprocessingCell: React.FC<PreprocessingCellProps> = ({
         <VisualizationGrid 
           key={index}
           cards={createVisualizationCards(fileData.stlFile, fileData.pipeMeasurements)}
-          cardsPerRow={7}
+          cardsPerRow={6}
         />
       ))}
 

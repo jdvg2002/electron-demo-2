@@ -94,41 +94,44 @@ const CardRenderer: React.FC<CardRendererProps> = React.memo(({ content, cards, 
 
     case 'measurements':
       return (
-        <div className="grid grid-rows-3 h-full gap-4 -ml-2 -mr-2 -mb-2">
-          {Object.entries(content.data).map(([key, value]) => {
-            // Find if there's an existing distribution for this measurement
-            const existingDistribution = cards.find(
-              card => 
-                card.content.type === 'distribution' && 
-                'label' in card.content && 
-                card.content.label === key
-            );
+        <div className="h-full px-2">
+          <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+            <div className="flex flex-col gap-3 py-2">
+              {Object.entries(content.data).map(([key, value]) => {
+                const existingDistribution = cards.find(
+                  card => 
+                    card.content.type === 'distribution' && 
+                    'label' in card.content && 
+                    card.content.label === key
+                );
 
-            return (
-              <div key={key} className="flex justify-between items-center px-4">
-                <div>
-                  <p className="text-sm text-gray-500">
-                    {key.split('_').map(word => 
-                      word.charAt(0).toUpperCase() + word.slice(1)
-                    ).join(' ')}
-                  </p>
-                  <p className="font-medium">{formatNumber(value)} mm</p>
-                </div>
-                <button
-                  onClick={() => onAddDistribution?.(
-                    key, 
-                    value, 
-                    existingDistribution?.content.type === 'distribution' 
-                      ? existingDistribution.content.stdDev 
-                      : undefined
-                  )}
-                  className="p-1 hover:bg-gray-100 rounded"
-                >
-                  <BarChart2 className="w-4 h-4" />
-                </button>
-              </div>
-            );
-          })}
+                return (
+                  <div key={key} className="flex justify-between items-center">
+                    <div>
+                      <p className="text-sm text-gray-500">
+                        {key.split('_').map(word => 
+                          word.charAt(0).toUpperCase() + word.slice(1)
+                        ).join(' ')}
+                      </p>
+                      <p className="font-medium">{formatNumber(value)} mm</p>
+                    </div>
+                    <button
+                      onClick={() => onAddDistribution?.(
+                        key, 
+                        value, 
+                        existingDistribution?.content.type === 'distribution' 
+                          ? existingDistribution.content.stdDev 
+                          : undefined
+                      )}
+                      className="p-1 hover:bg-gray-100 rounded flex-shrink-0"
+                    >
+                      <BarChart2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       );
 
@@ -175,9 +178,9 @@ const VisualizationCard = React.memo<{
   const isStlViewer = card.content.type === 'stl';
   
   return (
-    <Card className="aspect-square p-2 min-w-[150px] overflow-hidden">
-      <h3 className="font-medium mb-1 px-2 text-sm">{card.title}</h3>
-      <div className="h-[calc(100%-1.5rem)] w-full">
+    <Card className="aspect-square p-2 w-[180px] overflow-hidden">
+      <h3 className="font-medium mb-2 px-2 text-sm">{card.title}</h3>
+      <div className="h-[calc(100%-2rem)] w-full">
         <CardRenderer 
           content={card.content}
           cards={cards}
@@ -245,9 +248,12 @@ const VisualizationGrid: React.FC<VisualizationGridProps> = ({ cards: initialCar
 
   return (
     <>
-      <div className="grid gap-4" style={{
-        gridTemplateColumns: `repeat(${cardsPerRow}, minmax(0, 1fr))`
-      }}>
+      <div
+        className="grid gap-4 justify-start"
+        style={{
+          gridTemplateColumns: 'repeat(auto-fill, 180px)',
+        }}
+      >
         {cards.map((card, index) => (
           <VisualizationCard
             key={index}

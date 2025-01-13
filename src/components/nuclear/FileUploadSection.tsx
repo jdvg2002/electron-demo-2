@@ -146,7 +146,7 @@ const FileUploadSection: React.FC = () => {
                       cards={stepFilesData.flatMap(data => 
                         createVisualizationCards(data.stlFile, data.pipeMeasurements)
                       )}
-                      cardsPerRow={7}
+                      cardsPerRow={6}
                     />
 
                     <div className="mt-4 flex justify-between items-center">
