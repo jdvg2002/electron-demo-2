@@ -11,6 +11,7 @@ interface ElectronWindow {
     result?: string;
     error?: string;
   }>;
+  getProjectRoot: () => Promise<string>;
 }
 
 contextBridge.exposeInMainWorld('electronWindow', {
@@ -18,7 +19,8 @@ contextBridge.exposeInMainWorld('electronWindow', {
   maximize: () => ipcRenderer.invoke('window-maximize'),
   close: () => ipcRenderer.invoke('window-close'),
   saveTempFile: (buffer: ArrayBuffer) => ipcRenderer.invoke('save-temp-file', buffer),
-  executePython: (code: string) => ipcRenderer.invoke('execute-python', code)
+  executePython: (code: string) => ipcRenderer.invoke('execute-python', code),
+  getProjectRoot: () => ipcRenderer.invoke('get-project-root')
 });
 
 contextBridge.exposeInMainWorld('stepConverter', {

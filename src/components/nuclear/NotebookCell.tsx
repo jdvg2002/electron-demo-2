@@ -165,6 +165,65 @@ const NotebookCell: React.FC<NotebookCellProps> = ({
   };
 
   const handleRunCell = useCallback(async () => {
+    if (cell.type === 'external') {
+      try {
+        setIsExecuting(true);
+        setErrorMessage(null);
+
+        // First get the project root path
+        const projectRoot = await window.electronWindow.getProjectRoot();
+
+        // Execute the fatigue crack analysis script
+        const result = await window.electronWindow.executePython(`
+import sys
+import os
+
+# Get the absolute path to the Python script
+script_path = os.path.join('${projectRoot}', 'server', 'fatigue_crack_init.py')
+print(f"Executing script at: {script_path}")
+
+# Add the server directory to Python path
+sys.path.append(os.path.dirname(script_path))
+
+# Run the main function directly
+from fatigue_crack_init import main
+main()
+`);
+
+        if (!result.success) {
+          throw new Error(result.error || 'Execution failed');
+        }
+
+        // Parse the result
+        const parsedResult = {
+          success: true,
+          results: result.stdout
+        };
+
+        // Update cell with results
+        const updatedCell = {
+          ...cell,
+          status: 'completed',
+          executionResult: parsedResult
+        };
+        onCellChange(updatedCell);
+        setExecutionResult(parsedResult);
+
+      } catch (error) {
+        console.error('External tool execution failed:', error);
+        setErrorMessage(error instanceof Error ? error.message : 'Execution failed');
+        const updatedCell = {
+          ...cell,
+          status: 'error'
+        };
+        onCellChange(updatedCell);
+      } finally {
+        setIsExecuting(false);
+      }
+      return;
+    }
+
+    // Regular code execution for non-external cells
     if (!localCode) {
       console.log("Cannot execute: missing cellCode");
       return;
@@ -191,7 +250,7 @@ const NotebookCell: React.FC<NotebookCellProps> = ({
     } finally {
       setIsExecuting(false);
     }
-  }, [localCode]);
+  }, [cell, localCode, onCellChange]);
 
   const renderCellIcon = () => {
     switch (cell.type) {
@@ -293,11 +352,12 @@ const NotebookCell: React.FC<NotebookCellProps> = ({
           )}
 
           {/* External Tool */}
-          {cell.type === 'external' && cell.tool && cell.input && (
+          {cell.type === 'external' && cell.tool && (
             <ExternalTool
               tool={cell.tool}
               status={cell.status || 'pending'}
-              input={cell.input}
+              input={cell.pipeMeasurements || {}}
+              executionResult={executionResult}
             />
           )}
           

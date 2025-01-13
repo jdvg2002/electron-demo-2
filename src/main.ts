@@ -204,3 +204,7 @@ function clearLocalStorage(mainWindow: BrowserWindow) {
     isInitialLaunch = false;
   });
 }
+
+ipcMain.handle('get-project-root', () => {
+  return process.cwd();
+});
