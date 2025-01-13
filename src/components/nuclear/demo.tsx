@@ -163,26 +163,6 @@ const Demo = ({ className = '', cardId }: DemoProps) => {
           />
         ))}
       </div>
-
-      <div className="mt-6 flex justify-end">
-        <button
-          onClick={() => {
-            const newId = Math.max(...moduleObj!.cells.map(c => c.id)) + 1;
-            const newCell: CellData = {
-              id: newId,
-              type: 'preprocessing',
-              title: 'New Cell',
-              code: '# Placeholder code',
-              output: {}
-            };
-            moduleObj?.setCells([...moduleObj.cells, newCell]);
-            manager.updateModuleCells(moduleObj.card.id, moduleObj.cells);
-          }}
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
-        >
-          Add Cell
-        </button>
-      </div>
     </div>
   );
 };
