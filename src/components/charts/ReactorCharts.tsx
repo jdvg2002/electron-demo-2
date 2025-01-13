@@ -31,6 +31,7 @@ interface DistributionChartProps extends ChartProps {
   mean: number;
   stdDev: number;
   type: DistributionType;
+  onChartClick?: () => void;
 }
 
 // Common chart configuration
@@ -224,12 +225,17 @@ export const DistributionChart: React.FC<DistributionChartProps> = ({
   stdDev,
   type,
   height = chartConfig.defaultHeight,
-  className = ''
+  className = '',
+  onChartClick
 }) => {
   const data = generateNormalDistribution(mean, stdDev);
   
   return (
-    <div className={`w-full h-full ${className}`}>
+    <div 
+      className={`w-full h-full ${className}`}
+      onClick={onChartClick}
+      style={{ cursor: onChartClick ? 'pointer' : 'default' }}
+    >
       <ResponsiveContainer width="100%" height="100%">
         <LineChart 
           data={data}
