@@ -332,7 +332,10 @@ const NotebookCell: React.FC<NotebookCellProps> = ({
           {cell.output?.file && stepFileData && (
             <FileOutput
               file={{
-                ...cell.output.file,
+                name: `${stepFileData.originalFileName}_measurements.json`,
+                size: `${JSON.stringify(stepFileData.pipeMeasurements).length} bytes`,
+                format: 'JSON',
+                timestamp: stepFileData.timestamp,
                 data: {
                   pipeMeasurements: stepFileData.pipeMeasurements,
                   originalFileName: stepFileData.originalFileName,
