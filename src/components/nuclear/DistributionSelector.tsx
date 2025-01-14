@@ -3,27 +3,32 @@ import { Card } from '@/components/ui/card';
 import { DistributionChart } from '../charts/ReactorCharts';
 
 interface DistributionSelectorProps {
-  value: number;
+  value?: number;
   currentStdDev?: number;
-  onAdd: (mean: number, stdDev: number) => void;
+  onAdd: (mean: number, stdDev: number, name?: string) => void;
   onClose: () => void;
   isUpdating?: boolean;
+  showNameInput?: boolean;
+  allowMeanEdit?: boolean;
 }
 
 export const DistributionSelector: React.FC<DistributionSelectorProps> = ({
-  value,
+  value = 0,
   currentStdDev,
   onAdd,
   onClose,
-  isUpdating = false
+  isUpdating = false,
+  showNameInput = false,
+  allowMeanEdit = false
 }) => {
-  const [mean] = useState(value);
+  const [mean, setMean] = useState(value);
   const [stdDev, setStdDev] = useState(() => {
+    if (currentStdDev) return currentStdDev;
     const defaultStdDev = value * 0.05;
-    // Round to 2 significant figures
-    const magnitude = Math.floor(Math.log10(Math.abs(defaultStdDev)));
+    const magnitude = Math.floor(Math.log10(Math.abs(defaultStdDev) || 1));
     return Number((Math.round(defaultStdDev / Math.pow(10, magnitude - 1)) * Math.pow(10, magnitude - 1)).toFixed(10));
   });
+  const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const handleStdDevChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -50,6 +55,13 @@ export const DistributionSelector: React.FC<DistributionSelectorProps> = ({
     setError(null);
   };
 
+  const handleMeanChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const numValue = Number(e.target.value);
+    if (!isNaN(numValue)) {
+      setMean(numValue);
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
       <Card className="w-96 p-4 space-y-4 bg-white">
@@ -58,13 +70,28 @@ export const DistributionSelector: React.FC<DistributionSelectorProps> = ({
         </h3>
         
         <div className="space-y-4">
+          {showNameInput && (
+            <div>
+              <label className="block text-sm font-medium mb-1">Distribution Name</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full p-2 border rounded"
+                placeholder="Enter distribution name"
+                required
+              />
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium mb-1">Mean (μ)</label>
             <input
               type="number"
               value={mean}
-              disabled
-              className="w-full p-2 border rounded bg-gray-100"
+              onChange={handleMeanChange}
+              disabled={!allowMeanEdit && value !== undefined}
+              className={`w-full p-2 border rounded ${!allowMeanEdit && value !== undefined ? 'bg-gray-100' : ''}`}
             />
           </div>
           
@@ -100,14 +127,14 @@ export const DistributionSelector: React.FC<DistributionSelectorProps> = ({
             </button>
             <button
               onClick={() => {
-                if (!error && stdDev > 0) {
-                  onAdd(mean, stdDev);
+                if (!error && stdDev > 0 && (!showNameInput || name.trim())) {
+                  onAdd(mean, stdDev, showNameInput ? name : undefined);
                   onClose();
                 }
               }}
-              disabled={!!error || stdDev <= 0}
+              disabled={!!error || stdDev <= 0 || (showNameInput && !name.trim())}
               className={`px-4 py-2 rounded ${
-                error || stdDev <= 0
+                error || stdDev <= 0 || (showNameInput && !name.trim())
                   ? 'bg-gray-300 cursor-not-allowed'
                   : 'bg-blue-500 hover:bg-blue-600 text-white'
               }`}

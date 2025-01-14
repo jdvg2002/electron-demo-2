@@ -187,6 +187,38 @@ const VisualizationCard = React.memo<{
   );
 });
 
+const PlusCard = React.memo(({ onCreateDistribution }: { onCreateDistribution: (mean: number, stdDev: number, name: string) => void }) => {
+  const [showSelector, setShowSelector] = useState(false);
+
+  return (
+    <>
+      <Card 
+        className="aspect-square p-2 w-[180px] overflow-hidden flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50"
+        onClick={() => setShowSelector(true)}
+      >
+        <div className="text-4xl text-gray-400">+</div>
+        <div className="text-sm text-gray-400">Add a Variable</div>
+      </Card>
+
+      {showSelector && (
+        <DistributionSelector
+          value={10}
+          allowMeanEdit={true}
+          onAdd={(mean, stdDev, name) => {
+            if (name) {
+              onCreateDistribution(mean, stdDev, name);
+            }
+            setShowSelector(false);
+          }}
+          onClose={() => setShowSelector(false)}
+          isUpdating={false}
+          showNameInput={true}
+        />
+      )}
+    </>
+  );
+});
+
 const VisualizationGrid: React.FC<VisualizationGridProps> = ({ 
   cards: initialCards, 
   cardsPerRow = 3,
@@ -201,86 +233,68 @@ const VisualizationGrid: React.FC<VisualizationGridProps> = ({
 
   const globalFileManager = useMemo(() => GlobalFileManager.getInstance(), []);
 
-  const handleDistributionCreated = useCallback((mean: number, stdDev: number) => {
-    if (!selectedMeasurement || !fileId) {
-      console.warn('Missing required data:', { selectedMeasurement, fileId });
-      return;
-    }
+  const handleAddDistribution = useCallback((key: string, value: number, stdDev?: number) => {
+    setSelectedMeasurement({ key, value, stdDev });
+  }, []);
 
-    // Save to GlobalFileManager
+  const handleNewDistribution = useCallback((mean: number, stdDev: number, name: string) => {
+    const timestamp = Date.now();
+    const key = `custom_distribution_${timestamp}`;
+    const fullName = `${name} Distribution`;
+
+    // Save to GlobalFileManager with the full name
     globalFileManager.addDistribution(
       fileId,
-      selectedMeasurement.key,
+      key,
       mean,
-      stdDev
+      stdDev,
+      fullName
     );
 
     // Create new distribution card
     const newCard: VisualizationCard = {
-      title: `${selectedMeasurement.key.split('_').map(word => 
-        word.charAt(0).toUpperCase() + word.slice(1)
-      ).join(' ')} Distribution`,
+      title: fullName,
       content: {
         type: 'distribution',
         mean,
         stdDev,
-        label: selectedMeasurement.key
+        label: key
       }
     };
 
-    // Update cards state
-    setCards(prevCards => {
-      const existingIndex = prevCards.findIndex(
-        card => 
-          card.content.type === 'distribution' && 
-          'label' in card.content && 
-          card.content.label === selectedMeasurement.key
-      );
-
-      if (existingIndex !== -1) {
-        // Replace existing card
-        const newCards = [...prevCards];
-        newCards[existingIndex] = newCard;
-        return newCards;
-      } else {
-        // Add new card
-        return [...prevCards, newCard];
-      }
-    });
-
-    setSelectedMeasurement(null);
-  }, [selectedMeasurement, fileId, globalFileManager]);
-
-  // Add effect to load existing distributions on mount
-  useEffect(() => {
-    if (fileId) {
-      const fileData = globalFileManager.getFileById(fileId);
-      if (fileData?.distributions) {
-        const distributionCards = Object.values(fileData.distributions).map(dist => ({
-          title: `${dist.label.split('_').map(word => 
-            word.charAt(0).toUpperCase() + word.slice(1)
-          ).join(' ')} Distribution`,
-          content: {
-            type: 'distribution' as const,
-            mean: dist.mean,
-            stdDev: dist.stdDev,
-            label: dist.label
-          }
-        }));
-
-        setCards(prevCards => {
-          const nonDistributionCards = prevCards.filter(
-            card => card.content.type !== 'distribution'
-          );
-          return [...nonDistributionCards, ...distributionCards];
-        });
-      }
-    }
+    setCards(prevCards => [...prevCards, newCard]);
   }, [fileId, globalFileManager]);
 
-  const handleAddDistribution = (key: string, value: number, stdDev?: number) => {
-    setSelectedMeasurement({ key, value, stdDev });
-  };
+  const handleDistributionCreated = useCallback((mean: number, stdDev: number) => {
+    if (selectedMeasurement) {
+      const name = selectedMeasurement.key.split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ') + ' Distribution';
+
+      // Save to GlobalFileManager with the generated name
+      globalFileManager.addDistribution(
+        fileId,
+        selectedMeasurement.key,
+        mean,
+        stdDev,
+        name
+      );
+
+      // Create new distribution card
+      const newCard: VisualizationCard = {
+        title: name,
+        content: {
+          type: 'distribution',
+          mean,
+          stdDev,
+          label: selectedMeasurement.key
+        }
+      };
+
+      setCards(prevCards => [...prevCards, newCard]);
+      setSelectedMeasurement(null);
+    }
+  }, [selectedMeasurement, fileId, globalFileManager]);
 
   return (
     <>
@@ -299,6 +313,7 @@ const VisualizationGrid: React.FC<VisualizationGridProps> = ({
             onAddDistribution={handleAddDistribution}
           />
         ))}
+        <PlusCard onCreateDistribution={handleNewDistribution} />
       </div>
 
       {selectedMeasurement && (
@@ -343,11 +358,10 @@ export const createVisualizationCards = (
     }
   ];
 
-  // Add distribution cards if they exist
   if (distributions) {
     Object.values(distributions).forEach(dist => {
       cards.push({
-        title: `${dist.label.split('_').map(word => 
+        title: dist.name || `${dist.label.split('_').map(word => 
           word.charAt(0).toUpperCase() + word.slice(1)
         ).join(' ')} Distribution`,
         content: {

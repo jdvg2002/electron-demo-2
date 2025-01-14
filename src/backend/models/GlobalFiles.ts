@@ -2,7 +2,7 @@ export interface DistributionData {
   label: string;
   mean: number;
   stdDev: number;
-  timestamp: string;
+  name?: string;
 }
 
 export interface GlobalFileData {
@@ -73,7 +73,8 @@ export class GlobalFileManager {
     fileId: string,
     label: string,
     mean: number,
-    stdDev: number
+    stdDev: number,
+    name?: string
   ): void {
     const file = this.files.get(fileId);
     if (!file) {
@@ -89,7 +90,7 @@ export class GlobalFileManager {
       label,
       mean,
       stdDev,
-      timestamp: new Date().toISOString()
+      name
     };
 
     this.files.set(fileId, file);
