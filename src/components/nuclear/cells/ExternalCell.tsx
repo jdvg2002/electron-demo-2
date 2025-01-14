@@ -116,6 +116,34 @@ const ExternalCell: React.FC<ExternalCellProps> = ({
     );
   };
 
+  const renderOutputs = (executionResult: any) => {
+    if (!executionResult) return null;
+
+    const fileData = {
+      name: 'analysis_results.json',
+      size: `${JSON.stringify(executionResult).length} bytes`,
+      format: 'JSON',
+      timestamp: new Date().toLocaleString(),
+      data: {
+        type: 'analysis_results',
+        version: '1.0',
+        timestamp: new Date().toISOString(),
+        data: executionResult.data,
+        stdout: executionResult.stdout,
+        metadata: {
+          analysisType: selectedAnalysis,
+          tool: cell.tool
+        }
+      }
+    };
+
+    return (
+      <div className="space-y-4">
+        <FileOutput file={fileData} />
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-4">
       {!getPreprocessedData() && (
@@ -152,9 +180,7 @@ const ExternalCell: React.FC<ExternalCellProps> = ({
 
       {isExecuting && <LoadingIndicator message="Running external tool..." />}
       
-      {executionResult && (
-        <ExecutionOutput stdout={executionResult.stdout} />
-      )}
+      {executionResult && renderOutputs(executionResult)}
     </div>
   );
 };
