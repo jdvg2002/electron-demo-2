@@ -1,5 +1,6 @@
-import React from 'react';
-import { FileText, Download } from 'lucide-react';
+import React, { useState } from 'react';
+import { FileText, Download, Eye } from 'lucide-react';
+import ExecutionOutput from './cells/shared/ExecutionOutput';
 
 interface FileOutputProps {
   file: {
@@ -14,6 +15,8 @@ interface FileOutputProps {
 }
 
 const FileOutput = ({ file, className = '', onDownload }: FileOutputProps) => {
+  const [showPreview, setShowPreview] = useState(false);
+
   const handleDownload = () => {
     if (file.data) {
       const jsonString = JSON.stringify(file.data, null, 2);
@@ -47,17 +50,32 @@ const FileOutput = ({ file, className = '', onDownload }: FileOutputProps) => {
             </p>
           </div>
         </div>
-        <button 
-          onClick={handleDownload}
-          className="p-2 hover:bg-gray-100 rounded transition-colors"
-          aria-label="Download file"
-        >
-          <Download className="w-4 h-4" />
-        </button>
+        <div className="flex gap-2">
+          <button 
+            onClick={() => setShowPreview(!showPreview)}
+            className="p-2 hover:bg-gray-100 rounded transition-colors"
+            aria-label="Preview file"
+          >
+            <Eye className="w-4 h-4" />
+          </button>
+          <button 
+            onClick={handleDownload}
+            className="p-2 hover:bg-gray-100 rounded transition-colors"
+            aria-label="Download file"
+          >
+            <Download className="w-4 h-4" />
+          </button>
+        </div>
       </div>
       <p className="text-xs text-gray-500 mt-2">
         Generated on {file.timestamp}
       </p>
+      
+      {showPreview && file.data && (
+        <div className="mt-4">
+          <ExecutionOutput result={file.data} />
+        </div>
+      )}
     </div>
   );
 };

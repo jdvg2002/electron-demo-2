@@ -17,9 +17,21 @@ export class CellExecutionManager {
     /**
      * Executes Python code for preprocessing cells
      */
-    public async runPreprocessingCode(code: string) {
+    public async runPreprocessingCode(code: string, inputData: any = null) {
       try {
-        const result = await window.electronWindow.executePython(code);
+        // Prepare the Python code with the input data
+        const executionCode = `
+import json
+input_data = json.loads('''${JSON.stringify(inputData)}''')
+
+${code}
+
+# Execute the process_data function with the input data
+result = process_data(input_data)
+print(json.dumps({"result": result}))
+`;
+
+        const result = await window.electronWindow.executePython(executionCode);
         if (!result.success) {
           throw new Error(result.error);
         }

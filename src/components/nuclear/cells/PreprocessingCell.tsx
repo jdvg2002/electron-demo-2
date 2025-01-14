@@ -9,6 +9,7 @@ import ExecutionOutput from './shared/ExecutionOutput';
 import LoadingIndicator from './shared/LoadingIndicator';
 import VisualizationGrid, { createVisualizationCards } from '../CellVisualization';
 import { Upload } from 'lucide-react';
+import FileOutput from '../FileOutput';
 
 interface PreprocessingCellProps {
   cell: CellData;
@@ -67,28 +68,93 @@ const PreprocessingCell: React.FC<PreprocessingCellProps> = ({
     }
   };
 
-  const handleCodeExecution = async () => {
+  const prepareInputData = (stepFilesData: any[]) => {
+    if (!cell.globalFileIds?.length) return null;
+    
+    const processedData = {
+      files: cell.globalFileIds
+        .map(id => globalFileManager.getFileById(id))
+        .filter(file => file !== undefined)
+        .map(file => ({
+          stlFile: file.stlFile,
+          measurements: {
+            inner_diameter: file.pipeMeasurements.inner_diameter,
+            outer_diameter: file.pipeMeasurements.outer_diameter,
+            wall_thickness: file.pipeMeasurements.wall_thickness
+          },
+          distributions: file.distributions,
+          metadata: {
+            file_name: file.originalFileName,
+            timestamp: file.timestamp
+          }
+        }))
+    };
+
+    // Get the first file to extract available variable names
+    const firstFile = globalFileManager.getFileById(cell.globalFileIds[0]);
+    const availableVariables = {
+      stlFile: firstFile?.stlFile ? ['vertices', 'faces'] : [],
+      measurements: Object.keys(firstFile?.pipeMeasurements || {}),
+      distributions: Object.keys(firstFile?.distributions || {}),
+      metadata: ['file_name', 'timestamp']
+    };
+
+    return {
+      ...processedData,
+      availableVariables,
+      totalFiles: cell.globalFileIds.length
+    };
+  };
+
+  const handlePreprocessingClick = async () => {
     try {
       setIsExecuting(true);
       setErrorMessage(null);
+
+      const preprocessedData = prepareInputData(stepFilesData);
+      if (!preprocessedData) {
+        throw new Error('No input data available for preprocessing');
+      }
       
-      const result = await cellExecutionManager.runPreprocessingCode(localCode);
-      setExecutionResult(result);
-      
+      // Set the execution result to include the preprocessed data
+      setExecutionResult({
+        success: true,
+        message: "Data prepared successfully",
+        preprocessedData // Include the preprocessed data here
+      });
+
       const updatedCell = {
         ...cell,
-        code: localCode,
         output: {
           ...cell.output,
-          result
+          preprocessedData
         }
       };
       onCellChange(updatedCell);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Execution failed');
+      setErrorMessage(error instanceof Error ? error.message : 'Preprocessing failed');
     } finally {
       setIsExecuting(false);
     }
+  };
+
+
+  const renderOutputs = (executionResult: any) => {
+    if (!executionResult?.preprocessedData) return null;
+
+    const fileData = {
+      name: 'preprocessed_data.json',
+      size: `${JSON.stringify(executionResult.preprocessedData).length} bytes`,
+      format: 'JSON',
+      timestamp: new Date().toLocaleString(),
+      data: executionResult.preprocessedData
+    };
+
+    return (
+      <div className="space-y-4">
+        <FileOutput file={fileData} />
+      </div>
+    );
   };
 
   return (
@@ -112,7 +178,7 @@ const PreprocessingCell: React.FC<PreprocessingCellProps> = ({
       />
 
       <button
-        onClick={handleCodeExecution}
+        onClick={handlePreprocessingClick}
         disabled={isExecuting}
         className={`px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 ${
           isExecuting ? 'opacity-50 cursor-not-allowed' : ''
@@ -123,7 +189,7 @@ const PreprocessingCell: React.FC<PreprocessingCellProps> = ({
 
       {isExecuting && <LoadingIndicator />}
       
-      {executionResult && <ExecutionOutput {...executionResult} />}
+      {executionResult && renderOutputs(executionResult)}
     </div>
   );
 };
