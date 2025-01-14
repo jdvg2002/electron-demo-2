@@ -238,8 +238,11 @@ const VisualizationGrid: React.FC<VisualizationGridProps> = ({
   }, []);
 
   const handleNewDistribution = useCallback((mean: number, stdDev: number, name: string) => {
-    const timestamp = Date.now();
-    const key = `custom_distribution_${timestamp}`;
+    // Convert the name to the key format: lowercase with underscores
+    const key = name.toLowerCase()
+        .replace(/\s+distribution$/i, '')  // Remove 'distribution' suffix if present
+        .replace(/\s+/g, '_');  // Replace spaces with underscores
+    
     const fullName = `${name} Distribution`;
 
     // Save to GlobalFileManager with the full name
