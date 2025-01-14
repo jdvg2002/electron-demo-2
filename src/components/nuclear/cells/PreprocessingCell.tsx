@@ -116,23 +116,46 @@ const PreprocessingCell: React.FC<PreprocessingCellProps> = ({
         throw new Error('No input data available for preprocessing');
       }
       
-      // Set the execution result to include the preprocessed data
+      // Structure the output in a standardized format
+      const outputData = {
+        type: 'preprocessed_data',
+        version: '1.0',
+        timestamp: new Date().toISOString(),
+        data: preprocessedData,
+        metadata: {
+          sourceFiles: cell.globalFileIds,
+          processingSteps: ['data_preparation', 'preprocessing']
+        }
+      };
+
+      // Update cell with structured output
+      const updatedCell = {
+        ...cell,
+        status: 'completed',
+        output: {
+          preprocessedData: outputData
+        }
+      };
+
+      // Important: Call onCellChange to update the parent's state
+      onCellChange(updatedCell);
+
+      // Update execution result for display
       setExecutionResult({
         success: true,
         message: "Data prepared successfully",
-        preprocessedData // Include the preprocessed data here
+        preprocessedData: outputData
       });
 
+    } catch (error) {
+      console.error('Preprocessing failed:', error);
+      setErrorMessage(error instanceof Error ? error.message : 'Preprocessing failed');
+      
       const updatedCell = {
         ...cell,
-        output: {
-          ...cell.output,
-          preprocessedData
-        }
+        status: 'error'
       };
       onCellChange(updatedCell);
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Preprocessing failed');
     } finally {
       setIsExecuting(false);
     }

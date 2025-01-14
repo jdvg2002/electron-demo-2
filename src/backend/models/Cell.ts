@@ -19,26 +19,28 @@ export interface KeyMetric {
 }
 
 export interface CellOutput {
-  visualizations?: Visualization[];
-  file?: FileInfo;
-  summary?: {
-    status: string;
-    key_metrics: KeyMetric[];
+  preprocessedData?: {
+    type: string;
+    version: string;
+    timestamp: string;
+    data: any;
+    metadata: {
+      sourceFiles: string[];
+      processingSteps: string[];
+    };
   };
-  result?: any;
+  stdout?: string;
+  data?: any;
 }
 
 export interface CellData {
-  id: number;
+  id: string;
   type: 'preprocessing' | 'external' | 'postprocessing';
   title: string;
   code?: string;
   tool?: string;
-  status?: string;
-  input?: any;
+  status?: 'pending' | 'running' | 'completed' | 'error';
   output?: CellOutput;
   globalFileIds?: string[];
-  stlFile?: any;
-  pipeMeasurements?: any;
-  timestamp?: string;
+  dependencyCellId?: string;
 } 

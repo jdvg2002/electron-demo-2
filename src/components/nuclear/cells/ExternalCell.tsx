@@ -5,6 +5,7 @@ import ErrorDisplay from './shared/ErrorDisplay';
 import ExecutionOutput from './shared/ExecutionOutput';
 import LoadingIndicator from './shared/LoadingIndicator';
 import ExternalTool from '../ExternalTool';
+import FileOutput from '../FileOutput';
 
 // Define the analysis options once
 const ANALYSIS_OPTIONS = {
@@ -20,6 +21,7 @@ type AnalysisType = keyof typeof ANALYSIS_OPTIONS;
 interface ExternalCellProps {
   cell: CellData;
   onCellChange: (updatedCell: CellData) => void;
+  availableCells: CellData[];
 }
 
 /**
@@ -27,7 +29,8 @@ interface ExternalCellProps {
  */
 const ExternalCell: React.FC<ExternalCellProps> = ({
   cell,
-  onCellChange
+  onCellChange,
+  availableCells = []
 }) => {
   const cellExecutionManager = CellExecutionManager.getInstance();
   
@@ -41,10 +44,6 @@ const ExternalCell: React.FC<ExternalCellProps> = ({
 
   const handleExecution = async () => {
     try {
-      console.log('Starting external tool execution...', {
-        tool: cell.tool,
-        analysisType: selectedAnalysis
-      });
       
       setIsExecuting(true);
       setErrorMessage(null);
@@ -84,8 +83,49 @@ const ExternalCell: React.FC<ExternalCellProps> = ({
     }
   };
 
+  // Get preprocessed data from the preprocessing cell (if it exists)
+  const getPreprocessedData = () => {
+    
+    const preprocessingCell = availableCells.find(c => 
+      c.type === 'preprocessing' && 
+      c.status === 'completed' && 
+      c.output?.preprocessedData
+    );
+    
+    return preprocessingCell?.output?.preprocessedData;
+  };
+
+  // Render the preprocessed data if available
+  const renderPreprocessedData = () => {
+    const preprocessedData = getPreprocessedData();
+    if (!preprocessedData) return null;
+
+    const fileData = {
+      name: 'preprocessed_data.json',
+      size: `${JSON.stringify(preprocessedData).length} bytes`,
+      format: 'JSON',
+      timestamp: new Date().toLocaleString(),
+      data: preprocessedData
+    };
+
+    return (
+      <div className="mb-4">
+        <h3 className="text-sm font-medium mb-2">Input Data:</h3>
+        <FileOutput file={fileData} />
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-4">
+      {!getPreprocessedData() && (
+        <div className="text-gray-500 italic">
+          No preprocessed data available. Please run the preprocessing cell first.
+        </div>
+      )}
+      
+      {renderPreprocessedData()}
+      
       {errorMessage && <ErrorDisplay message={errorMessage} />}
 
       <div className="flex items-center space-x-4">

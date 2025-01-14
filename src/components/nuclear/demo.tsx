@@ -37,15 +37,16 @@ const Demo = ({ className = '', cardId }: DemoProps) => {
     );
   }
 
-  const filteredCells = moduleObj.cells;
-
   function handleCellChange(updatedCell: CellData) {
+    
     moduleObj?.updateCell(updatedCell);
 
     if (moduleObj) {
       manager.updateModuleCells(moduleObj.card.id, moduleObj.cells);
     }
   }
+
+  const filteredCells = moduleObj?.cells || [];
 
   return (
     <div className={`max-w-6xl mx-auto p-6 ${className}`}>
@@ -72,6 +73,7 @@ const Demo = ({ className = '', cardId }: DemoProps) => {
               );
             }}
             onCellChange={handleCellChange}
+            availableCells={filteredCells}
           />
         ))}
       </div>

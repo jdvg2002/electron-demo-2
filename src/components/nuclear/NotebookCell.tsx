@@ -11,6 +11,7 @@ interface NotebookCellProps {
   isActive: boolean;
   onToggle(): void;
   onCellChange: (updatedCell: CellData) => void;
+  availableCells: CellData[];
 }
 
 /**
@@ -21,7 +22,8 @@ const NotebookCell: React.FC<NotebookCellProps> = ({
   cell,
   isActive,
   onToggle,
-  onCellChange
+  onCellChange,
+  availableCells = []
 }) => {
   const renderCellIcon = () => {
     switch (cell.type) {
@@ -46,7 +48,8 @@ const NotebookCell: React.FC<NotebookCellProps> = ({
   const renderCellContent = () => {
     const commonProps = {
       cell,
-      onCellChange
+      onCellChange,
+      availableCells
     };
 
     switch (cell.type) {
