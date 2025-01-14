@@ -93,15 +93,6 @@ const PreprocessingCell: React.FC<PreprocessingCellProps> = ({
 
   return (
     <div className="space-y-4">
-      <FileUploadHandler onFileSelect={handleFileSelect}>
-        <button className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-          <Upload className="w-4 h-4" />
-          Upload File
-        </button>
-      </FileUploadHandler>
-
-      {errorMessage && <ErrorDisplay message={errorMessage} />}
-
       {stepFilesData.map((fileData, index) => (
         <VisualizationGrid 
           key={index}

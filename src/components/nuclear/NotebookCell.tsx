@@ -51,6 +51,7 @@ const NotebookCell: React.FC<NotebookCellProps> = ({
 
     switch (cell.type) {
       case 'preprocessing':
+        console.log("PREPROCESSING CELL: ", {...commonProps});
         return <PreprocessingCell {...commonProps} />;
       case 'external':
         return <ExternalCell {...commonProps} />;
