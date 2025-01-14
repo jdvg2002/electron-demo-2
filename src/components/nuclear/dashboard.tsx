@@ -27,7 +27,7 @@ const DraggableCardsCanvas = () => {
   const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
   const [pendingDragCard, setPendingDragCard] = useState<number | null>(null);
   const [expandedCard, setExpandedCard] = useState<number | null>(null);
-  const [dashboardTitle, setDashboardTitle] = useState("Pipe Stress Analysis");
+  const [dashboardTitle, setDashboardTitle] = useState("Analysis");
 
   // Reflect changes from manager if storing wires/modules somewhere else
   useEffect(() => {
@@ -391,7 +391,7 @@ const DraggableCardsCanvas = () => {
           onClick={addNewCard}
           className="bg-[#0086bb] hover:bg-[#4fcdff] text-white px-4 py-2 rounded w-32"
         >
-          Add Card
+          Add Module
         </button>
         <button
           onClick={startWiring}
@@ -401,7 +401,7 @@ const DraggableCardsCanvas = () => {
               : 'bg-[#0086bb] hover:bg-[#4fcdff] text-white'
           }`}
         >
-          {isWiring ? 'Wiring...' : 'Add Wire'}
+          {isWiring ? 'Linking...' : 'Add Link'}
         </button>
       </div>
 
@@ -519,7 +519,7 @@ const DraggableCardsCanvas = () => {
                 ) : (
                   <Card
                     data-card-id={mod.card.id}
-                    className="w-full cursor-move shadow-lg relative"
+                    className="w-full shadow-lg relative cursor-pointer"
                     onMouseDown={(e) => handleMouseDown(e, mod.card.id)}
                     onClick={(e) => handleCardClick(e, mod.card.id)}
                   >

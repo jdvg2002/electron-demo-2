@@ -88,7 +88,7 @@ const FileUploadSection: React.FC = () => {
       <div className="flex flex-col items-center gap-4">
         {stepFilesData.length === 0 ? (
           <>
-            <h2 className="text-xl font-semibold text-gray-700">Upload Nuclear Data Files</h2>
+            <h2 className="text-xl font-semibold text-gray-700">Upload Files</h2>
             <div 
               className="w-full max-w-xl h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center"
               onDragOver={(e) => e.preventDefault()}
