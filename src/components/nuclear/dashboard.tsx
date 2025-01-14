@@ -341,35 +341,8 @@ const DraggableCardsCanvas = () => {
 
   const addNewCard = () => {
     const globalFiles = fileManager.getAllFiles();
-    
-    if (globalFiles.length > 0) {
-      // Create a new module with all global files
-      const newModule = manager.createPreprocessingModuleWithGlobalFiles(globalFiles);
-      setModules([...modules, newModule]);
-    } else {
-      // Fall back to creating an empty module if no global files
-      const newId = modules.length ? Math.max(...modules.map(m => m.card.id)) + 1 : 1;
-      
-      const cardsPerRow = 3;
-      const cardWidth = 300;
-      const cardHeight = 150;
-      const baseOffset = 20;
-      
-      const column = (modules.length) % cardsPerRow;
-      const row = Math.floor(modules.length / cardsPerRow);
-      
-      const newCard: ModuleCard = {
-        id: newId,
-        x: baseOffset + (column * cardWidth),
-        y: baseOffset + (row * cardHeight),
-        isDragging: false,
-        dragOffset: { x: 0, y: 0 },
-        title: `Card ${newId}`,
-      };
-      
-      const newModule = manager.createModule(newCard, []);
-      setModules([...modules, newModule]);
-    }
+    const newModule = manager.createPreprocessingModuleWithGlobalFiles(globalFiles);
+    setModules([...modules, newModule]);
   };
 
   const updateCardText = (moduleId: number, field: 'title' | 'content', value: string) => {

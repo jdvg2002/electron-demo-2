@@ -88,6 +88,7 @@ export class ModuleManager {
       isDragging: false,
       dragOffset: { x: 0, y: 0 },
       title: files[0]?.originalFileName || `Card ${newId}`,
+      content: 'New module created automatically!'
     };
 
     const cells: CellData[] = [
@@ -96,7 +97,8 @@ export class ModuleManager {
         type: 'preprocessing',
         title: 'Input Preprocessing',
         globalFileIds: files.map(f => f.id),
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        code: 'import numpy as np\n\n# Process reactor data\ndef process_data(input):\n    return np.mean(input)'
       },
       {
         id: Date.now() + 1,
@@ -109,6 +111,7 @@ export class ModuleManager {
         id: Date.now() + 2,
         type: 'postprocessing',
         title: 'Results Analysis',
+        code: 'import numpy as np\n\n# Process reactor data\ndef process_data(input):\n    return np.mean(input)'
       }
     ];
 

@@ -18,38 +18,9 @@ const Demo = ({ className = '', cardId }: DemoProps) => {
     moduleObj = manager.getModuleById(cardId);
   }
 
-  const defaultCells: CellData[] = [
-    {
-      id: parseInt(cardId || '0') * 3 + 1,
-      type: 'preprocessing',
-      title: 'Input Preprocessing',
-    },
-    {
-      id: parseInt(cardId || '0') * 3 + 2,
-      type: 'external',
-      title: 'Analysis',
-    },
-    {
-      id: parseInt(cardId || '0') * 3 + 3,
-      type: 'postprocessing',
-      title: 'Output Analysis',
-    }
-  ];
-
   if (!moduleObj && cardId) {
     const parsedId = parseInt(cardId, 10);
-    moduleObj = manager.createModule(
-      {
-        id: parsedId,
-        x: 100,
-        y: 100,
-        isDragging: false,
-        dragOffset: { x: 0, y: 0 },
-        title: `Card ${parsedId}`,
-        content: 'New module created automatically!'
-      },
-      defaultCells
-    );
+    moduleObj = manager.createPreprocessingModuleWithGlobalFiles([]);
   }
 
   if (moduleObj && moduleObj.cells.length === 0) {
