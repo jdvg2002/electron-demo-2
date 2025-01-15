@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { ModuleManager } from '@/backend/manager/ModuleManager';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -7,6 +7,9 @@ import FileUploadSection from './FileUploadSection';
 import { GlobalFileManager } from '@/backend/models/GlobalFiles';
 
 const DraggableCardsCanvas = () => {
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const [canvasRect, setCanvasRect] = useState<DOMRect | null>(null);
+
   const manager = ModuleManager.getInstance();
   const fileManager = GlobalFileManager.getInstance();
   const [modules, setModules] = useState(manager.getAllModules());
@@ -29,22 +32,16 @@ const DraggableCardsCanvas = () => {
   const [expandedCard, setExpandedCard] = useState<number | null>(null);
   const [dashboardTitle, setDashboardTitle] = useState("Analysis");
 
-  // Reflect changes from manager if storing wires/modules somewhere else
   useEffect(() => {
     const storedModules = manager.getAllModules();
     setModules([...storedModules]);
   }, []);
 
   useEffect(() => {
-    // Keep wires in internal state synchronized
-    // Comment out or remove wire-related code for now
-    // manager.setWires(wires);
-  }, [wires]);
-
-  useEffect(() => {
     const handleGlobalMouseUp = () => {
       setDragStart(null);
       setPendingDragCard(null);
+      setCanvasRect(null);
       const anyDragging = modules.some(m => m.card.isDragging);
       if (anyDragging) {
         setRecentlyDragged(true);
@@ -59,11 +56,38 @@ const DraggableCardsCanvas = () => {
   }, [modules]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!canvasRect) {
+      if (canvasRef.current) {
+        setCanvasRect(canvasRef.current.getBoundingClientRect());
+      }
+      return;
+    }
+
+    // Calculate mouse position relative to canvas
+    const mouseX = e.clientX - canvasRect.left;
+    const mouseY = e.clientY - canvasRect.top;
+
+    // Update active wire position
+    if (activeWire && isWiring) {
+      console.log('Updating active wire:', {
+        startX: activeWire.startX,
+        startY: activeWire.startY,
+        mouseX,
+        mouseY,
+        isWiring
+      });
+      setActiveWire({
+        ...activeWire,
+        mouseX,
+        mouseY,
+      });
+    }
+
+    // Handle dragging logic
     if (dragStart && pendingDragCard) {
       const dx = Math.abs(e.clientX - dragStart.x);
       const dy = Math.abs(e.clientY - dragStart.y);
 
-      // Only start dragging if mouse has moved more than 3 pixels
       if (dx > 3 || dy > 3) {
         const draggingModule = modules.find(m => m.card.id === pendingDragCard);
         if (draggingModule) {
@@ -73,40 +97,22 @@ const DraggableCardsCanvas = () => {
       }
     }
 
-    const canvasRect = e.currentTarget.getBoundingClientRect();
-    const mouseX = e.clientX - canvasRect.left;
-    const mouseY = e.clientY - canvasRect.top;
-
-    if (activeWire) {
-      setActiveWire({
-        ...activeWire,
-        mouseX,
-        mouseY,
-      });
-    }
-
     const draggingModule = modules.find(m => m.card.isDragging);
     if (draggingModule) {
-      const canvasRect = e.currentTarget.getBoundingClientRect();
-      const cardWidth = 256; // w-64 = 16rem = 256px
-      const cardHeight = 100; // Approximate height of card
+      const cardWidth = 256;
+      const cardHeight = 100;
       
-      // Calculate new position with boundaries
       let newX = e.clientX - canvasRect.left - draggingModule.card.dragOffset.x;
       let newY = e.clientY - canvasRect.top - draggingModule.card.dragOffset.y;
       
-      // Constrain to canvas boundaries
       newX = Math.max(0, Math.min(newX, canvasRect.width - cardWidth));
       newY = Math.max(0, Math.min(newY, canvasRect.height - cardHeight));
 
-      // Update module position directly on the card object
       draggingModule.card.x = newX;
       draggingModule.card.y = newY;
       
-      // Update wires immediately before re-rendering modules
       updateConnectedWirePositions(draggingModule.card.id, newX, newY, e.currentTarget);
       
-      // Update modules state
       setModules([...modules]);
     }
   };
@@ -162,6 +168,10 @@ const DraggableCardsCanvas = () => {
     
     const found = modules.find(m => m.card.id === cardId);
     if (!found) return;
+
+    if (canvasRef.current) {
+      setCanvasRect(canvasRef.current.getBoundingClientRect());
+    }
 
     setDragStart({ x: e.clientX, y: e.clientY });
     setPendingDragCard(cardId);
@@ -406,6 +416,7 @@ const DraggableCardsCanvas = () => {
       </div>
 
       <div
+        ref={canvasRef}
         data-canvas
         className={`w-full h-96 bg-[#f6f6f6] border-2 border-gray-200 rounded-lg relative ${
           modules.some(m => m.card.isDragging) ? 'select-none' : ''
@@ -420,29 +431,16 @@ const DraggableCardsCanvas = () => {
             const dy = wire.endY - wire.startY;
             const distance = Math.sqrt(dx * dx + dy * dy);
             
-            // Adjust control point distance based on wire length
-            const controlDistance = Math.min(distance * 0.5, 100);
+            // Simple horizontal offset for control points
+            const offsetX = Math.min(Math.max(distance * 0.25, 30), 150);
             
-            // Determine control points based on relative positions
-            let c1x, c1y, c2x, c2y;
-            
-            // If start is to the left of end
-            if (wire.startX < wire.endX) {
-              c1x = wire.startX + controlDistance;
-              c2x = wire.endX - controlDistance;
-            } else {
-              c1x = wire.startX - controlDistance;
-              c2x = wire.endX + controlDistance;
-            }
-            
-            // Keep vertical positions aligned with endpoints
-            c1y = wire.startY;
-            c2y = wire.endY;
+            // Calculate control points
+            const c1x = wire.startX + offsetX;
+            const c1y = wire.startY;
+            const c2x = wire.endX - offsetX;
+            const c2y = wire.endY;
 
-            const path = `M ${wire.startX} ${wire.startY}
-              C ${c1x} ${c1y},
-                ${c2x} ${c2y},
-                ${wire.endX} ${wire.endY}`;
+            const path = `M ${wire.startX} ${wire.startY} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${wire.endX} ${wire.endY}`;
 
             return (
               <path
@@ -454,16 +452,32 @@ const DraggableCardsCanvas = () => {
               />
             );
           })}
-          {activeWire && (
+          {activeWire && isWiring && (
             <path
-              d={`M ${activeWire.startX} ${activeWire.startY}
-                C ${activeWire.startX + 100} ${activeWire.startY},
-                  ${(activeWire.mouseX || activeWire.startX) - 100} ${activeWire.mouseY || activeWire.startY},
-                  ${activeWire.mouseX || activeWire.startX} ${activeWire.mouseY || activeWire.startY}`}
+              className="active-wire-preview"
+              d={(() => {
+                const endX = activeWire.mouseX ?? activeWire.startX;
+                const endY = activeWire.mouseY ?? activeWire.startY;
+                const dx = endX - activeWire.startX;
+                const dy = endY - activeWire.startY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                // Use the same simple offset logic
+                const offsetX = Math.min(Math.max(distance * 0.25, 30), 150);
+                
+                // Calculate control points
+                const c1x = activeWire.startX + offsetX;
+                const c1y = activeWire.startY;
+                const c2x = endX - offsetX;
+                const c2y = endY;
+
+                return `M ${activeWire.startX} ${activeWire.startY} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${endX} ${endY}`;
+              })()}
               fill="none"
               stroke="#2563eb"
               strokeWidth="2"
               strokeDasharray="4"
+              style={{ pointerEvents: 'none' }}
             />
           )}
         </svg>
@@ -489,13 +503,12 @@ const DraggableCardsCanvas = () => {
                   boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
                 } : {
                   position: 'absolute',
-                  top: mod.card.y,
-                  left: mod.card.x,
+                  transform: `translate(${mod.card.x}px, ${mod.card.y}px)`,
                   width: '16rem',
                   height: 'auto',
                   zIndex: mod.card.isDragging ? 10 : 1,
                 }}
-                transition={{ duration: 0.3 }}
+                transition={{ duration: isExpanded ? 0.3 : 0 }}
               >
                 {isExpanded ? (
                   <>
