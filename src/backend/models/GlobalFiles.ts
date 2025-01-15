@@ -1,26 +1,30 @@
-export interface DistributionData {
-  label: string;
-  mean: number;
-  stdDev: number;
-  name?: string;
-}
-
-export interface GlobalFileData {
+export interface FileRecord {
   id: string;
   stlFile: {
     data: string;
     name: string;
     type: string;
   };
-  pipeMeasurements: Record<string, number>;
-  distributions?: Record<string, DistributionData>;
   originalFileName: string;
   timestamp: string;
 }
 
+export interface VariableRecord {
+  id: string;
+  fileId: string;
+  type: 'measurement' | 'distribution';
+  name: string;
+  value?: number;  // for measurements
+  mean?: number;   // for distributions
+  stdDev?: number; // for distributions
+  units?: string;
+  label?: string;
+}
+
 export class GlobalFileManager {
   private static instance: GlobalFileManager;
-  private files: Map<string, GlobalFileData> = new Map();
+  private files: Map<string, FileRecord> = new Map();
+  private variables: Map<string, VariableRecord> = new Map();
   private listeners: Set<() => void> = new Set();
 
   private constructor() {}
@@ -34,7 +38,6 @@ export class GlobalFileManager {
 
   async addFileFromUpload(
     file: File,
-    measurements: GlobalFileData['pipeMeasurements'],
     originalFileName: string
   ): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -43,17 +46,15 @@ export class GlobalFileManager {
       reader.onload = () => {
         try {
           const id = crypto.randomUUID();
-          const fileData: GlobalFileData = {
+          const fileData: FileRecord = {
             id,
             stlFile: {
               data: reader.result as string,
               name: file.name,
               type: file.type
             },
-            pipeMeasurements: measurements,
             originalFileName,
-            timestamp: new Date().toISOString(),
-            distributions: {} // Initialize empty distributions object
+            timestamp: new Date().toISOString()
           };
           
           this.files.set(id, fileData);
@@ -69,44 +70,82 @@ export class GlobalFileManager {
     });
   }
 
+  addVariable(record: Omit<VariableRecord, 'id'>): string {
+    const id = crypto.randomUUID();
+    const variableRecord: VariableRecord = { id, ...record };
+    
+    if (!this.files.has(record.fileId)) {
+      throw new Error(`File with ID ${record.fileId} not found`);
+    }
+
+    this.variables.set(id, variableRecord);
+    this.notifyListeners();
+    return id;
+  }
+
+  addMeasurement(
+    fileId: string,
+    name: string,
+    value: number,
+    units: string = 'mm'
+  ): string {
+    return this.addVariable({
+      fileId,
+      type: 'measurement',
+      name,
+      value,
+      units
+    });
+  }
+
   addDistribution(
     fileId: string,
     label: string,
     mean: number,
     stdDev: number,
     name?: string
-  ): void {
-    const file = this.files.get(fileId);
-    if (!file) {
-      console.warn(`File with ID ${fileId} not found`);
-      return;
-    }
-
-    if (!file.distributions) {
-      file.distributions = {};
-    }
-
-    file.distributions[label] = {
+  ): string {
+    return this.addVariable({
+      fileId,
+      type: 'distribution',
+      name: name || label,
       label,
       mean,
-      stdDev,
-      name
-    };
-
-    this.files.set(fileId, file);
-    this.notifyListeners();
+      stdDev
+    });
   }
 
-  getFileById(id: string): GlobalFileData | undefined {
+  getFileById(id: string): FileRecord | undefined {
     return this.files.get(id);
   }
 
-  getAllFiles(): GlobalFileData[] {
+  getVariablesForFile(fileId: string): VariableRecord[] {
+    return Array.from(this.variables.values())
+      .filter(variable => variable.fileId === fileId);
+  }
+
+  getMeasurementsForFile(fileId: string): VariableRecord[] {
+    return this.getVariablesForFile(fileId)
+      .filter(variable => variable.type === 'measurement');
+  }
+
+  getDistributionsForFile(fileId: string): VariableRecord[] {
+    return this.getVariablesForFile(fileId)
+      .filter(variable => variable.type === 'distribution');
+  }
+
+  getAllFiles(): FileRecord[] {
     return Array.from(this.files.values());
   }
 
   removeFile(id: string): void {
     this.files.delete(id);
+    // Remove all variables associated with this file
+    for (const [varId, variable] of this.variables.entries()) {
+      if (variable.fileId === id) {
+        this.variables.delete(varId);
+      }
+    }
     this.notifyListeners();
   }
 

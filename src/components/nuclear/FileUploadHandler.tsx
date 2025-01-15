@@ -1,18 +1,14 @@
 import React from 'react';
 import { CellData } from '@/backend/models/Cell';
 import { RenderedFileInfo } from './FileRenderInfo';
-
-interface PipeMeasurements {
-  inner_diameter: number;
-  outer_diameter: number;
-  wall_thickness: number;
-}
+import { GlobalFileManager } from '@/backend/models/GlobalFiles';
 
 interface StepFileData {
   stlFile: File;
-  pipeMeasurements: PipeMeasurements;
   originalFileName: string;
   timestamp: string;
+  pipeMeasurements?: Record<string, number>;
+  fileId?: string;
 }
 
 interface FileUploadHandlerConfig {
@@ -25,6 +21,8 @@ interface FileUploadHandlerConfig {
 }
 
 export const createFileUploadHandler = (config: FileUploadHandlerConfig) => {
+  const globalFileManager = GlobalFileManager.getInstance();
+  
   return async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -43,7 +41,6 @@ export const createFileUploadHandler = (config: FileUploadHandlerConfig) => {
   function handleStlUpload(file: File) {
     const newStepFileData = {
       stlFile: file,
-      pipeMeasurements: null,
       originalFileName: file.name,
       timestamp: new Date().toISOString()
     };
@@ -81,14 +78,22 @@ export const createFileUploadHandler = (config: FileUploadHandlerConfig) => {
         const newFileName = file.name.replace(/\.(step|stp)$/i, '.stl');
         const stlFile = new File([stlBlob], newFileName, { type: 'model/stl' });
         
-        const newStepFileData = {
-          stlFile,
-          pipeMeasurements: result.pipe_measurements,
-          originalFileName: file.name,
-          timestamp: new Date().toISOString()
-        };
+        const fileId = await globalFileManager.addFileFromUpload(stlFile, file.name);
 
-        config.onStepFileDataChange(newStepFileData);
+        if (result.pipe_measurements) {
+          Object.entries(result.pipe_measurements).forEach(([name, value]) => {
+            globalFileManager.addMeasurement(fileId, name, value as number);
+          });
+        }
+
+        config.onStepFileDataChange({
+          stlFile,
+          originalFileName: file.name,
+          timestamp: new Date().toISOString(),
+          pipeMeasurements: result.pipe_measurements,
+          fileId
+        });
+        
         config.onViewStateChange('viewing');
         config.onRenderedFileChange({
           file: stlFile,
@@ -98,21 +103,11 @@ export const createFileUploadHandler = (config: FileUploadHandlerConfig) => {
         });
 
         if (config.cell) {
-          const reader = new FileReader();
-          reader.onload = () => {
-            const base64data = reader.result as string;
-            const updatedCell: CellData = {
-              ...config.cell,
-              stlFile: {
-                name: newFileName,
-                data: base64data,
-                type: 'model/stl'
-              },
-              pipeMeasurements: result.pipe_measurements
-            };
-            config.onCellChange(updatedCell);
+          const updatedCell: CellData = {
+            ...config.cell,
+            globalFileIds: [...(config.cell.globalFileIds || []), fileId]
           };
-          reader.readAsDataURL(stlFile);
+          config.onCellChange(updatedCell);
         }
       } else {
         config.onErrorChange(result.error || 'Failed to convert STEP file');

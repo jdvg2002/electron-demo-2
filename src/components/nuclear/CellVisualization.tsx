@@ -331,10 +331,19 @@ const VisualizationGrid: React.FC<VisualizationGridProps> = ({
 
 // Helper function to create visualization cards from STEP file data
 export const createVisualizationCards = (
-  stlFile: File | { name: string; data: string; type: string },
-  measurements: Record<string, number>,
-  distributions?: Record<string, DistributionData>
+  fileId: string,
+  stlFile: File | { name: string; data: string; type: string }
 ): VisualizationCard[] => {
+  const globalFileManager = GlobalFileManager.getInstance();
+  const measurements = globalFileManager.getMeasurementsForFile(fileId)
+    .reduce((acc, m) => ({ ...acc, [m.name]: m.value }), {});
+  
+  const distributions = globalFileManager.getDistributionsForFile(fileId)
+    .reduce((acc, d) => ({ 
+      ...acc, 
+      [d.label]: { label: d.label, mean: d.mean, stdDev: d.stdDev, name: d.name }
+    }), {});
+
   const cards: VisualizationCard[] = [
     {
       title: '3D Model',
@@ -346,28 +355,29 @@ export const createVisualizationCards = (
           { type: stlFile.type }
         )
       }
-    },
-    {
-      title: 'Measurements',
-      content: { type: 'measurements', data: measurements }
     }
   ];
 
-  if (distributions) {
-    Object.values(distributions).forEach(dist => {
-      cards.push({
-        title: dist.name || `${dist.label.split('_').map(word => 
-          word.charAt(0).toUpperCase() + word.slice(1)
-        ).join(' ')} Distribution`,
-        content: {
-          type: 'distribution',
-          mean: dist.mean,
-          stdDev: dist.stdDev,
-          label: dist.label
-        }
-      });
+  if (Object.keys(measurements).length > 0) {
+    cards.push({
+      title: 'Measurements',
+      content: { type: 'measurements', data: measurements }
     });
   }
+
+  Object.values(distributions).forEach(dist => {
+    cards.push({
+      title: dist.name || `${dist.label.split('_').map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1)
+      ).join(' ')} Distribution`,
+      content: {
+        type: 'distribution',
+        mean: dist.mean,
+        stdDev: dist.stdDev,
+        label: dist.label
+      }
+    });
+  });
 
   return cards;
 };

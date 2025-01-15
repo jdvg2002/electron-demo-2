@@ -20,28 +20,21 @@ const FileUploadSection: React.FC = () => {
     cell: null,
     onCellChange: () => {},
     onStepFileDataChange: async (newStepData) => {
-      const handleFileCreation = async () => {
-        try {
-          setViewState('loading');
-          
-          const fileId = await globalFileManager.addFileFromUpload(
-            newStepData.stlFile,
-            newStepData.pipeMeasurements,
-            newStepData.originalFileName
-          );
+      try {
+        setViewState('loading');
+        
+        const fileId = newStepData.fileId;
 
-          setFileIds(prev => [...prev, fileId]);
-          setStepFilesData(prev => [...prev, { ...newStepData, id: fileId }]);
-          setViewState('viewing');
-          setIsExpanded(true);
-        } catch (error) {
-          console.error('Error creating file:', error);
-          setUploadError(error instanceof Error ? error.message : 'Failed to create file');
-          setViewState('error');
-        }
-      };
-
-      handleFileCreation();
+        setFileIds(prev => [...prev, fileId]);
+        setStepFilesData(prev => [...prev, { ...newStepData, id: fileId }]);
+        
+        setViewState('viewing');
+        setIsExpanded(true);
+      } catch (error) {
+        console.error('Error creating file:', error);
+        setUploadError(error instanceof Error ? error.message : 'Failed to create file');
+        setViewState('error');
+      }
     },
     onRenderedFileChange: (newRenderedFile) => {
       setRenderedFiles(prev => [...prev, newRenderedFile]);
@@ -165,9 +158,10 @@ const FileUploadSection: React.FC = () => {
                 >
                   <div className="mt-4">
                     <VisualizationGrid 
-                      cards={stepFilesData.flatMap((data, index) => 
-                        createVisualizationCards(data.stlFile, data.pipeMeasurements)
-                      )}
+                      cards={fileIds.flatMap(fileId => {
+                        const file = globalFileManager.getFileById(fileId);
+                        return file ? createVisualizationCards(fileId, file.stlFile) : [];
+                      })}
                       cardsPerRow={6}
                       fileId={fileIds[0]}
                     />

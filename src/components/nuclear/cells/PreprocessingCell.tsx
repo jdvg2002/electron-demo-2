@@ -35,59 +35,65 @@ const PreprocessingCell: React.FC<PreprocessingCellProps> = ({
   useEffect(() => {
     if (cell.globalFileIds?.length) {
       const filesData = cell.globalFileIds
-        .map(id => globalFileManager.getFileById(id))
-        .filter(file => file !== undefined)
-        .map(file => ({
-          stlFile: file.stlFile,
-          pipeMeasurements: file.pipeMeasurements,
-          distributions: file.distributions,
-          originalFileName: file.originalFileName,
-          timestamp: file.timestamp
-        }));
+        .map(id => {
+          const file = globalFileManager.getFileById(id);
+          if (!file) {
+            console.warn(`File with ID ${id} not found in GlobalFileManager`);
+            return undefined;
+          }
+          
+          const measurements = globalFileManager.getMeasurementsForFile(id)
+            .reduce((acc, m) => ({ ...acc, [m.name]: m.value }), {});
+          
+          const distributions = globalFileManager.getDistributionsForFile(id)
+            .reduce((acc, d) => ({ 
+              ...acc, 
+              [d.label]: { label: d.label, mean: d.mean, stdDev: d.stdDev, name: d.name }
+            }), {});
+
+          return {
+            stlFile: file.stlFile,
+            pipeMeasurements: measurements,
+            distributions,
+            originalFileName: file.originalFileName,
+            timestamp: file.timestamp
+          };
+        })
+        .filter(file => file !== undefined);
       
       setStepFilesData(filesData);
     }
   }, [cell.globalFileIds]);
-
-  const handleFileSelect = async (file: File) => {
-    try {
-      setErrorMessage(null);
-      const globalFileId = await globalFileManager.addFileFromUpload(
-        file,
-        { inner_diameter: 0, outer_diameter: 0, wall_thickness: 0 },
-        file.name
-      );
-
-      const updatedCell = {
-        ...cell,
-        globalFileIds: [...(cell.globalFileIds || []), globalFileId]
-      };
-      onCellChange(updatedCell);
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'File upload failed');
-    }
-  };
 
   const prepareInputData = (stepFilesData: any[]) => {
     if (!cell.globalFileIds?.length) return null;
     
     const processedData = {
       files: cell.globalFileIds
-        .map(id => globalFileManager.getFileById(id))
+        .map(id => {
+          const file = globalFileManager.getFileById(id);
+          if (!file) return undefined;
+          
+          const measurements = globalFileManager.getMeasurementsForFile(id)
+            .reduce((acc, m) => ({ ...acc, [m.name]: m.value }), {});
+          
+          const distributions = globalFileManager.getDistributionsForFile(id)
+            .reduce((acc, d) => ({ 
+              ...acc, 
+              [d.label]: { label: d.label, mean: d.mean, stdDev: d.stdDev, name: d.name }
+            }), {});
+
+          return {
+            stlFile: file.stlFile,
+            measurements,
+            distributions,
+            metadata: {
+              file_name: file.originalFileName,
+              timestamp: file.timestamp
+            }
+          };
+        })
         .filter(file => file !== undefined)
-        .map(file => ({
-          stlFile: file.stlFile,
-          measurements: {
-            inner_diameter: file.pipeMeasurements.inner_diameter,
-            outer_diameter: file.pipeMeasurements.outer_diameter,
-            wall_thickness: file.pipeMeasurements.wall_thickness
-          },
-          distributions: file.distributions,
-          metadata: {
-            file_name: file.originalFileName,
-            timestamp: file.timestamp
-          }
-        }))
     };
 
     // Get the first file to extract available variable names
@@ -186,9 +192,8 @@ const PreprocessingCell: React.FC<PreprocessingCellProps> = ({
         <VisualizationGrid 
           key={index}
           cards={createVisualizationCards(
-            fileData.stlFile, 
-            fileData.pipeMeasurements,
-            fileData.distributions
+            cell.globalFileIds[index],
+            fileData.stlFile
           )}
           cardsPerRow={6}
           fileId={cell.globalFileIds[index]}
