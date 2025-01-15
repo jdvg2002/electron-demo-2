@@ -87,8 +87,8 @@ export class ModuleManager {
       y: 20 + Math.floor(this.getAllModules().length / 3) * 150,
       isDragging: false,
       dragOffset: { x: 0, y: 0 },
-      title: `Module ${newId}`,
-      content: ''
+      title: files[0]?.originalFileName || `Card ${newId}`,
+      content: 'New module created automatically!'
     };
 
     const cells: CellData[] = [
