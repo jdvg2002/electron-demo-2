@@ -86,7 +86,7 @@ def run_dakota_analysis(variables: list[Variable], mesh=Mesh(mesh_type=MeshType.
             if platform.machine() == 'arm64':
                 dakota_platform = "dakota-6.21.0-public-darwin.Darwin.arm64-cli"
             else:
-                dakota_platform = "dakota-6.21.0-public-darwin.Darwin.x86_64-cli"
+                dakota_platform = "dakota-6.19.0-public-darwin.Darwin.x86_64-cli"
             dakota_exe = "dakota"
             
             # Clear quarantine attributes on macOS
@@ -191,11 +191,18 @@ def main():
         ]
         
         results = analysis_setup(variables) 
-        # print(results)
-        return results
+        return {
+            "status": "success",
+            "results": results,
+            "errorCode": None
+        }
         
     except Exception as e:
-        raise
+        return {
+            "status": "error",
+            "results": None,
+            "errorCode": str(e)
+        }
 
 if __name__ == "__main__":
     main()
