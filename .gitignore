@@ -1,3 +1,10 @@
+dakota/LHS*
+dakota/dakota-6.21.0-public-darwin.Darwin.arm64-cli/share/dakota/Python/dakota/interfacing/__pycache__/
+dakota/dakota.rst
+dakota/dakota_input.in
+dakota/dakota_output.out
+server/__pycache__/
+
 # Logs
 logs
 *.log
