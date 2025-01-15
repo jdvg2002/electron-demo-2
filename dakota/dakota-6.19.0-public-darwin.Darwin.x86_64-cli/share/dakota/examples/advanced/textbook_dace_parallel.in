@@ -1,0 +1,33 @@
+
+environment,
+	  tabular_data
+
+method,
+	dace oas seed = 5
+	  quality_metrics
+	  samples = 49 symbols = 7
+
+variables,
+	active all
+	continuous_design = 3
+	  initial_point       1.0 1.0 1.0
+	  lower_bounds        0.0 0.0 0.0
+	  upper_bounds        2.0 2.0 2.0
+	continuous_state = 1
+	  initial_state       4.0
+	  lower_bounds        0.0
+	  upper_bounds        8.0
+
+interface,
+	id_interface = 'I1'
+  analysis_drivers = 'text_book'
+	  system
+#	evaluation_scheduling master
+	asynchronous
+	  evaluation_concurrency = 5
+
+responses,
+	objective_functions = 1
+	nonlinear_inequality_constraints = 2
+	no_gradients
+	no_hessians
