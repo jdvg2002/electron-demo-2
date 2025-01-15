@@ -12,6 +12,7 @@ import { Card } from '@/components/ui/card';
 interface PostprocessingCellProps {
   cell: CellData;
   onCellChange: (updatedCell: CellData) => void;
+  availableCells: CellData[];
 }
 
 /**
@@ -19,7 +20,8 @@ interface PostprocessingCellProps {
  */
 const PostprocessingCell: React.FC<PostprocessingCellProps> = ({
   cell,
-  onCellChange
+  onCellChange,
+  availableCells
 }) => {
   const [localCode, setLocalCode] = useState(cell.code || '');
   const [isExecuting, setIsExecuting] = useState(false);
@@ -28,13 +30,47 @@ const PostprocessingCell: React.FC<PostprocessingCellProps> = ({
   const [chartData, setChartData] = useState<any[]>([]);
   const [probabilityOfFailure, setProbabilityOfFailure] = useState<number>(0);
 
+  const getExternalCellResults = () => {
+    // Debug logging
+    console.log('Available Cells:', availableCells);
+    
+    const externalCell = availableCells
+      .filter(c => {
+        console.log('Checking cell:', {
+          type: c.type,
+          status: c.status,
+          hasOutput: !!c.output,
+          output: c.output
+        });
+        return c.type === 'external' && c.status === 'completed' && c.output;
+      })
+      .pop();
+    
+    console.log('Found External Cell:', externalCell);
+    
+    if (!externalCell?.output) {
+      throw new Error('No external cell results available. Please run the external analysis first.');
+    }
+    
+    // The output is directly an array of results
+    return externalCell.output;
+  };
+
+  // Add this function to safely check for results
+  const hasExternalResults = () => {
+    try {
+      return !!getExternalCellResults();
+    } catch (e) {
+      return false;
+    }
+  };
+
   const handleCodeExecution = async () => {
     try {
       setIsExecuting(true);
       setErrorMessage(null);
 
-      // Process the data for visualization
-      const { default: dataArray } = await import('@/data/results.json');
+      const dataArray = getExternalCellResults();
       
       // Extract T and sigma_f values
       const T = dataArray.map((d: any) => d.T);
@@ -102,6 +138,12 @@ const PostprocessingCell: React.FC<PostprocessingCellProps> = ({
 
   return (
     <div className="space-y-4">
+      {!hasExternalResults() && (
+        <div className="text-amber-600 bg-amber-50 p-4 rounded-md">
+          Please run the external analysis cell first to generate results for post-processing.
+        </div>
+      )}
+
       {errorMessage && <ErrorDisplay message={errorMessage} />}
 
       <CellCodeEditor
@@ -111,9 +153,9 @@ const PostprocessingCell: React.FC<PostprocessingCellProps> = ({
 
       <button
         onClick={handleCodeExecution}
-        disabled={isExecuting}
+        disabled={isExecuting || !hasExternalResults()}
         className={`px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 ${
-          isExecuting ? 'opacity-50 cursor-not-allowed' : ''
+          isExecuting || !hasExternalResults() ? 'opacity-50 cursor-not-allowed' : ''
         }`}
       >
         Run Analysis

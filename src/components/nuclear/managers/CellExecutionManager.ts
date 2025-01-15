@@ -68,18 +68,28 @@ print(json.dumps({"result": result}))
         const result = await window.electronWindow.executePython(
           `import sys
 import os
+import json
 
 script_path = os.path.join('${projectRoot}', 'server', '${scriptPath}')
 sys.path.append(os.path.dirname(script_path))
 
 from ${scriptPath.replace('.py', '')} import main
-main()`
+result = main()  # Capture the returned value
+print(json.dumps({"data": result}))  # Convert to JSON and print`
         );
 
         if (!result.success) {
           throw new Error(result.error);
         }
-        return result;
+
+        // Parse the JSON string from stdout to get the actual data
+        try {
+          const parsedOutput = JSON.parse(result.stdout);
+          return parsedOutput.data;
+        } catch (e) {
+          console.error("Failed to parse Python output:", result.stdout);
+          throw new Error("Invalid output format from Python script");
+        }
       } catch (error) {
         console.error("External tool execution failed:", error);
         throw error;

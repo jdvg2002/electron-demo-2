@@ -1,0 +1,33 @@
+# Dakota Input File: textbook_uq_sampling.in
+environment
+  tabular_data
+    tabular_data_file = 'textbook_uq_sampling.dat'
+  top_method_pointer = 'UQ'
+
+method
+  id_method = 'UQ'
+  sampling
+    sample_type lhs
+    samples = 10
+    seed = 98765
+    response_levels = 0.1 0.2 0.6
+                      0.1 0.2 0.6
+                      0.1 0.2 0.6
+    distribution cumulative
+
+variables
+  uniform_uncertain = 2
+    lower_bounds =  0.   0.
+    upper_bounds =  1.   1.
+    descriptors  = 'x1' 'x2'
+
+interface
+  id_interface = 'I1'
+  analysis_drivers = 'text_book'
+    fork
+  asynchronous evaluation_concurrency = 5
+
+responses
+  response_functions = 3
+  no_gradients
+  no_hessians

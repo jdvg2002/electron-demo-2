@@ -6,7 +6,6 @@ import ExecutionOutput from './shared/ExecutionOutput';
 import LoadingIndicator from './shared/LoadingIndicator';
 import ExternalTool from '../ExternalTool';
 import FileOutput from '../FileOutput';
-import resultsData from '@/data/results.json';
 
 // Define the analysis options once
 const ANALYSIS_OPTIONS = {
@@ -55,18 +54,12 @@ const ExternalCell: React.FC<ExternalCellProps> = ({
 
       const result = await cellExecutionManager.runExternalTool(cell.tool, projectRoot, selectedAnalysis);
       
-      // Create a dummy execution result since we're using hardcoded data for now
-      const executionOutput = {
-        stdout: "Analysis completed successfully",
-        data: require('@/data/results.json') // Load the hardcoded results
-      };
-
-      setExecutionResult(executionOutput);
+      setExecutionResult(result);
       
       const updatedCell = {
         ...cell,
         status: 'completed',
-        output: executionOutput
+        output: result
       };
 
       onCellChange(updatedCell);
@@ -117,9 +110,11 @@ const ExternalCell: React.FC<ExternalCellProps> = ({
   };
 
   const renderOutputs = () => {
+    if (!executionResult) return null;
+
     const fileData = {
-      name: 'results.json',
-      size: `${JSON.stringify(resultsData).length} bytes`,
+      name: 'analysis_results.json',
+      size: `${JSON.stringify(executionResult).length} bytes`,
       format: 'JSON',
       timestamp: new Date().toLocaleString(),
       data: {
@@ -127,14 +122,7 @@ const ExternalCell: React.FC<ExternalCellProps> = ({
         version: '1.0',
         timestamp: new Date().toISOString(),
         analysisType: selectedAnalysis,
-        results: resultsData,
-        metadata: {
-          tool: cell.tool,
-          analysisParameters: {
-            temperature_range: [12000, 38000],
-            stress_range: [35000, 65000]
-          }
-        }
+        results: executionResult
       }
     };
 

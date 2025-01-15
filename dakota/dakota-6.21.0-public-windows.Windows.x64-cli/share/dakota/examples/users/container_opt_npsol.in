@@ -1,0 +1,33 @@
+
+# Dakota Input File: container_opt_npsol.in
+
+environment
+  tabular_data
+    tabular_data_file = 'container_opt_npsol.dat'
+
+method
+## (NPSOL requires a software license; if not available, try
+## conmin_mfd or optpp_q_newton instead)
+  npsol_sqp
+
+variables
+  continuous_design = 2
+    descriptors   'H' 'D'
+    initial_point 4.5 4.5
+    lower_bounds  0.0 0.0
+
+interface
+  analysis_drivers = 'container'
+    fork
+    parameters_file = 'container.in'
+    results_file    = 'container.out'
+    file_tag
+
+responses
+  objective_functions = 1
+  nonlinear_equality_constraints = 1
+  numerical_gradients
+    method_source dakota
+    interval_type central
+    fd_step_size = 0.001
+  no_hessians

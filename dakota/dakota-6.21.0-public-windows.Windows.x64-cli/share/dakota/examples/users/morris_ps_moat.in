@@ -1,0 +1,29 @@
+
+# Dakota Input File: morris_ps_moat.in
+
+environment
+  tabular_data
+    tabular_data_file 'dakota_psuade.0.dat'
+
+method
+  psuade_moat
+    samples = 84
+    partitions = 3
+    seed = 500
+
+variables
+  continuous_design = 20
+    lower_bounds = 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+    upper_bounds = 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0
+                   1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0
+
+interface
+  analysis_drivers = 'morris'
+    fork
+  asynchronous evaluation_concurrency = 5
+
+responses
+  objective_functions = 1
+  no_gradients
+  no_hessians

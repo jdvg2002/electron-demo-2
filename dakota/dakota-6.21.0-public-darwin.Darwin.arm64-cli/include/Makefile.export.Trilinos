@@ -1,0 +1,90 @@
+##############################################################################
+#
+# Make variables for use by Trilinos clients. 
+#
+# Do not edit: This file was generated automatically by CMake.
+#
+##############################################################################
+
+
+## ---------------------------------------------------------------------------
+## Compilers used by Trilinos build
+## ---------------------------------------------------------------------------
+
+Trilinos_CXX_COMPILER=/Library/Developer/CommandLineTools/usr/bin/c++
+
+Trilinos_C_COMPILER=/Library/Developer/CommandLineTools/usr/bin/cc
+
+Trilinos_Fortran_COMPILER=/opt/homebrew/bin/gfortran
+
+
+## ---------------------------------------------------------------------------
+## Compiler flags used by Trilinos build
+## ---------------------------------------------------------------------------
+
+Trilinos_CXX_COMPILER_FLAGS= -w 
+
+Trilinos_C_COMPILER_FLAGS= -w 
+
+Trilinos_Fortran_COMPILER_FLAGS= 
+
+## Extra link flags (e.g., specification of fortran libraries)
+Trilinos_EXTRA_LD_FLAGS=
+
+## This is the command-line entry used for setting rpaths. In a build
+## with static libraries it will be empty. 
+Trilinos_SHARED_LIB_RPATH_COMMAND=-Wl,-rpath,/usr/local/lib
+Trilinos_BUILD_SHARED_LIBS=TRUE
+
+Trilinos_LINKER=/Library/Developer/CommandLineTools/usr/bin/ld
+Trilinos_AR=/Library/Developer/CommandLineTools/usr/bin/ar
+
+
+## ---------------------------------------------------------------------------
+## Set library specifications and paths 
+## ---------------------------------------------------------------------------
+
+## The project version number
+Trilinos_VERSION=13.0
+
+## The project include file directories.
+Trilinos_INCLUDE_DIRS= -I/usr/local/include
+
+## The project library directories.
+Trilinos_LIBRARY_DIRS= -L/usr/local/lib
+
+## The project libraries.
+Trilinos_LIBRARIES= -lrol -lteuchosremainder -lteuchosnumerics -lteuchoscomm -lteuchosparameterlist -lteuchosparser -lteuchoscore -lteuchosremainder -lteuchosnumerics -lteuchoscomm -lteuchosparameterlist -lteuchosparser -lteuchoscore
+
+## The project tpl include paths
+Trilinos_TPL_INCLUDE_DIRS=
+
+## The project tpl library paths
+Trilinos_TPL_LIBRARY_DIRS=
+
+## The project tpl libraries
+Trilinos_TPL_LIBRARIES= /opt/spack/darwin-ventura-m1/apple-clang-15.0.0/netlib-lapack-3.10.1-u2yzn46m35ncqgdaesem7nbibap4atbq/lib/liblapack.dylib /opt/spack/darwin-ventura-m1/apple-clang-15.0.0/netlib-lapack-3.10.1-u2yzn46m35ncqgdaesem7nbibap4atbq/lib/libblas.dylib
+
+## ---------------------------------------------------------------------------
+## MPI specific variables
+##   These variables are provided to make it easier to get the mpi libraries
+##   and includes on systems that do not use the mpi wrappers for compiling
+## ---------------------------------------------------------------------------
+
+Trilinos_MPI_LIBRARIES=
+Trilinos_MPI_LIBRARY_DIRS=
+Trilinos_MPI_INCLUDE_DIRS=
+Trilinos_MPI_EXEC=
+Trilinos_MPI_EXEC_MAX_NUMPROCS=
+Trilinos_MPI_EXEC_NUMPROCS_FLAG=
+
+## ---------------------------------------------------------------------------
+## Set useful general variables 
+## ---------------------------------------------------------------------------
+
+## The packages enabled for this project
+Trilinos_PACKAGE_LIST= ROL Teuchos TeuchosRemainder TeuchosNumerics TeuchosComm TeuchosParameterList TeuchosParser TeuchosCore
+
+## The TPLs enabled for this project
+Trilinos_TPL_LIST= LAPACK BLAS
+

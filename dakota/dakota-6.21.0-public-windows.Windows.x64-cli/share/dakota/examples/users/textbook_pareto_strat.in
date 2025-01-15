@@ -1,0 +1,40 @@
+
+# Dakota Input File: textbook_pareto_strat.in
+
+environment
+  top_method_pointer = 'PS'
+
+method
+  id_method = 'PS'
+  pareto_set
+    method_pointer = 'NLP'
+    weight_sets =
+      1.0    0.0    0.0
+      0.0    1.0    0.0
+      0.0    0.0    1.0
+      0.333  0.333  0.333
+
+method
+  id_method = 'NLP'
+## (DOT requires a software license; if not available, try
+## conmin_mfd or optpp_q_newton instead)
+  dot_bfgs
+
+model
+  single
+
+variables
+  continuous_design = 2
+    initial_point     0.9    1.1
+    upper_bounds      5.8    2.9
+    lower_bounds      0.5   -2.9
+    descriptors       'x1'   'x2'
+
+interface
+  analysis_drivers = 'text_book'
+    direct
+
+responses
+  objective_functions = 3
+  analytic_gradients
+  no_hessians

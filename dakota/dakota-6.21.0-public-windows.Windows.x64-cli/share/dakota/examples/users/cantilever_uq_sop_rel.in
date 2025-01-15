@@ -1,0 +1,78 @@
+# Dakota Input File: cantilever_uq_sop_rel.in
+
+environment
+    top_method_pointer = 'EPISTEMIC'
+
+method
+  id_method = 'EPISTEMIC'
+  sampling
+    samples = 50 seed = 12347
+    model_pointer = 'EPIST_M'
+
+model
+  id_model = 'EPIST_M'
+  nested
+    sub_method_pointer = 'ALEATORY'
+    primary_variable_mapping   = 'X'    'Y'
+    secondary_variable_mapping = 'mean' 'mean'
+    primary_response_mapping   = 1. 0. 0. 0. 0. 0. 0. 0.
+                                 0. 0. 0. 0. 1. 0. 0. 0.
+                                 0. 0. 0. 0. 0. 0. 0. 1.
+  variables_pointer  = 'EPIST_V'
+  responses_pointer  = 'EPIST_R'
+
+variables
+  id_variables = 'EPIST_V'
+  continuous_interval_uncertain = 2
+    num_intervals = 1 1
+    interval_probabilities =      1.0       1.0
+    lower_bounds =      400.0     800.0
+    upper_bounds =      600.0    1200.0
+    descriptors      'X_mean'  'Y_mean'
+
+responses
+  id_responses = 'EPIST_R'
+  response_functions = 3
+  descriptors = 'mean_wt' 'ccdf_beta_s' 'ccdf_beta_d'
+  no_gradients
+  no_hessians
+
+method
+  id_method = 'ALEATORY'
+  local_reliability
+    mpp_search no_approx
+    response_levels = 0.0 0.0
+      num_response_levels = 0 1 1
+    compute reliabilities
+    distribution complementary
+    model_pointer = 'ALEAT_M'
+
+model
+  id_model = 'ALEAT_M'
+  single
+    interface_pointer = 'ALEAT_I'
+  variables_pointer = 'ALEAT_V'
+  responses_pointer = 'ALEAT_R'
+
+variables
+  id_variables = 'ALEAT_V'
+  continuous_design = 2
+    initial_point    2.4522 3.8826
+    descriptors 'w' 't'
+  normal_uncertain = 4
+    means             =  40000. 29.E+6 500. 1000.
+    std_deviations    =  2000. 1.45E+6 100. 100.
+    descriptors       =  'R' 'E' 'X' 'Y'
+
+interface
+  id_interface = 'ALEAT_I'
+  analysis_drivers = 'cantilever'
+    direct
+  deactivate evaluation_cache restart_file
+
+responses
+  id_responses = 'ALEAT_R'
+  response_functions = 3
+  descriptors = 'weight' 'stress' 'displ'
+  analytic_gradients
+  no_hessians

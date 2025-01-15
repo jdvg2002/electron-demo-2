@@ -1,0 +1,24 @@
+# Exported Makefile fragments for Dakota
+
+## List of package definitions
+Dakota_DEFINES= -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS -D_SCL_SECURE_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS -DHAVE_CONFIG_H -DHAVE_DAKOTA_SURROGATES -DHAVE_CONFIG_H -DDISABLE_DAKOTA_CONFIG_H -DBOOST_DISABLE_ASSERTS -DHAVE_SYSTEM -DDAKOTA_HAVE_HDF5 -DHAVE_ -DHAVE_SURFPACK -DHAVE_DAKOTA_SURROGATES -DDAKOTA_F90 -DHAVE_ACRO -DDAKOTA_UTILIB -DHAVE_APPROXNN -DHAVE_ADAPTIVE_SAMPLING -DHAVE_CONMIN -DHAVE_DDACE -DHAVE_DREAM -DHAVE_FSUDACE -DDAKOTA_HOPS -DHAVE_JEGA -DHAVE_NCSU -DHAVE_NL2SOL -DHAVE_NOMAD -DHAVE_OPTPP -DDAKOTA_OPTPP -DHAVE_ROL -DHAVE_PSUADE -DHAVE_AMPL
+
+## List of package include dirs
+Dakota_INCLUDE_DIRS=-IC:/Program Files/Dakota/include
+
+## List of package library paths
+Dakota_LIBRARY_DIRS=-LIBPATH:C:/Program Files/Dakota/lib
+
+## List of package libraries
+Dakota_LIBRARIES= dakota_util dakota_surrogates dakota_src dakota_src_fortran nidr teuchosremainder teuchosnumerics teuchoscomm teuchosparameterlist teuchosparser teuchoscore pecos_util pecos_src lhs lhs_mods lhs_mod dfftpack sparsegrid surfpack surfpack surfpack_fortran utilib colin interfaces scolib 3po pebbl tinyxml approxnn conmin ddace dream fsudace hopspack jega jega_fe moga soga eutils utilities ncsuopt cport nomad optpp psuade amplsolver
+
+## List of TPL include dirs
+Dakota_TPL_INCLUDE_DIRS= -IC:/jenkins/workspace/public_windows_builder/source/packages/external/json/single_include -IC:/local/hdf5/1.10.4/include
+
+## List of TPL library paths external to the Dakota build
+Dakota_TPL_LIBRARY_DIRS=
+
+## List of required TPLs external to the Dakota build
+Dakota_TPL_LIBRARIES= C:/local/hdf5/1.10.4/lib/libhdf5_hl.lib C:/local/hdf5/1.10.4/lib/libhdf5.lib C:/local/hdf5/1.10.4/lib/libhdf5_hl_cpp.lib C:/local/hdf5/1.10.4/lib/libhdf5_hl.lib C:/local/hdf5/1.10.4/lib/libhdf5.lib C:/local/hdf5/1.10.4/lib/libhdf5_cpp.lib C:/local/hdf5/1.10.4/lib/libhdf5.lib C:/local/hdf5/1.10.4/lib/libhdf5.lib C:/local/hdf5/1.10.4/lib/libhdf5_cpp.lib C:/local/hdf5/1.10.4/lib/libhdf5.lib C:/local/lapack/3.10.1/static/lib/lapack.lib C:/local/lapack/3.10.1/static/lib/blas.lib C:/local/boost/1.71.0/lib64-msvc-14.2/libboost_filesystem-vc142-mt-x64-1_71.lib C:/local/boost/1.71.0/lib64-msvc-14.2/libboost_program_options-vc142-mt-x64-1_71.lib C:/local/boost/1.71.0/lib64-msvc-14.2/libboost_regex-vc142-mt-x64-1_71.lib C:/local/boost/1.71.0/lib64-msvc-14.2/libboost_serialization-vc142-mt-x64-1_71.lib C:/local/boost/1.71.0/lib64-msvc-14.2/libboost_system-vc142-mt-x64-1_71.lib
+
+

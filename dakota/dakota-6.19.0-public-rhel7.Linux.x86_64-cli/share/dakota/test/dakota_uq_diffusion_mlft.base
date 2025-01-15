@@ -1,0 +1,40 @@
+Test Number 0 succeeded
+<<<<< Function evaluation summary: 2664 total (2664 new, 0 duplicate)
+<<<<< Equivalent number of high fidelity evaluations: 2.4780200195e+02
+Moment statistics for each response function:
+                            Mean           Std Dev          Skewness          Kurtosis
+ response_fn_1  2.5279392476e-02  6.5777798282e-03  6.7650157216e-01 -5.2030649440e-01
+ response_fn_2  1.2901441183e-01  1.3438504401e-02  6.9033062788e-01 -7.1041066103e-01
+ response_fn_3  2.5279392476e-02  6.5777798282e-03  6.7650157218e-01 -5.2030649439e-01
+Test Number 1 succeeded
+<<<<< Function evaluation summary: 3807 total (3807 new, 0 duplicate)
+<<<<< Equivalent number of high fidelity evaluations: 4.2671386719e+01
+Moment statistics for each response function:
+                            Mean           Std Dev          Skewness          Kurtosis
+ response_fn_1  2.5273361316e-02  6.5796418556e-03  6.7386530932e-01 -4.9035708824e-01
+ response_fn_2  1.2904008307e-01  1.3458504816e-02  6.5434344909e-01 -7.6791442029e-01
+ response_fn_3  2.5273361317e-02  6.5796418555e-03  6.7386530929e-01 -4.9035708828e-01
+Test Number 2 succeeded
+<<<<< Function evaluation summary: 2256 total (2256 new, 0 duplicate)
+<<<<< Equivalent number of high fidelity evaluations: 2.1631005859e+02
+Moment statistics for each response function:
+                            Mean           Std Dev          Skewness          Kurtosis
+ response_fn_1  2.5248040551e-02  6.5677481502e-03  6.9606072137e-01 -4.7848383208e-01
+ response_fn_2  1.2902119701e-01  1.3471936030e-02  6.7240889031e-01 -7.3410312574e-01
+ response_fn_3  2.5248040551e-02  6.5677481501e-03  6.9606072137e-01 -4.7848383202e-01
+Test Number 3 succeeded
+<<<<< Function evaluation summary: 1928 total (1928 new, 0 duplicate)
+<<<<< Equivalent number of high fidelity evaluations: 9.8041748047e+01
+Moment statistics for each response function:
+                            Mean           Std Dev          Skewness          Kurtosis
+ response_fn_1  2.5275163425e-02  6.5721916385e-03  7.2088537449e-01 -3.2206290191e-01
+ response_fn_2  1.2904738885e-01  1.3544880662e-02  7.4563786142e-01 -5.2486042895e-01
+ response_fn_3  2.5275163425e-02  6.5721916388e-03  7.2088537443e-01 -3.2206290202e-01
+Test Number 4 succeeded
+<<<<< Function evaluation summary: 2294 total (2294 new, 0 duplicate)
+<<<<< Equivalent number of high fidelity evaluations: 2.1654150391e+02
+Moment statistics for each response function:
+                            Mean           Std Dev          Skewness          Kurtosis
+ response_fn_1  2.5256356304e-02  6.5625638197e-03  6.9825331024e-01 -3.8942600282e-01
+ response_fn_2  1.2907356314e-01  1.3559869583e-02  7.4468424215e-01 -5.1613723733e-01
+ response_fn_3  2.5256356304e-02  6.5625638199e-03  6.9825331018e-01 -3.8942600291e-01

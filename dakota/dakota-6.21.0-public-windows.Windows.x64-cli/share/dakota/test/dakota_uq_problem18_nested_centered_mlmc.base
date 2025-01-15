@@ -1,0 +1,125 @@
+Test Number 0 succeeded
+<<<<< Function evaluation summary (UQ_I): 210 total (210 new, 0 duplicate)
+  response_fn_1: 210 val (210 n, 0 d), 0 grad (0 n, 0 d), 0 Hess (0 n, 0 d)
+  response_fn_2: 210 val (210 n, 0 d), 0 grad (0 n, 0 d), 0 Hess (0 n, 0 d)
+<<<<< Online number of equivalent high fidelity evaluations: 4.8000000000e+01
+<<<<< Variance for mean estimator:
+    Initial MLMC (pilot samples):     6.1790200310e-06
+     Online MLMC (sample profile):    6.1790200310e-06
+     Online MLMC / pilot ratio:       1.0000000000e+00
+ Equivalent   MC (   48 HF samples):  2.2604652517e-05
+ Equivalent MLMC / MC ratio:          2.7335169282e-01
+Sample moment statistics for each response function:
+                            Mean           Std Dev          Skewness          Kurtosis
+ response_fn_1  3.1972245773e+00  2.3544986647e-07 -3.7213815093e+07  1.1069294091e+15
+ response_fn_2 -1.9004363149e+00  4.6583759418e-02  2.6446758038e-01  3.3526633502e-01
+<<<<< Function evaluation summary (UQ_I): 210 total (210 new, 0 duplicate)
+  response_fn_1: 210 val (210 n, 0 d), 0 grad (0 n, 0 d), 0 Hess (0 n, 0 d)
+  response_fn_2: 210 val (210 n, 0 d), 0 grad (0 n, 0 d), 0 Hess (0 n, 0 d)
+<<<<< Best parameters          =
+                      5.0000000000e+00 x
+<<<<< Best objective function  =
+                      3.1972245773e+00
+<<<<< Best constraint values   =
+                     -1.7606850367e+00
+<<<<< Best evaluation ID: 1
+Test Number 1 succeeded
+<<<<< Function evaluation summary (UQ_I): 210 total (210 new, 0 duplicate)
+  response_fn_1: 210 val (210 n, 0 d), 0 grad (0 n, 0 d), 0 Hess (0 n, 0 d)
+  response_fn_2: 210 val (210 n, 0 d), 0 grad (0 n, 0 d), 0 Hess (0 n, 0 d)
+<<<<< Online number of equivalent high fidelity evaluations: 4.8000000000e+01
+<<<<< Variance for mean estimator:
+    Initial MLMC (pilot samples):     6.1790200310e-06
+     Online MLMC (sample profile):    6.1790200310e-06
+     Online MLMC / pilot ratio:       1.0000000000e+00
+ Equivalent   MC (   48 HF samples):  2.2604652517e-05
+ Equivalent MLMC / MC ratio:          2.7335169282e-01
+Sample moment statistics for each response function:
+                            Mean           Std Dev          Skewness          Kurtosis
+ response_fn_1  3.1972245773e+00  2.3544986647e-07 -3.7213815093e+07  1.1069294091e+15
+ response_fn_2 -1.9004363149e+00  4.6583759418e-02  2.6446758038e-01  3.3526633502e-01
+<<<<< Function evaluation summary (UQ_I): 210 total (210 new, 0 duplicate)
+  response_fn_1: 210 val (210 n, 0 d), 0 grad (0 n, 0 d), 0 Hess (0 n, 0 d)
+  response_fn_2: 210 val (210 n, 0 d), 0 grad (0 n, 0 d), 0 Hess (0 n, 0 d)
+<<<<< Best parameters          =
+                      5.0000000000e+00 x
+<<<<< Best objective function  =
+                      3.1972245773e+00
+<<<<< Best constraint values   =
+                     -1.7606850367e+00
+<<<<< Best evaluation ID: 1
+Test Number 2 succeeded
+<<<<< Function evaluation summary (UQ_I): 210 total (210 new, 0 duplicate)
+  response_fn_1: 210 val (210 n, 0 d), 0 grad (0 n, 0 d), 0 Hess (0 n, 0 d)
+  response_fn_2: 210 val (210 n, 0 d), 0 grad (0 n, 0 d), 0 Hess (0 n, 0 d)
+<<<<< Online number of equivalent high fidelity evaluations: 4.8000000000e+01
+<<<<< Variance for mean estimator:
+    Initial MLMC (pilot samples):     6.1790200310e-06
+     Online MLMC (sample profile):    6.1790200310e-06
+     Online MLMC / pilot ratio:       1.0000000000e+00
+ Equivalent   MC (   48 HF samples):  2.2604652517e-05
+ Equivalent MLMC / MC ratio:          2.7335169282e-01
+Sample moment statistics for each response function:
+                            Mean           Std Dev          Skewness          Kurtosis
+ response_fn_1  3.1972245773e+00  2.3544986647e-07 -3.7213815093e+07  1.1069294091e+15
+ response_fn_2 -1.9004363149e+00  4.6583759418e-02  2.6446758038e-01  3.3526633502e-01
+<<<<< Function evaluation summary (UQ_I): 210 total (210 new, 0 duplicate)
+  response_fn_1: 210 val (210 n, 0 d), 0 grad (0 n, 0 d), 0 Hess (0 n, 0 d)
+  response_fn_2: 210 val (210 n, 0 d), 0 grad (0 n, 0 d), 0 Hess (0 n, 0 d)
+<<<<< Best parameters          =
+                      5.0000000000e+00 x
+<<<<< Best objective function  =
+                      3.1972245773e+00
+<<<<< Best constraint values   =
+                     -1.7606850367e+00
+<<<<< Best evaluation ID: 1
+Test Number 3 succeeded
+<<<<< Function evaluation summary (UQ_I): 210 total (210 new, 0 duplicate)
+  response_fn_1: 210 val (210 n, 0 d), 0 grad (0 n, 0 d), 0 Hess (0 n, 0 d)
+  response_fn_2: 210 val (210 n, 0 d), 0 grad (0 n, 0 d), 0 Hess (0 n, 0 d)
+<<<<< Online number of equivalent high fidelity evaluations: 4.8000000000e+01
+<<<<< Variance for mean estimator:
+    Initial MLMC (pilot samples):     6.1790200310e-06
+     Online MLMC (sample profile):    6.1790200310e-06
+     Online MLMC / pilot ratio:       1.0000000000e+00
+ Equivalent   MC (   48 HF samples):  2.2604652517e-05
+ Equivalent MLMC / MC ratio:          2.7335169282e-01
+Sample moment statistics for each response function:
+                            Mean           Std Dev          Skewness          Kurtosis
+ response_fn_1  3.1972245773e+00  2.3544986647e-07 -3.7213815093e+07  1.1069294091e+15
+ response_fn_2 -1.9004363149e+00  4.6583759418e-02  2.6446758038e-01  3.3526633502e-01
+<<<<< Function evaluation summary (UQ_I): 210 total (210 new, 0 duplicate)
+  response_fn_1: 210 val (210 n, 0 d), 0 grad (0 n, 0 d), 0 Hess (0 n, 0 d)
+  response_fn_2: 210 val (210 n, 0 d), 0 grad (0 n, 0 d), 0 Hess (0 n, 0 d)
+<<<<< Best parameters          =
+                      5.0000000000e+00 x
+<<<<< Best objective function  =
+                      1.2967882624e+00
+<<<<< Best constraint values   =
+                      1.4365395407e+00
+<<<<< Best evaluation ID: 1
+Test Number 4 succeeded
+<<<<< Function evaluation summary (UQ_I): 210 total (210 new, 0 duplicate)
+  response_fn_1: 210 val (210 n, 0 d), 0 grad (0 n, 0 d), 0 Hess (0 n, 0 d)
+  response_fn_2: 210 val (210 n, 0 d), 0 grad (0 n, 0 d), 0 Hess (0 n, 0 d)
+<<<<< Online number of equivalent high fidelity evaluations: 4.8000000000e+01
+<<<<< Variance for mean estimator:
+    Initial MLMC (pilot samples):     6.1790200310e-06
+     Online MLMC (sample profile):    6.1790200310e-06
+     Online MLMC / pilot ratio:       1.0000000000e+00
+ Equivalent   MC (   48 HF samples):  2.2604652517e-05
+ Equivalent MLMC / MC ratio:          2.7335169282e-01
+Sample moment statistics for each response function:
+                            Mean           Std Dev          Skewness          Kurtosis
+ response_fn_1  3.1972245773e+00  2.3544986647e-07 -3.7213815093e+07  1.1069294091e+15
+ response_fn_2 -1.9004363149e+00  4.6583759418e-02  2.6446758038e-01  3.3526633502e-01
+<<<<< Function evaluation summary (UQ_I): 210 total (210 new, 0 duplicate)
+  response_fn_1: 210 val (210 n, 0 d), 0 grad (0 n, 0 d), 0 Hess (0 n, 0 d)
+  response_fn_2: 210 val (210 n, 0 d), 0 grad (0 n, 0 d), 0 Hess (0 n, 0 d)
+<<<<< Best parameters          =
+                      5.0000000000e+00 x
+<<<<< Best objective function  =
+                      1.2967882624e+00
+<<<<< Best constraint values   =
+                      1.4365395407e+00
+<<<<< Best evaluation ID: 1

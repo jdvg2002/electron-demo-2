@@ -1,0 +1,24 @@
+# Exported Makefile fragments for Dakota
+
+## List of package definitions
+Dakota_DEFINES= -DHAVE_CONFIG_H -DHAVE_DAKOTA_SURROGATES -DHAVE_CONFIG_H -DDISABLE_DAKOTA_CONFIG_H -DBOOST_DISABLE_ASSERTS -DHAVE_UNISTD_H -DHAVE_SYSTEM -DHAVE_WORKING_FORK -DHAVE_WORKING_VFORK -DHAVE_SYS_WAIT_H -DDAKOTA_PYBIND11 -DDAKOTA_PYTHON_NUMPY -DDAKOTA_HAVE_MPI -DDAKOTA_HAVE_HDF5 -DHAVE_ -DHAVE_SURFPACK -DHAVE_DAKOTA_SURROGATES -DHAVE_DAKOTA_PYTHON_SURROGATES -DDAKOTA_F90 -DHAVE_ACRO -DDAKOTA_UTILIB -DHAVE_APPROXNN -DHAVE_ADAPTIVE_SAMPLING -DHAVE_CONMIN -DHAVE_DDACE -DHAVE_DREAM -DHAVE_FSUDACE -DDAKOTA_HOPS -DHAVE_JEGA -DHAVE_NCSU -DHAVE_NL2SOL -DHAVE_NOMAD -DHAVE_OPTPP -DDAKOTA_OPTPP -DHAVE_MUQ -DHAVE_ROL -DHAVE_PSUADE -DHAVE_AMPL
+
+## List of package include dirs
+Dakota_INCLUDE_DIRS=-I/usr/local/include
+
+## List of package library paths
+Dakota_LIBRARY_DIRS=-L/usr/local/lib
+
+## List of package libraries
+Dakota_LIBRARIES= -ldakota_util -ldakota_surrogates -ldakota_src -ldakota_src_fortran -lnidr -lteuchosremainder -lteuchosnumerics -lteuchoscomm -lteuchosparameterlist -lteuchosparser -lteuchoscore -lpecos_util -lpecos_src -llhs -llhs_mods -llhs_mod -ldfftpack -lsparsegrid -lsurfpack -lsurfpack -lsurfpack_fortran -lutilib -lcolin -linterfaces -lscolib -l3po -lpebbl -ltinyxml -lapproxnn -lconmin -lddace -ldream -lfsudace -lhopspack -ljega -ljega_fe -lmoga -lsoga -leutils -lutilities -lncsuopt -lcport -lnomad -loptpp -lmuqUtilities -lmuqModeling -lmuqSamplingAlgorithms -lpsuade -lamplsolver
+
+## List of TPL include dirs
+Dakota_TPL_INCLUDE_DIRS= -I/home/dakota-jenkins/jenkins/workspace/public_rhel8_builder/source/packages/external/json/single_include -I/home/dakota-jenkins/jenkins/workspace/public_rhel8_builder/source/packages/external/pybind11/include -I/projects/aue/cee/deploy/ed0e84f4/linux-rhel8-x86_64/gcc-12.3.0/anaconda3-2024.06-1-jxxucpn/lib/python3.12/site-packages/numpy/core/include -I/projects/aue/cee/deploy/9d138342/linux-rhel8-x86_64/gcc-12.3.0/openmpi-4.1.6-hfp5vwq/include -I/projects/aue/cee/deploy/9d138342/linux-rhel8-x86_64/gcc-12.3.0/openmpi-4.1.6-hfp5vwq/include -I/usr/include
+
+## List of TPL library paths external to the Dakota build
+Dakota_TPL_LIBRARY_DIRS=
+
+## List of required TPLs external to the Dakota build
+Dakota_TPL_LIBRARIES= /projects/aue/cee/deploy/9d138342/linux-rhel8-x86_64/gcc-12.3.0/openmpi-4.1.6-hfp5vwq/lib/libmpi.so /usr/lib64/libhdf5_hl.so /usr/lib64/libhdf5.so /usr/lib64/libhdf5_hl_cpp.so /usr/lib64/libhdf5_hl.so /usr/lib64/libhdf5.so /usr/lib64/libhdf5_cpp.so /usr/lib64/libhdf5.so /usr/lib64/libhdf5.so /usr/lib64/libhdf5_cpp.so /usr/lib64/libhdf5.so /usr/lib64/liblapack.so /usr/lib64/libblas.so -lBoost::filesystem -lBoost::program_options -lBoost::regex -lBoost::serialization -lBoost::system
+
+

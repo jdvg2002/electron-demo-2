@@ -1,0 +1,30 @@
+# Dakota Input File: cantilever_uq_global_interval.in
+
+environment
+  tabular_data
+#    tabular_data_file = 'cantilever_uq_global_interval.dat'
+
+method
+  global_interval_est ego
+    seed = 1234567
+
+variables
+  continuous_interval_uncertain = 2
+    num_intervals   =  1    1
+    interval_probabilities  =  1.0  1.0
+    lower_bounds    =  1.0  1.0
+    upper_bounds    = 10.0 10.0
+    descriptors        'w'  't'
+  continuous_state = 4
+    initial_state     =  40000. 29.E+6 500. 1000.
+    descriptors       =  'R' 'E' 'X' 'Y'
+
+interface
+  analysis_drivers = 'cantilever'
+    direct
+
+responses
+  response_functions = 3
+  descriptors = 'weight' 'stress' 'displ'
+  no_gradients
+  no_hessians

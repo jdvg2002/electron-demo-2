@@ -1,0 +1,110 @@
+##############################################################################
+#
+# Make variables for use by Trilinos/ROL clients. 
+#
+# Do not edit: This file was generated automatically by CMake.
+#
+##############################################################################
+
+
+## ---------------------------------------------------------------------------
+## Compilers used by Trilinos/ROL build
+## ---------------------------------------------------------------------------
+
+ROL_CXX_COMPILER=/projects/aue/cee/deploy/9d138342/linux-rhel8-x86_64/gcc-11.4.0/gcc-12.3.0-ac54ws5/bin/g++
+
+ROL_C_COMPILER=/projects/aue/cee/deploy/9d138342/linux-rhel8-x86_64/gcc-11.4.0/gcc-12.3.0-ac54ws5/bin/gcc
+
+ROL_FORTRAN_COMPILER=/projects/aue/cee/deploy/9d138342/linux-rhel8-x86_64/gcc-11.4.0/gcc-12.3.0-ac54ws5/bin/gfortran
+ROL_Fortran_COMPILER=/projects/aue/cee/deploy/9d138342/linux-rhel8-x86_64/gcc-11.4.0/gcc-12.3.0-ac54ws5/bin/gfortran
+
+
+## ---------------------------------------------------------------------------
+## Compiler flags used by Trilinos/ROL build
+## ---------------------------------------------------------------------------
+
+## Set compiler flags, including those determined by build type
+ROL_CXX_FLAGS=  -fno-new-ttp-matching  
+ROL_CXX_COMPILER_FLAGS=  -fno-new-ttp-matching  
+
+ROL_C_FLAGS= 
+ROL_C_COMPILER_FLAGS= 
+
+ROL_FORTRAN_FLAGS= 
+ROL_Fortran_COMPILER_FLAGS= 
+
+## Extra link flags (e.g., specification of fortran libraries)
+ROL_EXTRA_LD_FLAGS=
+
+## This is the command-line entry used for setting rpaths. In a build
+## with static libraries it will be empty. 
+ROL_SHARED_LIB_RPATH_COMMAND=-Wl,-rpath,/usr/local/lib
+ROL_BUILD_SHARED_LIBS=TRUE
+
+ROL_LINKER=/projects/aue/cee/deploy/ed0e84f4/linux-rhel8-x86_64/gcc-12.3.0/binutils-2.42-xd7fipb/bin/ld
+ROL_AR=/projects/aue/cee/deploy/ed0e84f4/linux-rhel8-x86_64/gcc-12.3.0/binutils-2.42-xd7fipb/bin/ar
+
+## ---------------------------------------------------------------------------
+## Set library specifications and paths 
+## ---------------------------------------------------------------------------
+
+## The project version number
+ROL_VERSION=13.0
+
+## List of package include dirs
+ROL_INCLUDE_DIRS= -I/usr/local/include
+
+## List of package library paths
+ROL_LIBRARY_DIRS= -L/usr/local/lib
+
+## List of package libraries
+ROL_LIBRARIES= -lrol -lteuchosremainder -lteuchosnumerics -lteuchoscomm -lteuchosparameterlist -lteuchosparser -lteuchoscore
+
+## Specification of directories for TPL headers
+ROL_TPL_INCLUDE_DIRS=
+
+## Specification of directories for TPL libraries
+ROL_TPL_LIBRARY_DIRS=
+
+## List of required TPLs
+ROL_TPL_LIBRARIES= /usr/lib64/liblapack.so /usr/lib64/libblas.so
+
+## ---------------------------------------------------------------------------
+## MPI specific variables
+##   These variables are provided to make it easier to get the mpi libraries
+##   and includes on systems that do not use the mpi wrappers for compiling
+## ---------------------------------------------------------------------------
+
+ROL_MPI_LIBRARIES=
+ROL_MPI_LIBRARY_DIRS=
+ROL_MPI_INCLUDE_DIRS=
+ROL_MPI_EXEC=
+ROL_MPI_EXEC_MAX_NUMPROCS=
+ROL_MPI_EXEC_NUMPROCS_FLAG=
+
+## ---------------------------------------------------------------------------
+## Set useful general variables 
+## ---------------------------------------------------------------------------
+
+## The packages enabled for this project
+ROL_PACKAGE_LIST= ROL Teuchos TeuchosRemainder TeuchosNumerics TeuchosComm TeuchosParameterList TeuchosParser TeuchosCore
+
+## The TPLs enabled for this project
+ROL_TPL_LIST= LAPACK BLAS
+
+## ---------------------------------------------------------------------------
+## Deprecated variables
+##   These variables from the autotools version of Makefile.export.<package>
+##   have been deprecated. To help avoid confusion with projects that haven't
+##   migrated to the new version of the variable names when the don't compile.
+##   This will put an obvious statement in the link line that these Trilinos
+##   Makefile variables are no longer used. Without this there would be a link
+##   error with no obvious reason as to why other than the lack of Trilinos libs
+##   which would be confusing since the link line in the Makefile would have 
+##   stated to put them on the line.
+## ---------------------------------------------------------------------------
+
+ROL_LIBS="The Trilinos variable ROL_LIBS has been deprecated. Please see the documentation on the Makefile.export capability for instructions on how to transition to the new system."
+ROL_INCLUDES="The Trilinos variable ROL_INCLUDES has been deprecated. Please see the documentation on the Makefile.export capability for instructions on how to transition to the new system."
+
+

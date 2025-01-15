@@ -1,0 +1,110 @@
+##############################################################################
+#
+# Make variables for use by Trilinos/TeuchosParser clients. 
+#
+# Do not edit: This file was generated automatically by CMake.
+#
+##############################################################################
+
+
+## ---------------------------------------------------------------------------
+## Compilers used by Trilinos/TeuchosParser build
+## ---------------------------------------------------------------------------
+
+TeuchosParser_CXX_COMPILER=/Library/Developer/CommandLineTools/usr/bin/c++
+
+TeuchosParser_C_COMPILER=/Library/Developer/CommandLineTools/usr/bin/cc
+
+TeuchosParser_FORTRAN_COMPILER=/opt/homebrew/bin/gfortran
+TeuchosParser_Fortran_COMPILER=/opt/homebrew/bin/gfortran
+
+
+## ---------------------------------------------------------------------------
+## Compiler flags used by Trilinos/TeuchosParser build
+## ---------------------------------------------------------------------------
+
+## Set compiler flags, including those determined by build type
+TeuchosParser_CXX_FLAGS= -w 
+TeuchosParser_CXX_COMPILER_FLAGS= -w 
+
+TeuchosParser_C_FLAGS= -w 
+TeuchosParser_C_COMPILER_FLAGS= -w 
+
+TeuchosParser_FORTRAN_FLAGS= 
+TeuchosParser_Fortran_COMPILER_FLAGS= 
+
+## Extra link flags (e.g., specification of fortran libraries)
+TeuchosParser_EXTRA_LD_FLAGS=
+
+## This is the command-line entry used for setting rpaths. In a build
+## with static libraries it will be empty. 
+TeuchosParser_SHARED_LIB_RPATH_COMMAND=-Wl,-rpath,/usr/local/lib
+TeuchosParser_BUILD_SHARED_LIBS=TRUE
+
+TeuchosParser_LINKER=/Library/Developer/CommandLineTools/usr/bin/ld
+TeuchosParser_AR=/Library/Developer/CommandLineTools/usr/bin/ar
+
+## ---------------------------------------------------------------------------
+## Set library specifications and paths 
+## ---------------------------------------------------------------------------
+
+## The project version number
+TeuchosParser_VERSION=13.0
+
+## List of package include dirs
+TeuchosParser_INCLUDE_DIRS= -I/usr/local/include
+
+## List of package library paths
+TeuchosParser_LIBRARY_DIRS= -L/usr/local/lib
+
+## List of package libraries
+TeuchosParser_LIBRARIES= -lteuchosparser -lteuchoscore
+
+## Specification of directories for TPL headers
+TeuchosParser_TPL_INCLUDE_DIRS=
+
+## Specification of directories for TPL libraries
+TeuchosParser_TPL_LIBRARY_DIRS=
+
+## List of required TPLs
+TeuchosParser_TPL_LIBRARIES=
+
+## ---------------------------------------------------------------------------
+## MPI specific variables
+##   These variables are provided to make it easier to get the mpi libraries
+##   and includes on systems that do not use the mpi wrappers for compiling
+## ---------------------------------------------------------------------------
+
+TeuchosParser_MPI_LIBRARIES=
+TeuchosParser_MPI_LIBRARY_DIRS=
+TeuchosParser_MPI_INCLUDE_DIRS=
+TeuchosParser_MPI_EXEC=
+TeuchosParser_MPI_EXEC_MAX_NUMPROCS=
+TeuchosParser_MPI_EXEC_NUMPROCS_FLAG=
+
+## ---------------------------------------------------------------------------
+## Set useful general variables 
+## ---------------------------------------------------------------------------
+
+## The packages enabled for this project
+TeuchosParser_PACKAGE_LIST= TeuchosParser TeuchosCore
+
+## The TPLs enabled for this project
+TeuchosParser_TPL_LIST=
+
+## ---------------------------------------------------------------------------
+## Deprecated variables
+##   These variables from the autotools version of Makefile.export.<package>
+##   have been deprecated. To help avoid confusion with projects that haven't
+##   migrated to the new version of the variable names when the don't compile.
+##   This will put an obvious statement in the link line that these Trilinos
+##   Makefile variables are no longer used. Without this there would be a link
+##   error with no obvious reason as to why other than the lack of Trilinos libs
+##   which would be confusing since the link line in the Makefile would have 
+##   stated to put them on the line.
+## ---------------------------------------------------------------------------
+
+TEUCHOSPARSER_LIBS="The Trilinos variable TEUCHOSPARSER_LIBS has been deprecated. Please see the documentation on the Makefile.export capability for instructions on how to transition to the new system."
+TEUCHOSPARSER_INCLUDES="The Trilinos variable TEUCHOSPARSER_INCLUDES has been deprecated. Please see the documentation on the Makefile.export capability for instructions on how to transition to the new system."
+
+

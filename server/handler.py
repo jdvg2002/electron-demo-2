@@ -1,6 +1,8 @@
 import os
 import logging
 import traceback
+import sys
+import platform
 from Variable import Variable
 from Mesh import Mesh, MeshType
 from Calculation import Calculation, CalculationType
@@ -64,6 +66,63 @@ def run_dakota_analysis(variables: list[Variable], mesh=Mesh(mesh_type=MeshType.
         # Create dakota directory if it doesn't exist
         os.makedirs("dakota", exist_ok=True)
         
+        # Determine platform and set Dakota executable path
+        if os.name == 'nt':  # Windows
+            dakota_platform = "dakota-6.21.0-public-windows.Windows.x86_64-cli"
+            dakota_exe = "dakota.exe"
+            
+            # Check and decompress libraries if needed
+            lib_dir = os.path.join("dakota", dakota_platform, "lib")
+            for lib_file in ["colin.lib", "dakota_src.lib"]:
+                lib_path = os.path.join(lib_dir, lib_file)
+                zip_path = lib_path + ".zip"
+                
+                if not os.path.exists(lib_path) and os.path.exists(zip_path):
+                    import zipfile
+                    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                        zip_ref.extractall(lib_dir)
+                        
+        elif sys.platform == 'darwin':  # macOS
+            if platform.machine() == 'arm64':
+                dakota_platform = "dakota-6.21.0-public-darwin.Darwin.arm64-cli"
+            else:
+                dakota_platform = "dakota-6.21.0-public-darwin.Darwin.x86_64-cli"
+            dakota_exe = "dakota"
+            
+            # Clear quarantine attributes on macOS
+            dakota_install_dir = os.path.join("dakota", dakota_platform)
+            if os.path.exists(dakota_install_dir):
+                os.system(f'xattr -cr "{dakota_install_dir}"')
+        else:  # Linux
+            # Try to detect RHEL version
+            rhel_version = None
+            try:
+                with open('/etc/redhat-release', 'r') as f:
+                    release_info = f.read().lower()
+                    if 'release 7' in release_info:
+                        rhel_version = 7
+                    elif 'release 8' in release_info:
+                        rhel_version = 8
+            except:
+                pass
+            
+            # Default to RHEL 8 if we can't determine version or not RHEL
+            if rhel_version == 7:
+                dakota_platform = "dakota-6.19.0-public-rhel7.Linux.x86_64-cli"
+            else:
+                dakota_platform = "dakota-6.21.0-public-rhel8.Linux.x86_64-cli"
+            dakota_exe = "dakota"
+            
+            # Set executable permissions on Linux
+            dakota_install_dir = os.path.join("dakota", dakota_platform, "bin")
+            if os.path.exists(dakota_install_dir):
+                os.system(f'chmod +x "{os.path.join(dakota_install_dir, dakota_exe)}"')
+            
+        dakota_path = os.path.join("dakota", dakota_platform, "bin", dakota_exe)
+        
+        if not os.path.exists(dakota_path):
+            raise FileNotFoundError(f"Dakota executable not found at: {dakota_path}")
+        
         # Write Dakota input file with calculation type
         dakota_input = os.path.join("dakota", "dakota_input.in")
         write_dakota_input(dakota_input, variables, calculation)
@@ -72,8 +131,8 @@ def run_dakota_analysis(variables: list[Variable], mesh=Mesh(mesh_type=MeshType.
         current_dir = os.getcwd()
         os.chdir("dakota")
         
-        # Run Dakota
-        dakota_command = f"dakota -i dakota_input.in -o dakota_output.out"
+        # Run Dakota with platform-specific executable
+        dakota_command = f'"{os.path.join("..", dakota_path)}" -i dakota_input.in -o dakota_output.out'
         result = os.system(dakota_command)
         
         if result != 0:
@@ -132,7 +191,7 @@ def main():
         ]
         
         results = analysis_setup(variables) 
-        print(results)
+        # print(results)
         return results
         
     except Exception as e:

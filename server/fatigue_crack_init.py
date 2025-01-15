@@ -155,11 +155,12 @@ def main():
     # Call the function
     time_to_init, angle, error = crack_init_fatigue(**params)
     
-    # Print results
-    print(f"Results:")
-    print(f"  Time to initiation: {time_to_init:.3f}")
-    print(f"  Angle offset: {angle:.3f}")
-    print(f"  Error code: {error:x}")  # Print in hex format
+    # Return structured results
+    return {
+        "timeToInitiation": float(time_to_init),
+        "angleOffset": float(angle),
+        "errorCode": hex(error)
+    }
 
 if __name__ == "__main__":
     main()
