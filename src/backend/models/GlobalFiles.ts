@@ -1,3 +1,5 @@
+import { VariableRecord } from './Variable';
+
 export interface FileRecord {
   id: string;
   stlFile: {
@@ -7,18 +9,6 @@ export interface FileRecord {
   };
   originalFileName: string;
   timestamp: string;
-}
-
-export interface VariableRecord {
-  id: string;
-  fileId: string;
-  type: 'measurement' | 'distribution';
-  name: string;
-  value?: number;  // for measurements
-  mean?: number;   // for distributions
-  stdDev?: number; // for distributions
-  units?: string;
-  label?: string;
 }
 
 export class GlobalFileManager {

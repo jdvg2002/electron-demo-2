@@ -1,3 +1,5 @@
+import { VariableRecord } from './Variable';
+
 export interface Visualization {
   title: string;
   description: string;
@@ -43,4 +45,5 @@ export interface CellData {
   output?: CellOutput;
   globalFileIds?: string[];
   dependencyCellId?: string;
+  variables?: Map<string, VariableRecord>;
 } 
