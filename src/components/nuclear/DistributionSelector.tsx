@@ -36,6 +36,7 @@ export const DistributionSelector: React.FC<DistributionSelectorProps> = ({
   });
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [meanError, setMeanError] = useState<string | null>(null);
 
   const handleStdDevChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
@@ -52,8 +53,13 @@ export const DistributionSelector: React.FC<DistributionSelectorProps> = ({
   };
 
   const handleMeanChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const numValue = Number(e.target.value);
-    if (!isNaN(numValue)) {
+    const newValue = e.target.value;
+    const numValue = Number(newValue);
+    
+    if (newValue === '' || isNaN(numValue)) {
+      setMeanError('Please enter a valid number');
+    } else {
+      setMeanError(null);
       setMean(numValue);
     }
   };
@@ -87,8 +93,9 @@ export const DistributionSelector: React.FC<DistributionSelectorProps> = ({
               value={mean}
               onChange={handleMeanChange}
               disabled={!allowMeanEdit && value !== undefined}
-              className={`w-full p-2 border rounded ${!allowMeanEdit && value !== undefined ? 'bg-gray-100' : ''}`}
+              className={`w-full p-2 border rounded ${!allowMeanEdit && value !== undefined ? 'bg-gray-100' : ''} ${meanError ? 'border-red-500' : ''}`}
             />
+            {meanError && <p className="text-red-500 text-sm mt-1">{meanError}</p>}
           </div>
           
           <div>
@@ -123,14 +130,14 @@ export const DistributionSelector: React.FC<DistributionSelectorProps> = ({
             <button
               onClick={() => {
                 const numStdDev = Number(stdDev);
-                if (!error && numStdDev > 0 && (!showNameInput || name.trim())) {
+                if (!error && !meanError && numStdDev > 0 && (!showNameInput || name.trim())) {
                   onAdd(mean, numStdDev, showNameInput ? name : undefined);
                   onClose();
                 }
               }}
-              disabled={!!error || Number(stdDev) <= 0 || (showNameInput && !name.trim())}
+              disabled={!!error || !!meanError || Number(stdDev) <= 0 || (showNameInput && !name.trim())}
               className={`px-4 py-2 rounded ${
-                error || Number(stdDev) <= 0 || (showNameInput && !name.trim())
+                error || meanError || Number(stdDev) <= 0 || (showNameInput && !name.trim())
                   ? 'bg-gray-300 cursor-not-allowed'
                   : 'bg-blue-500 hover:bg-blue-600 text-white'
               }`}
