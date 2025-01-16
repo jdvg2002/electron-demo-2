@@ -8,6 +8,8 @@ from Mesh import Mesh, MeshType
 from Calculation import Calculation, CalculationType
 from Distribution import Distribution, DistributionType
 
+logging.basicConfig(level=logging.INFO)
+
 def write_dakota_input(filename, variables: list[Variable], calculation: Calculation):
     try:
         # Get the absolute path to the calculation script
@@ -59,29 +61,26 @@ def write_dakota_input(filename, variables: list[Variable], calculation: Calcula
             f.write("    no_hessians\n")
             
     except Exception as e:
+        logging.error(f"Failed to write Dakota input file: {str(e)}")
+        logging.error(f"Traceback: {traceback.format_exc()}")
         raise
 
 def run_dakota_analysis(variables: list[Variable], mesh=Mesh(mesh_type=MeshType.PIPE), calculation=Calculation(calculation_type=CalculationType.FLOW_STRESS)):
+    current_dir = os.getcwd()
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    
     try:
+        logging.info(f"Current working directory: {current_dir}")
+        logging.info(f"Project root directory: {project_root}")
+        
         # Create dakota directory if it doesn't exist
-        os.makedirs("dakota", exist_ok=True)
+        dakota_dir = os.path.join(project_root, "dakota")
+        os.makedirs(dakota_dir, exist_ok=True)
         
         # Determine platform and set Dakota executable path
         if os.name == 'nt':  # Windows
             dakota_platform = "dakota-6.21.0-public-windows.Windows.x86_64-cli"
             dakota_exe = "dakota.exe"
-            
-            # Check and decompress libraries if needed
-            lib_dir = os.path.join("dakota", dakota_platform, "lib")
-            for lib_file in ["colin.lib", "dakota_src.lib"]:
-                lib_path = os.path.join(lib_dir, lib_file)
-                zip_path = lib_path + ".zip"
-                
-                if not os.path.exists(lib_path) and os.path.exists(zip_path):
-                    import zipfile
-                    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-                        zip_ref.extractall(lib_dir)
-                        
         elif sys.platform == 'darwin':  # macOS
             if platform.machine() == 'arm64':
                 dakota_platform = "dakota-6.21.0-public-darwin.Darwin.arm64-cli"
@@ -89,10 +88,37 @@ def run_dakota_analysis(variables: list[Variable], mesh=Mesh(mesh_type=MeshType.
                 dakota_platform = "dakota-6.19.0-public-darwin.Darwin.x86_64-cli"
             dakota_exe = "dakota"
             
-            # Clear quarantine attributes on macOS
-            dakota_install_dir = os.path.join("dakota", dakota_platform)
+            logging.info(f"Detected macOS platform: {platform.machine()}")
+            logging.info(f"Selected Dakota platform: {dakota_platform}")
+            
+            # Clear quarantine attributes and set permissions on macOS
+            dakota_install_dir = os.path.join(dakota_dir, dakota_platform)
+            dakota_bin_dir = os.path.join(dakota_install_dir, "bin")
+            dakota_path = os.path.join(dakota_bin_dir, dakota_exe)
+            
+            logging.info(f"Dakota install directory: {dakota_install_dir}")
+            logging.info(f"Dakota binary directory: {dakota_bin_dir}")
+            logging.info(f"Dakota executable path: {dakota_path}")
+            
             if os.path.exists(dakota_install_dir):
+                # Clear quarantine
                 os.system(f'xattr -cr "{dakota_install_dir}"')
+                logging.info("Cleared quarantine attributes")
+                
+                # Set executable permissions
+                if os.path.exists(dakota_path):
+                    os.system(f'chmod +x "{dakota_path}"')
+                    logging.info(f"Set executable permissions on {dakota_path}")
+                    
+                    # Verify permissions
+                    if os.access(dakota_path, os.X_OK):
+                        logging.info("Dakota executable has correct permissions")
+                    else:
+                        logging.error("Dakota executable does not have execute permission")
+                else:
+                    logging.error(f"Dakota executable not found at: {dakota_path}")
+            else:
+                logging.error(f"Dakota install directory does not exist: {dakota_install_dir}")
         else:  # Linux
             # Try to detect RHEL version
             rhel_version = None
@@ -114,48 +140,59 @@ def run_dakota_analysis(variables: list[Variable], mesh=Mesh(mesh_type=MeshType.
             dakota_exe = "dakota"
             
             # Set executable permissions on Linux
-            dakota_install_dir = os.path.join("dakota", dakota_platform, "bin")
+            dakota_install_dir = os.path.join(dakota_dir, dakota_platform, "bin")
             if os.path.exists(dakota_install_dir):
                 os.system(f'chmod +x "{os.path.join(dakota_install_dir, dakota_exe)}"')
             
-        dakota_path = os.path.join("dakota", dakota_platform, "bin", dakota_exe)
+        dakota_path = os.path.join(dakota_dir, dakota_platform, "bin", dakota_exe)
+        logging.info(f"Full Dakota executable path: {os.path.abspath(dakota_path)}")
+        logging.info(f"Path exists: {os.path.exists(dakota_path)}")
         
         if not os.path.exists(dakota_path):
             raise FileNotFoundError(f"Dakota executable not found at: {dakota_path}")
+            
+        if not os.access(dakota_path, os.X_OK):
+            raise PermissionError(f"Dakota executable does not have execute permission: {dakota_path}")
         
         # Write Dakota input file with calculation type
-        dakota_input = os.path.join("dakota", "dakota_input.in")
+        dakota_input = os.path.join(dakota_dir, "dakota_input.in")
         write_dakota_input(dakota_input, variables, calculation)
         
-        # Store current directory and change to dakota directory
-        current_dir = os.getcwd()
-        os.chdir("dakota")
+        # Change to dakota directory
+        os.chdir(dakota_dir)
         
         # Run Dakota with platform-specific executable
-        dakota_command = f'"{os.path.join("..", dakota_path)}" -i dakota_input.in -o dakota_output.out'
+        dakota_command = f'"{dakota_path}" -i dakota_input.in -o dakota_output.out'
+        logging.info(f"Executing Dakota command: {dakota_command}")
         result = os.system(dakota_command)
+        logging.info(f"Dakota execution result code: {result}")
         
         if result != 0:
-            raise RuntimeError(f"Dakota execution failed with return code: {result}")
+            # Check if output file exists and contains error information
+            output_file = os.path.join(dakota_dir, "dakota_output.out")
+            error_msg = f"Dakota execution failed with return code: {result}"
+            if os.path.exists(output_file):
+                with open(output_file, 'r') as f:
+                    error_msg += f"\nDakota output:\n{f.read()}"
+            raise RuntimeError(error_msg)
             
         os.chdir(current_dir)
         
-        return os.path.join("dakota", "dakota_output.dat")
+        return os.path.join(dakota_dir, "dakota_output.dat")
         
     except Exception as e:
         raise
     finally:
-        # Make sure we change back to original directory even if there's an error
         if os.getcwd() != current_dir:
             os.chdir(current_dir)
 
-def analysis_setup(variables: list[Variable], mesh=Mesh(mesh_type=MeshType.PIPE), calculation=Calculation(calculation_type=CalculationType.FLOW_STRESS)):
+def analysis_setup(variables: list[Variable], mesh=Mesh(mesh_type=MeshType.PIPE), calculation=None):
     try:
         if mesh.mesh_type.name.lower() != "pipe":
             raise ValueError("Currently only pipe mesh type is supported")
             
-        if calculation.calculation_type.name.lower() != "flow_stress":
-            raise ValueError("Currently only flow_stress calculation is supported")
+        if calculation.calculation_type.name.lower() not in ["flow_stress", "fatigue_crack_init"]:
+            raise ValueError("Currently only flow_stress and fatigue_crack_init calculations are supported")
             
         if variables is None:
             raise ValueError("Must provide variables")
@@ -169,12 +206,18 @@ def analysis_setup(variables: list[Variable], mesh=Mesh(mesh_type=MeshType.PIPE)
             next(f)
             for line in f:
                 values = line.split()
-                result_dict = {
-                    'eval_id': int(values[0]),
-                    'T': float(values[2]),
-                    'sigma_f': float(values[3]),
-                    'response_fn_1': float(values[5])
-                }
+                if calculation.calculation_type.name.lower() == "fatigue_crack_init":
+                    result_dict = {
+                        'eval_id': int(values[0]),
+                        'stress_range_scaling': float(values[2])
+                    }
+                else:  # flow_stress
+                    result_dict = {
+                        'eval_id': int(values[0]),
+                        'T': float(values[2]),
+                        'sigma_f': float(values[3]),
+                        'response_fn_1': float(values[5])
+                    }
                 results.append(result_dict)
         
         return results
@@ -182,7 +225,7 @@ def analysis_setup(variables: list[Variable], mesh=Mesh(mesh_type=MeshType.PIPE)
     except Exception as e:
         raise
 
-def main(preprocessed_data=None):
+def main(preprocessed_data=None, calculation_type=None):
     try:
         if preprocessed_data:
             # Extract variables from preprocessed data
@@ -197,18 +240,48 @@ def main(preprocessed_data=None):
                     )
                 )
         
-        results = analysis_setup(variables) 
-        return {
-            "status": "success",
-            "results": results,
-            "errorCode": None
-        }
+            # Map analysis types to calculation types
+            calculation_type_mapping = {
+                'pipe_failure': 'FLOW_STRESS',
+                'fatigue_crack_init': 'FATIGUE_CRACK_INIT'
+            }
+            
+            # Get the correct calculation type from the mapping
+            calc_type = calculation_type_mapping.get(calculation_type.lower())
+            if not calc_type:
+                raise ValueError(f"Unsupported calculation type: {calculation_type}")
+                
+            # Create Calculation object based on mapped calculation type
+            calc = Calculation(CalculationType[calc_type])
+            
+            # Add more detailed error logging
+            logging.info(f"Starting analysis with {len(variables)} variables")
+            logging.info(f"Input calculation type: {calculation_type}")
+            logging.info(f"Mapped to calculation type: {calc_type}")
+            
+            try:
+                results = analysis_setup(variables, calculation=calc)
+                return {
+                    "status": "success",
+                    "results": results,
+                    "errorCode": None
+                }
+            except Exception as e:
+                logging.error(f"Analysis setup failed: {str(e)}")
+                logging.error(f"Traceback: {traceback.format_exc()}")
+                return {
+                    "status": "error",
+                    "results": None,
+                    "errorCode": f"Analysis error: {str(e)}\n{traceback.format_exc()}"
+                }
         
     except Exception as e:
+        logging.error(f"Main function failed: {str(e)}")
+        logging.error(f"Traceback: {traceback.format_exc()}")
         return {
             "status": "error",
             "results": None,
-            "errorCode": str(e)
+            "errorCode": f"Main function error: {str(e)}\n{traceback.format_exc()}"
         }
 
 if __name__ == "__main__":

@@ -4,6 +4,7 @@ import platform
 import importlib.util
 import types
 import math
+import logging
 
 def load_dakota_interface():
     # Determine platform and set Dakota path
@@ -32,19 +33,20 @@ def load_dakota_interface():
         else:
             dakota_platform = "dakota-6.21.0-public-rhel8.Linux.x86_64-cli"
     
-
-    # Create base paths
-    base_path = os.path.join(dakota_platform, "share", "dakota", "Python", "dakota", "interfacing")
+    # Get the project root directory
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     
+    # Create base paths using project root
+    base_path = os.path.join(project_root, "dakota", dakota_platform, "share", "dakota", "Python", "dakota", "interfacing")
     dprepro_path = os.path.abspath(os.path.join(base_path, "dprepro.py"))
-    
     interface_path = os.path.abspath(os.path.join(base_path, "interfacing.py"))
-
 
     if not os.path.exists(dprepro_path):
         raise ImportError(f"Dakota dprepro module not found at: {dprepro_path}")
     if not os.path.exists(interface_path):
         raise ImportError(f"Dakota interface module not found at: {interface_path}")
+    if not os.path.exists(base_path):
+        raise FileNotFoundError(f"Dakota base path not found: {base_path}")
 
     # Create package structure
     dakota = types.ModuleType("dakota")
@@ -64,6 +66,11 @@ def load_dakota_interface():
     di = importlib.util.module_from_spec(interface_spec)
     sys.modules["dakota.interfacing.interfacing"] = di
     interface_spec.loader.exec_module(di)
+    
+    logging.info(f"Project root: {project_root}")
+    logging.info(f"Base path: {base_path}")
+    logging.info(f"Dprepro path: {dprepro_path}")
+    logging.info(f"Interface path: {interface_path}")
     
     return di
 

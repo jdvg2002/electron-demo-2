@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 class CalculationType(Enum):
     FLOW_STRESS = 'flow_stress'
+    FATIGUE_CRACK_INIT = 'fatigue_crack_init'
 
 @dataclass
 class Calculation:

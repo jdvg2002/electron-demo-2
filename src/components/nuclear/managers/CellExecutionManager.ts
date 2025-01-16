@@ -53,7 +53,7 @@ print(json.dumps({"result": result}))
             scriptPath = 'handler.py';
             break;
           case 'fatigueCrackInit':
-            scriptPath = 'fatigue_crack_init.py';
+            scriptPath = 'handler.py';
             break;
           case 'ansys':
             scriptPath = 'ansys_fracture.py';
@@ -68,28 +68,44 @@ print(json.dumps({"result": result}))
         const pythonCode = `import sys
 import os
 import json
+import traceback
 
-script_path = os.path.join('${projectRoot}', 'server', '${scriptPath}')
-sys.path.append(os.path.dirname(script_path))
+try:
+    script_path = os.path.join('${projectRoot}', 'server', '${scriptPath}')
+    sys.path.append(os.path.dirname(script_path))
 
-from ${scriptPath.replace('.py', '')} import main
-preprocessed_data = ${preprocessedData ? JSON.stringify(preprocessedData) : 'None'}
-result = main(preprocessed_data)  # Pass the preprocessed data
-print(json.dumps({"data": result}))`;
+    from ${scriptPath.replace('.py', '')} import main
+    preprocessed_data = ${preprocessedData ? JSON.stringify(preprocessedData) : 'None'}
+    analysis_type = "${analysisType.replace(/([A-Z])/g, '_$1').toLowerCase().replace(/^_/, '')}"
+    result = main(preprocessed_data, analysis_type)
+    print(json.dumps({"data": result}))
+except Exception as e:
+    print(json.dumps({
+        "data": {
+            "status": "error",
+            "results": None,
+            "errorCode": f"Python execution error: {str(e)}\\nTraceback: {traceback.format_exc()}"
+        }
+    }))`;
 
         const result = await window.electronWindow.executePython(pythonCode);
 
         if (!result.success) {
-          throw new Error(result.error);
+            console.error("Python execution failed:", result.error);
+            throw new Error(`Python execution failed: ${result.error}`);
         }
 
         // Parse the JSON string from stdout to get the actual data
         try {
-          const parsedOutput = JSON.parse(result.stdout);
-          return parsedOutput.data;
+            const parsedOutput = JSON.parse(result.stdout);
+            if (parsedOutput.data.status === "error") {
+                console.error("Python analysis failed:", parsedOutput.data.errorCode);
+                throw new Error(parsedOutput.data.errorCode);
+            }
+            return parsedOutput.data;
         } catch (e) {
-          console.error("Failed to parse Python output:", result.stdout);
-          throw new Error("Invalid output format from Python script");
+            console.error("Failed to parse Python output:", result.stdout);
+            throw new Error(`Invalid output format from Python script: ${e.message}\nOutput: ${result.stdout}`);
         }
       } catch (error) {
         console.error("External tool execution failed:", error);
