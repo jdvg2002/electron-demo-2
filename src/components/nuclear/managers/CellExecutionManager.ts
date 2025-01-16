@@ -45,7 +45,7 @@ print(json.dumps({"result": result}))
     /**
      * Executes external tools with specific configurations
      */
-    public async runExternalTool(tool: string, projectRoot: string, analysisType: string) {
+    public async runExternalTool(tool: string, projectRoot: string, analysisType: string, preprocessedData: any = null) {
       try {
         let scriptPath;
         switch (analysisType) {
@@ -65,8 +65,7 @@ print(json.dumps({"result": result}))
             throw new Error('Invalid analysis type');
         }
 
-        const result = await window.electronWindow.executePython(
-          `import sys
+        const pythonCode = `import sys
 import os
 import json
 
@@ -74,9 +73,11 @@ script_path = os.path.join('${projectRoot}', 'server', '${scriptPath}')
 sys.path.append(os.path.dirname(script_path))
 
 from ${scriptPath.replace('.py', '')} import main
-result = main()  # Capture the returned value
-print(json.dumps({"data": result}))  # Convert to JSON and print`
-        );
+preprocessed_data = ${preprocessedData ? JSON.stringify(preprocessedData) : 'None'}
+result = main(preprocessed_data)  # Pass the preprocessed data
+print(json.dumps({"data": result}))`;
+
+        const result = await window.electronWindow.executePython(pythonCode);
 
         if (!result.success) {
           throw new Error(result.error);

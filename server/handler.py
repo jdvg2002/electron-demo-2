@@ -182,13 +182,20 @@ def analysis_setup(variables: list[Variable], mesh=Mesh(mesh_type=MeshType.PIPE)
     except Exception as e:
         raise
 
-def main():
+def main(preprocessed_data=None):
     try:
-        variables = [
-            Variable(name="T", value=15000, distribution=Distribution(DistributionType.NORMAL), uncertainty=5000),
-            Variable(name="sigma_f", value=50000, distribution=Distribution(DistributionType.NORMAL), uncertainty=5000),
-            Variable(name="phi", value=1, distribution=Distribution(DistributionType.NORMAL), uncertainty=0.1)
-        ]
+        if preprocessed_data:
+            # Extract variables from preprocessed data
+            variables = []
+            for dist in preprocessed_data['data']['files'][0]['distributions'].values():
+                variables.append(
+                    Variable(
+                        name=dist['name'].split(' ')[0],
+                        value=dist['mean'],
+                        distribution=Distribution(DistributionType.NORMAL),
+                        uncertainty=dist['stdDev']
+                    )
+                )
         
         results = analysis_setup(variables) 
         return {

@@ -3,6 +3,7 @@ dakota/dakota-6.21.0-public-darwin.Darwin.arm64-cli/share/dakota/Python/dakota/i
 dakota/dakota.rst
 dakota/dakota_input.in
 dakota/dakota_output.out
+dakota/dakota_output.dat
 server/__pycache__/
 
 # Logs

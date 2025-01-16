@@ -52,7 +52,16 @@ const ExternalCell: React.FC<ExternalCellProps> = ({
         throw new Error('No tool specified');
       }
 
-      const result = await cellExecutionManager.runExternalTool(cell.tool, projectRoot, selectedAnalysis);
+      // Get the preprocessed data
+      const preprocessedData = getPreprocessedData();
+
+      // Pass preprocessed data to runExternalTool
+      const result = await cellExecutionManager.runExternalTool(
+        cell.tool, 
+        projectRoot, 
+        selectedAnalysis,
+        preprocessedData
+      );
       
       setExecutionResult(result);
       
