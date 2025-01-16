@@ -22,11 +22,17 @@ export const DistributionSelector: React.FC<DistributionSelectorProps> = ({
   showNameInput = false,
   allowMeanEdit = false
 }) => {
+  const formatNumber = (num: number): string => {
+    // Limit to 4 decimal places and remove trailing zeros
+    return Number(num.toFixed(4)).toString();
+  };
+
   const [mean, setMean] = useState(value);
   const [stdDev, setStdDev] = useState<string>(() => {
-    if (currentStdDev) return currentStdDev.toString();
+    if (currentStdDev) return formatNumber(currentStdDev);
     const defaultStdDev = value * 0.05;
-    return defaultStdDev.toString();
+    const magnitude = Math.floor(Math.log10(Math.abs(defaultStdDev) || 1));
+    return formatNumber((Math.round(defaultStdDev / Math.pow(10, magnitude - 1)) * Math.pow(10, magnitude - 1)));
   });
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
