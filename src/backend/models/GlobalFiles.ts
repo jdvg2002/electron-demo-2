@@ -95,7 +95,7 @@ export class GlobalFileManager {
     stdDev: number,
     name?: string
   ): string {
-    return this.addVariable({
+    const id = this.addVariable({
       fileId,
       type: 'distribution',
       name: name || label,
@@ -103,6 +103,11 @@ export class GlobalFileManager {
       mean,
       stdDev
     });
+    
+    // Force an immediate update
+    requestAnimationFrame(() => this.notifyListeners());
+    
+    return id;
   }
 
   getFileById(id: string): FileRecord | undefined {
@@ -150,5 +155,7 @@ export class GlobalFileManager {
 
   public removeVariable(id: string): void {
     this.variables.delete(id);
+    // Force an immediate update
+    requestAnimationFrame(() => this.notifyListeners());
   }
 } 

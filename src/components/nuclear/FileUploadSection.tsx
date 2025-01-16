@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { createFileUploadHandler } from './FileUploadHandler';
 import VisualizationGrid, { createVisualizationCards } from './CellVisualization';
 import FileRenderInfo, { RenderedFileInfo } from './FileRenderInfo';
@@ -13,8 +13,15 @@ const FileUploadSection: React.FC = () => {
   const [stepFilesData, setStepFilesData] = useState<any[]>([]);
   const [isExpanded, setIsExpanded] = useState(false);
   const [fileIds, setFileIds] = useState<string[]>([]);
+  const [updateTrigger, setUpdateTrigger] = useState(0);
 
   const globalFileManager = GlobalFileManager.getInstance();
+
+  useEffect(() => {
+    return globalFileManager.addListener(() => {
+      setUpdateTrigger(prev => prev + 1);
+    });
+  }, []);
 
   const handleFileUpload = useMemo(() => createFileUploadHandler({
     cell: null,
@@ -88,6 +95,22 @@ const FileUploadSection: React.FC = () => {
       );
     }
   }, []);
+
+  const handleDeleteVariable = useCallback((label: string) => {
+    const globalFileManager = GlobalFileManager.getInstance();
+    const fileId = fileIds[0]; // or handle multiple files if needed
+    
+    // Find and delete the variable with this label
+    const variables = globalFileManager.getVariablesForFile(fileId);
+    const variableToDelete = variables.find(v => v.type === 'distribution' && v.label === label);
+    
+    if (variableToDelete) {
+      globalFileManager.removeVariable(variableToDelete.id);
+      
+      // Force a re-render by updating stepFilesData
+      setStepFilesData(prev => [...prev]);
+    }
+  }, [fileIds]);
 
   return (
     <div className="w-full p-6 bg-[#f6f6f6] border-2 border-gray-200 rounded-lg">
@@ -179,6 +202,7 @@ const FileUploadSection: React.FC = () => {
                 >
                   <div className="mt-4">
                     <VisualizationGrid 
+                      key={`grid-${updateTrigger}`}
                       cards={fileIds.flatMap(fileId => {
                         const file = globalFileManager.getFileById(fileId);
                         return file ? createVisualizationCards(fileId, file.stlFile) : [];
@@ -186,6 +210,7 @@ const FileUploadSection: React.FC = () => {
                       cardsPerRow={6}
                       fileId={fileIds[0]}
                       onAddVariable={handleAddVariable}
+                      onDeleteVariable={handleDeleteVariable}
                     />
                   </div>
                 </motion.div>

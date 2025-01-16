@@ -2,7 +2,7 @@ import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { StlViewer } from 'react-stl-viewer';
 import { DistributionChart } from '../charts/ReactorCharts';
 import { Card } from '@/components/ui/card';
-import { BarChart2 } from 'lucide-react';
+import { BarChart2, X } from 'lucide-react';
 import { DistributionSelector } from './DistributionSelector';
 import { GlobalFileManager } from '@/backend/models/GlobalFiles';
 import { VariableRecord } from '@/backend/models/VariableRecord';
@@ -11,7 +11,7 @@ import { VariableRecord } from '@/backend/models/VariableRecord';
 type CardContent = 
   | { type: 'stl'; file: File }
   | { type: 'measurements'; data: Record<string, number> }
-  | { type: 'distribution'; mean: number; stdDev: number; label: string };
+  | { type: 'distribution'; mean: number; stdDev: number; label: string; isLocal?: boolean };
 
 interface VisualizationCard {
   title: string;
@@ -23,6 +23,7 @@ interface VisualizationGridProps {
   cardsPerRow?: number;
   fileId: string;
   onAddVariable: (variable: Omit<VariableRecord, 'id'>) => void;
+  onDeleteVariable?: (label: string) => void;
 }
 
 interface CardRendererProps {
@@ -164,11 +165,23 @@ const VisualizationCard = React.memo<{
   cards: VisualizationCard[];
   index: number;
   onAddDistribution?: (key: string, value: number, stdDev?: number) => void;
-}>(({ card, cards, index, onAddDistribution }) => {
+  onDeleteVariable?: (label: string) => void;
+}>(({ card, cards, index, onAddDistribution, onDeleteVariable }) => {
   const isStlViewer = card.content.type === 'stl';
   
   return (
-    <Card className="aspect-square p-2 w-[180px] overflow-hidden">
+    <Card className="aspect-square p-2 w-[180px] overflow-hidden relative">
+      {card.content.type === 'distribution' && card.content.isLocal && onDeleteVariable && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDeleteVariable(card.content.label);
+          }}
+          className="absolute top-2 right-2 p-1 hover:bg-gray-100 rounded-full z-10"
+        >
+          <X className="w-3 h-3 text-gray-500" />
+        </button>
+      )}
       <h3 className="font-medium mb-2 px-2 text-sm">{card.title}</h3>
       <div className="h-[calc(100%-2rem)] w-full">
         <CardRenderer 
@@ -260,8 +273,8 @@ export const createVisualizationCards = (
     });
   }
 
-  // Add all distributions (both global and local)
-  [...globalDistributions, ...localDistributions].forEach(dist => {
+  // Add global distributions
+  globalDistributions.forEach(dist => {
     cards.push({
       title: dist.name || `${dist.label.split('_').map(word => 
         word.charAt(0).toUpperCase() + word.slice(1)
@@ -270,10 +283,37 @@ export const createVisualizationCards = (
         type: 'distribution',
         mean: dist.mean,
         stdDev: dist.stdDev,
-        label: dist.label
+        label: dist.label,
+        isLocal: false // This indicates it's a global distribution
       }
     });
   });
+
+  // Add local distributions
+  localDistributions.forEach(dist => {
+    cards.push({
+      title: dist.name || `${dist.label.split('_').map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1)
+      ).join(' ')} Distribution`,
+      content: {
+        type: 'distribution',
+        mean: dist.mean,
+        stdDev: dist.stdDev,
+        label: dist.label,
+        isLocal: true // This indicates it's a local distribution
+      }
+    });
+  });
+
+  // If we're not in a preprocessing cell (no localVariables provided), 
+  // mark all distributions as deletable
+  if (!localVariables) {
+    cards.forEach(card => {
+      if (card.content.type === 'distribution') {
+        card.content.isLocal = true; // Make all distributions deletable in FileUploadSection
+      }
+    });
+  }
 
   return cards;
 };
@@ -282,19 +322,14 @@ const VisualizationGrid: React.FC<VisualizationGridProps> = ({
   cards: initialCards, 
   cardsPerRow = 3,
   fileId,
-  onAddVariable 
+  onAddVariable,
+  onDeleteVariable 
 }) => {
-  const [cards, setCards] = useState(initialCards);
   const [selectedMeasurement, setSelectedMeasurement] = useState<{
     key: string;
     value: number;
     stdDev?: number;
   } | null>(null);
-
-  // Update cards when initialCards changes
-  useEffect(() => {
-    setCards(initialCards);
-  }, [initialCards]);
 
   const handleAddDistribution = useCallback((key: string, value: number, stdDev?: number) => {
     setSelectedMeasurement({ key, value, stdDev });
@@ -306,7 +341,6 @@ const VisualizationGrid: React.FC<VisualizationGridProps> = ({
         .map(word => word.charAt(0).toUpperCase() + word.slice(1))
         .join(' ');
 
-      // Create the variable record
       onAddVariable({
         type: 'distribution',
         name: `${name} Distribution`,
@@ -316,18 +350,6 @@ const VisualizationGrid: React.FC<VisualizationGridProps> = ({
         fileId
       });
 
-      // Add new card immediately
-      const newCard: VisualizationCard = {
-        title: `${name} Distribution`,
-        content: {
-          type: 'distribution',
-          mean,
-          stdDev,
-          label: selectedMeasurement.key
-        }
-      };
-
-      setCards(prevCards => [...prevCards, newCard]);
       setSelectedMeasurement(null);
     }
   }, [selectedMeasurement, onAddVariable, fileId]);
@@ -339,7 +361,6 @@ const VisualizationGrid: React.FC<VisualizationGridProps> = ({
     
     const fullName = name.endsWith('Distribution') ? name : `${name} Distribution`;
 
-    // Create the variable record
     onAddVariable({
       type: 'distribution',
       name: fullName,
@@ -348,19 +369,6 @@ const VisualizationGrid: React.FC<VisualizationGridProps> = ({
       stdDev,
       fileId
     });
-
-    // Add new card immediately
-    const newCard: VisualizationCard = {
-      title: fullName,
-      content: {
-        type: 'distribution',
-        mean,
-        stdDev,
-        label: key
-      }
-    };
-
-    setCards(prevCards => [...prevCards, newCard]);
   }, [fileId, onAddVariable]);
 
   return (
@@ -371,13 +379,14 @@ const VisualizationGrid: React.FC<VisualizationGridProps> = ({
           gridTemplateColumns: 'repeat(auto-fill, 180px)',
         }}
       >
-        {cards.map((card, index) => (
+        {initialCards.map((card, index) => (
           <VisualizationCard
-            key={`${card.title}-${index}`}
+            key={`${card.title}-${index}-${card.content.type === 'distribution' ? card.content.label : ''}`}
             card={card}
-            cards={cards}
+            cards={initialCards}
             index={index}
             onAddDistribution={handleAddDistribution}
+            onDeleteVariable={onDeleteVariable}
           />
         ))}
         <PlusCard onCreateDistribution={handleNewDistribution} />
@@ -389,7 +398,7 @@ const VisualizationGrid: React.FC<VisualizationGridProps> = ({
           currentStdDev={selectedMeasurement.stdDev}
           onAdd={handleDistributionCreated}
           onClose={() => setSelectedMeasurement(null)}
-          isUpdating={cards.some(
+          isUpdating={initialCards.some(
             card => 
               card.content.type === 'distribution' && 
               'label' in card.content && 

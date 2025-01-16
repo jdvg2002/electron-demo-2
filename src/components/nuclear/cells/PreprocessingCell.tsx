@@ -31,6 +31,9 @@ const PreprocessingCell: React.FC<PreprocessingCellProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [executionResult, setExecutionResult] = useState<any>(null);
   const [stepFilesData, setStepFilesData] = useState<any[]>([]);
+  const [localRenderTrigger, setLocalRenderTrigger] = useState(0);
+  const [updateTrigger, setUpdateTrigger] = useState(0);
+  const [localVariables, setLocalVariables] = useState<Map<string, VariableRecord>>(cell.localVariables);
 
   useEffect(() => {
     if (cell.globalFileIds?.length) {
@@ -64,6 +67,17 @@ const PreprocessingCell: React.FC<PreprocessingCellProps> = ({
       setStepFilesData(filesData);
     }
   }, [cell.globalFileIds]);
+
+  useEffect(() => {
+    const globalFileManager = GlobalFileManager.getInstance();
+    return globalFileManager.addListener(() => {
+      setUpdateTrigger(prev => prev + 1);
+    });
+  }, []);
+
+  useEffect(() => {
+    setLocalVariables(cell.localVariables);
+  }, [cell.localVariables]);
 
   const prepareInputData = (stepFilesData: any[]) => {
     if (!cell.globalFileIds?.length) return null;
@@ -171,9 +185,30 @@ const PreprocessingCell: React.FC<PreprocessingCellProps> = ({
     const id = crypto.randomUUID();
     const variableRecord: VariableRecord = { id, fileId, ...variable };
     
-    // Create a new Map to avoid reference sharing
-    const newLocalVariables = new Map(cell.localVariables);
+    const newLocalVariables = new Map(localVariables);
     newLocalVariables.set(id, variableRecord);
+    setLocalVariables(newLocalVariables);
+    
+    const updatedCell = {
+      ...cell,
+      localVariables: newLocalVariables
+    };
+    
+    onCellChange(updatedCell);
+  };
+
+  const handleDeleteVariable = (fileId: string, label: string) => {
+    const newLocalVariables = new Map(localVariables);
+    
+    // Find and delete the variable with this label
+    for (const [id, variable] of newLocalVariables.entries()) {
+      if (variable.type === 'distribution' && variable.label === label && variable.fileId === fileId) {
+        newLocalVariables.delete(id);
+        break;
+      }
+    }
+    
+    setLocalVariables(newLocalVariables);
     
     const updatedCell = {
       ...cell,
@@ -205,15 +240,16 @@ const PreprocessingCell: React.FC<PreprocessingCellProps> = ({
     <div className="space-y-4">
       {stepFilesData.map((fileData, index) => (
         <VisualizationGrid 
-          key={index}
+          key={`${index}-${localVariables.size}`}
           cards={createVisualizationCards(
             cell.globalFileIds[index],
             fileData.stlFile,
-            cell.localVariables
+            localVariables
           )}
           cardsPerRow={6}
           fileId={cell.globalFileIds[index]}
           onAddVariable={(variable) => handleAddLocalVariable(cell.globalFileIds[index], variable)}
+          onDeleteVariable={(label) => handleDeleteVariable(cell.globalFileIds[index], label)}
         />
       ))}
 
