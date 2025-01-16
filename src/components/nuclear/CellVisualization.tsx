@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { BarChart2 } from 'lucide-react';
 import { DistributionSelector } from './DistributionSelector';
 import { GlobalFileManager } from '@/backend/models/GlobalFiles';
+import { VariableRecord } from '@/backend/models/VariableRecord';
 
 // Define possible card content types
 type CardContent = 
@@ -21,6 +22,7 @@ interface VisualizationGridProps {
   cards: VisualizationCard[];
   cardsPerRow?: number;
   fileId: string;
+  onAddVariable: (variable: Omit<VariableRecord, 'id'>) => void;
 }
 
 interface CardRendererProps {
@@ -211,10 +213,76 @@ const PlusCard = React.memo(({ onCreateDistribution }: { onCreateDistribution: (
   );
 });
 
+export const createVisualizationCards = (
+  fileId: string,
+  stlFile: File | { name: string; data: string; type: string },
+  localVariables?: Map<string, VariableRecord>
+): VisualizationCard[] => {
+  const globalFileManager = GlobalFileManager.getInstance();
+  
+  // Get global variables
+  const globalMeasurements = globalFileManager.getMeasurementsForFile(fileId);
+  const globalDistributions = globalFileManager.getDistributionsForFile(fileId);
+  
+  // Get local variables for this file (with null check)
+  const localMeasurements = localVariables ? 
+    Array.from(localVariables.values())
+      .filter(v => v.fileId === fileId && v.type === 'measurement')
+    : [];
+    
+  const localDistributions = localVariables ? 
+    Array.from(localVariables.values())
+      .filter(v => v.fileId === fileId && v.type === 'distribution')
+    : [];
+
+  // Combine measurements
+  const measurementData = [...globalMeasurements, ...localMeasurements]
+    .reduce((acc, m) => ({ ...acc, [m.name]: m.value }), {});
+
+  const cards: VisualizationCard[] = [
+    {
+      title: '3D Model',
+      content: { 
+        type: 'stl', 
+        file: stlFile instanceof File ? stlFile : new File(
+          [Uint8Array.from(atob(stlFile.data.split(',')[1]), c => c.charCodeAt(0))],
+          stlFile.name,
+          { type: stlFile.type }
+        )
+      }
+    }
+  ];
+
+  if (Object.keys(measurementData).length > 0) {
+    cards.push({
+      title: 'Measurements',
+      content: { type: 'measurements', data: measurementData }
+    });
+  }
+
+  // Add all distributions (both global and local)
+  [...globalDistributions, ...localDistributions].forEach(dist => {
+    cards.push({
+      title: dist.name || `${dist.label.split('_').map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1)
+      ).join(' ')} Distribution`,
+      content: {
+        type: 'distribution',
+        mean: dist.mean,
+        stdDev: dist.stdDev,
+        label: dist.label
+      }
+    });
+  });
+
+  return cards;
+};
+
 const VisualizationGrid: React.FC<VisualizationGridProps> = ({ 
   cards: initialCards, 
   cardsPerRow = 3,
-  fileId 
+  fileId,
+  onAddVariable 
 }) => {
   const [cards, setCards] = useState(initialCards);
   const [selectedMeasurement, setSelectedMeasurement] = useState<{
@@ -223,61 +291,34 @@ const VisualizationGrid: React.FC<VisualizationGridProps> = ({
     stdDev?: number;
   } | null>(null);
 
-  const globalFileManager = useMemo(() => GlobalFileManager.getInstance(), []);
+  // Update cards when initialCards changes
+  useEffect(() => {
+    setCards(initialCards);
+  }, [initialCards]);
 
   const handleAddDistribution = useCallback((key: string, value: number, stdDev?: number) => {
     setSelectedMeasurement({ key, value, stdDev });
   }, []);
 
-  const handleNewDistribution = useCallback((mean: number, stdDev: number, name: string) => {
-    // Convert the name to the key format: lowercase with underscores
-    const key = name.toLowerCase()
-        .replace(/\s+distribution$/i, '')  // Remove 'distribution' suffix if present
-        .replace(/\s+/g, '_');  // Replace spaces with underscores
-    
-    const fullName = `${name} Distribution`;
-
-    // Save to GlobalFileManager with the full name
-    globalFileManager.addDistribution(
-      fileId,
-      key,
-      mean,
-      stdDev,
-      fullName
-    );
-
-    // Create new distribution card
-    const newCard: VisualizationCard = {
-      title: fullName,
-      content: {
-        type: 'distribution',
-        mean,
-        stdDev,
-        label: key
-      }
-    };
-
-    setCards(prevCards => [...prevCards, newCard]);
-  }, [fileId, globalFileManager]);
-
   const handleDistributionCreated = useCallback((mean: number, stdDev: number) => {
     if (selectedMeasurement) {
       const name = selectedMeasurement.key.split('_')
         .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ') + ' Distribution';
+        .join(' ');
 
-      // Save to GlobalFileManager with the generated name
-      globalFileManager.addDistribution(
-        fileId,
-        selectedMeasurement.key,
+      // Create the variable record
+      onAddVariable({
+        type: 'distribution',
+        name: `${name} Distribution`,
+        label: selectedMeasurement.key,
         mean,
         stdDev,
-        name
-      );
+        fileId
+      });
 
-      // Create new distribution card
+      // Add new card immediately
       const newCard: VisualizationCard = {
-        title: name,
+        title: `${name} Distribution`,
         content: {
           type: 'distribution',
           mean,
@@ -289,7 +330,38 @@ const VisualizationGrid: React.FC<VisualizationGridProps> = ({
       setCards(prevCards => [...prevCards, newCard]);
       setSelectedMeasurement(null);
     }
-  }, [selectedMeasurement, fileId, globalFileManager]);
+  }, [selectedMeasurement, onAddVariable, fileId]);
+
+  const handleNewDistribution = useCallback((mean: number, stdDev: number, name: string) => {
+    const key = name.toLowerCase()
+      .replace(/\s+distribution$/i, '')
+      .replace(/\s+/g, '_');
+    
+    const fullName = name.endsWith('Distribution') ? name : `${name} Distribution`;
+
+    // Create the variable record
+    onAddVariable({
+      type: 'distribution',
+      name: fullName,
+      label: key,
+      mean,
+      stdDev,
+      fileId
+    });
+
+    // Add new card immediately
+    const newCard: VisualizationCard = {
+      title: fullName,
+      content: {
+        type: 'distribution',
+        mean,
+        stdDev,
+        label: key
+      }
+    };
+
+    setCards(prevCards => [...prevCards, newCard]);
+  }, [fileId, onAddVariable]);
 
   return (
     <>
@@ -301,7 +373,7 @@ const VisualizationGrid: React.FC<VisualizationGridProps> = ({
       >
         {cards.map((card, index) => (
           <VisualizationCard
-            key={index}
+            key={`${card.title}-${index}`}
             card={card}
             cards={cards}
             index={index}
@@ -327,59 +399,6 @@ const VisualizationGrid: React.FC<VisualizationGridProps> = ({
       )}
     </>
   );
-};
-
-// Helper function to create visualization cards from STEP file data
-export const createVisualizationCards = (
-  fileId: string,
-  stlFile: File | { name: string; data: string; type: string }
-): VisualizationCard[] => {
-  const globalFileManager = GlobalFileManager.getInstance();
-  const measurements = globalFileManager.getMeasurementsForFile(fileId)
-    .reduce((acc, m) => ({ ...acc, [m.name]: m.value }), {});
-  
-  const distributions = globalFileManager.getDistributionsForFile(fileId)
-    .reduce((acc, d) => ({ 
-      ...acc, 
-      [d.label]: { label: d.label, mean: d.mean, stdDev: d.stdDev, name: d.name }
-    }), {});
-
-  const cards: VisualizationCard[] = [
-    {
-      title: '3D Model',
-      content: { 
-        type: 'stl', 
-        file: stlFile instanceof File ? stlFile : new File(
-          [Uint8Array.from(atob(stlFile.data.split(',')[1]), c => c.charCodeAt(0))],
-          stlFile.name,
-          { type: stlFile.type }
-        )
-      }
-    }
-  ];
-
-  if (Object.keys(measurements).length > 0) {
-    cards.push({
-      title: 'Measurements',
-      content: { type: 'measurements', data: measurements }
-    });
-  }
-
-  Object.values(distributions).forEach(dist => {
-    cards.push({
-      title: dist.name || `${dist.label.split('_').map(word => 
-        word.charAt(0).toUpperCase() + word.slice(1)
-      ).join(' ')} Distribution`,
-      content: {
-        type: 'distribution',
-        mean: dist.mean,
-        stdDev: dist.stdDev,
-        label: dist.label
-      }
-    });
-  });
-
-  return cards;
 };
 
 export default VisualizationGrid; 

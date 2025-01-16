@@ -147,4 +147,34 @@ export class GlobalFileManager {
   private notifyListeners(): void {
     this.listeners.forEach(callback => callback());
   }
+
+  public removeVariable(id: string): void {
+    this.variables.delete(id);
+  }
+
+  public addMeasurement(fileId: string, name: string, value: number): string {
+    const id = crypto.randomUUID();
+    this.variables.set(id, {
+      id,
+      fileId,
+      type: 'measurement',
+      name,
+      value
+    });
+    return id;
+  }
+
+  public addDistribution(fileId: string, label: string, mean: number, stdDev: number, name: string): string {
+    const id = crypto.randomUUID();
+    this.variables.set(id, {
+      id,
+      fileId,
+      type: 'distribution',
+      name,
+      label,
+      mean,
+      stdDev
+    });
+    return id;
+  }
 } 

@@ -45,5 +45,5 @@ export interface CellData {
   output?: CellOutput;
   globalFileIds?: string[];
   dependencyCellId?: string;
-  variables?: Map<string, VariableRecord>;
+  localVariables: Map<string, VariableRecord>;
 } 

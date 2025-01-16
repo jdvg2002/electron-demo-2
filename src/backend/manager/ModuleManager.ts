@@ -97,7 +97,7 @@ export class ModuleManager {
         type: 'preprocessing',
         title: 'Input Preprocessing',
         globalFileIds: files.map(f => f.id),
-        localVariables: [],
+        localVariables: new Map(),
         timestamp: new Date().toISOString(),
         code: 'import numpy as np\n\n# Process reactor data\ndef process_data(input):\n    return np.mean(input)'
       },

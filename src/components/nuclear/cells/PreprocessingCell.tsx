@@ -167,6 +167,21 @@ const PreprocessingCell: React.FC<PreprocessingCellProps> = ({
     }
   };
 
+  const handleAddLocalVariable = (fileId: string, variable: Omit<VariableRecord, 'id'>) => {
+    const id = crypto.randomUUID();
+    const variableRecord: VariableRecord = { id, fileId, ...variable };
+    
+    // Create a new Map to avoid reference sharing
+    const newLocalVariables = new Map(cell.localVariables);
+    newLocalVariables.set(id, variableRecord);
+    
+    const updatedCell = {
+      ...cell,
+      localVariables: newLocalVariables
+    };
+    
+    onCellChange(updatedCell);
+  };
 
   const renderOutputs = (executionResult: any) => {
     if (!executionResult?.preprocessedData) return null;
@@ -193,10 +208,12 @@ const PreprocessingCell: React.FC<PreprocessingCellProps> = ({
           key={index}
           cards={createVisualizationCards(
             cell.globalFileIds[index],
-            fileData.stlFile
+            fileData.stlFile,
+            cell.localVariables
           )}
           cardsPerRow={6}
           fileId={cell.globalFileIds[index]}
+          onAddVariable={(variable) => handleAddLocalVariable(cell.globalFileIds[index], variable)}
         />
       ))}
 
