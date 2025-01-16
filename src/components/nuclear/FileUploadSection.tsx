@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { createFileUploadHandler } from './FileUploadHandler';
 import VisualizationGrid, { createVisualizationCards } from './CellVisualization';
 import FileRenderInfo, { RenderedFileInfo } from './FileRenderInfo';
@@ -67,6 +67,27 @@ const FileUploadSection: React.FC = () => {
     setStepFilesData(prev => prev.filter((_, i) => i !== index));
     setFileIds(prev => prev.filter((_, i) => i !== index));
   };
+
+  const handleAddVariable = useCallback((variable: Omit<VariableRecord, 'id'>) => {
+    const globalFileManager = GlobalFileManager.getInstance();
+    
+    if (variable.type === 'distribution') {
+      globalFileManager.addDistribution(
+        variable.fileId,
+        variable.label,
+        variable.mean,
+        variable.stdDev,
+        variable.name
+      );
+    } else if (variable.type === 'measurement') {
+      globalFileManager.addMeasurement(
+        variable.fileId,
+        variable.name,
+        variable.value,
+        variable.units
+      );
+    }
+  }, []);
 
   return (
     <div className="w-full p-6 bg-[#f6f6f6] border-2 border-gray-200 rounded-lg">
@@ -164,6 +185,7 @@ const FileUploadSection: React.FC = () => {
                       })}
                       cardsPerRow={6}
                       fileId={fileIds[0]}
+                      onAddVariable={handleAddVariable}
                     />
                   </div>
                 </motion.div>
