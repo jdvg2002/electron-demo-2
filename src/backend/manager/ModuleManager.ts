@@ -99,7 +99,7 @@ export class ModuleManager {
         globalFileIds: files.map(f => f.id),
         localVariables: new Map(),
         timestamp: new Date().toISOString(),
-        code: 'import numpy as np\n\n# Process reactor data\ndef process_data(input):\n    return np.mean(input)'
+        code: '#Add variables and calculations here\n'
       },
       {
         id: Date.now() + 1,
@@ -112,7 +112,7 @@ export class ModuleManager {
         id: Date.now() + 2,
         type: 'postprocessing',
         title: 'Results Analysis',
-        code: 'import numpy as np\n\n# Process reactor data\ndef process_data(input):\n    return np.mean(input)'
+        code: '#Add variables and calculations here\n'
       }
     ];
 

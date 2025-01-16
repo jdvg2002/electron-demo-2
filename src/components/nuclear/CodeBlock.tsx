@@ -1,5 +1,5 @@
 import { Editor, loader } from '@monaco-editor/react';
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Copy, Check } from 'lucide-react';
 
 interface CodeBlockProps {
@@ -9,6 +9,7 @@ interface CodeBlockProps {
   showCopy?: boolean;
   onChange?: (value: string | undefined) => void;
   readOnly?: boolean;
+  onEditorMount?: (editor: any) => void;
 }
 
 const CodeBlock = ({ 
@@ -17,9 +18,12 @@ const CodeBlock = ({
   className = '',
   showCopy = true,
   onChange,
-  readOnly = false
+  readOnly = false,
+  onEditorMount
 }: CodeBlockProps) => {
   const [copied, setCopied] = useState(false);
+  const editorRef = useRef<any>(null);
+  const lastCursorPosition = useRef<any>(null);
 
   const handleCopy = async () => {
     try {
@@ -31,12 +35,41 @@ const CodeBlock = ({
     }
   };
 
-  const handleEditorDidMount = (editor: any) => {
-    // Ensure the editor updates its layout
+  const handleEditorDidMount = (editor: any, monaco: any) => {
+    editorRef.current = editor;
+    
+    if (onEditorMount) {
+      onEditorMount(editor);
+    }
+    
+    // Store cursor position on change
+    editor.onDidChangeCursorPosition((e: any) => {
+      lastCursorPosition.current = e.position;
+    });
+
     setTimeout(() => {
       editor.layout();
     }, 100);
   };
+
+  const updateEditorContent = (newValue: string) => {
+    if (editorRef.current) {
+      const editor = editorRef.current;
+      const position = lastCursorPosition.current;
+      
+      editor.setValue(newValue);
+      
+      // Restore cursor position if we have one
+      if (position) {
+        editor.setPosition(position);
+        editor.revealPositionInCenter(position);
+      }
+    }
+  };
+
+  useEffect(() => {
+    updateEditorContent(code);
+  }, [code]);
 
   const handleEditorWillMount = (monaco: any) => {
     // Optional: Configure Monaco instance before mounting
@@ -68,7 +101,7 @@ const CodeBlock = ({
         )}
         <Editor
           height="200px"
-          defaultValue={code}
+          value={code}
           language={language}
           theme="vs-light"
           options={{

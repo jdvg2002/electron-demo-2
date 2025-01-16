@@ -103,7 +103,18 @@ const CardRenderer: React.FC<CardRendererProps> = React.memo(({ content, cards, 
                 );
 
                 return (
-                  <div key={key} className="flex justify-between items-center">
+                  <div 
+                    key={key} 
+                    className="flex justify-between items-center cursor-move"
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData('application/json', JSON.stringify({
+                        type: 'measurement',
+                        label: key,
+                        value: value
+                      }));
+                    }}
+                  >
                     <div>
                       <p className="text-xs text-gray-500 leading-tight">
                         {key.split('_').map(word => 
@@ -128,7 +139,18 @@ const CardRenderer: React.FC<CardRendererProps> = React.memo(({ content, cards, 
 
     case 'distribution':
       return (
-        <div className="w-full h-full -ml-2 -mr-2 -mb-2">
+        <div 
+          className="w-full h-full -ml-2 -mr-2 -mb-2 cursor-move"
+          draggable
+          onDragStart={(e) => {
+            e.dataTransfer.setData('application/json', JSON.stringify({
+              type: 'distribution',
+              label: content.label,
+              mean: content.mean,
+              stdDev: content.stdDev
+            }));
+          }}
+        >
           <DistributionChart
             mean={content.mean}
             stdDev={content.stdDev}
