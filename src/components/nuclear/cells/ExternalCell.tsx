@@ -119,8 +119,7 @@ const ExternalCell: React.FC<ExternalCellProps> = ({
 
     return (
       <div className="mb-4">
-        <h3 className="text-sm font-medium mb-2">Input Data:</h3>
-        <FileOutput file={fileData} />
+        <FileOutput file={fileData} type="input" />
       </div>
     );
   };
@@ -144,7 +143,7 @@ const ExternalCell: React.FC<ExternalCellProps> = ({
 
     return (
       <div className="space-y-4">
-        <FileOutput file={fileData} />
+        <FileOutput file={fileData} type="output" />
       </div>
     );
   };

@@ -8,6 +8,7 @@ import LoadingIndicator from './shared/LoadingIndicator';
 import AnalysisSummary from '../AnalysisSummary';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Card } from '@/components/ui/card';
+import FileOutput from '../FileOutput';
 
 interface PostprocessingCellProps {
   cell: CellData;
@@ -172,6 +173,43 @@ const PostprocessingCell: React.FC<PostprocessingCellProps> = ({
     }
   };
 
+  const renderExternalResults = () => {
+    const externalResults = getExternalCellResults();
+    if (!externalResults) return null;
+
+    const fileData = {
+      name: 'external_analysis_results.json',
+      size: `${JSON.stringify(externalResults).length} bytes`,
+      format: 'JSON',
+      timestamp: new Date().toLocaleString(),
+      data: externalResults
+    };
+
+    return (
+      <div className="mb-4">
+        <FileOutput file={fileData} type="input" />
+      </div>
+    );
+  };
+
+  const renderAnalysisOutput = () => {
+    if (!cell.output?.postProcessedData) return null;
+
+    const fileData = {
+      name: 'post_processing_results.json',
+      size: `${JSON.stringify(cell.output.postProcessedData).length} bytes`,
+      format: 'JSON',
+      timestamp: cell.output.postProcessedData.timestamp,
+      data: cell.output.postProcessedData
+    };
+
+    return (
+      <div className="mt-4">
+        <FileOutput file={fileData} type="output" />
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-4">
       {!hasExternalResults() && (
@@ -180,8 +218,12 @@ const PostprocessingCell: React.FC<PostprocessingCellProps> = ({
         </div>
       )}
 
+      {/* Input File Output */}
+      {renderExternalResults()}
+
       {errorMessage && <ErrorDisplay message={errorMessage} />}
 
+      {/* Code Editor */}
       <CellCodeEditor
         code={localCode}
         onChange={setLocalCode}
@@ -199,6 +241,7 @@ const PostprocessingCell: React.FC<PostprocessingCellProps> = ({
 
       {isExecuting && <LoadingIndicator />}
 
+      {/* Chart */}
       {showChart && (
         <Card className="w-full h-[400px] flex flex-col bg-[#eaf9ff]">
           <div className="flex-grow">
@@ -264,12 +307,16 @@ const PostprocessingCell: React.FC<PostprocessingCellProps> = ({
         </Card>
       )}
 
+      {/* Analysis Summary if present */}
       {cell.output?.summary && (
         <AnalysisSummary
           status={cell.output.summary.status}
           metrics={cell.output.summary.key_metrics}
         />
       )}
+
+      {/* Output File Output */}
+      {renderAnalysisOutput()}
     </div>
   );
 };

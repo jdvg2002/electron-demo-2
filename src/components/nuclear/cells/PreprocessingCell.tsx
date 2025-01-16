@@ -244,7 +244,7 @@ const PreprocessingCell: React.FC<PreprocessingCellProps> = ({
 
     return (
       <div className="space-y-4">
-        <FileOutput file={fileData} />
+        <FileOutput file={fileData} type="output" />
       </div>
     );
   };
@@ -265,7 +265,7 @@ const PreprocessingCell: React.FC<PreprocessingCellProps> = ({
         <div className="text-sm font-medium mb-2">
           Input from {cell.input.inputData.metadata.sourceModule}
         </div>
-        <FileOutput file={fileData} />
+        <FileOutput file={fileData} type="input" />
       </div>
     );
   };

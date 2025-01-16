@@ -12,9 +12,10 @@ interface FileOutputProps {
   };
   className?: string;
   onDownload?: () => void;
+  type?: 'input' | 'output';
 }
 
-const FileOutput = ({ file, className = '', onDownload }: FileOutputProps) => {
+const FileOutput = ({ file, className = '', onDownload, type = 'output' }: FileOutputProps) => {
   const [showPreview, setShowPreview] = useState(false);
 
   const handleDownload = () => {
@@ -39,7 +40,7 @@ const FileOutput = ({ file, className = '', onDownload }: FileOutputProps) => {
 
   return (
     <div className={`bg-gray-50 border rounded-lg p-4 ${className}`}>
-      <h3 className="text-sm font-medium mb-2">Output File</h3>
+      <h3 className="text-sm font-medium mb-2">{type === 'input' ? 'Input File' : 'Output File'}</h3>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <FileText className="w-4 h-4 text-gray-500" />
