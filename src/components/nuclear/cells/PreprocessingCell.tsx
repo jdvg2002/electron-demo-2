@@ -249,8 +249,30 @@ const PreprocessingCell: React.FC<PreprocessingCellProps> = ({
     );
   };
 
+  const renderWiredInput = () => {
+    if (!cell.input?.inputData) return null;
+
+    const fileData = {
+      name: 'wired_input.json',
+      size: `${JSON.stringify(cell.input.inputData.data).length} bytes`,
+      format: 'JSON',
+      timestamp: cell.input.inputData.timestamp,
+      data: cell.input.inputData.data
+    };
+
+    return (
+      <div className="mb-4">
+        <div className="text-sm font-medium mb-2">
+          Input from {cell.input.inputData.metadata.sourceModule}
+        </div>
+        <FileOutput file={fileData} />
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-4">
+      {renderWiredInput()}
       {stepFilesData.map((fileData, index) => (
         <VisualizationGrid 
           key={`${index}-${localVariables.size}`}

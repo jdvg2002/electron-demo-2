@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Demo from './demo';
 import FileUploadSection from './FileUploadSection';
 import { GlobalFileManager } from '@/backend/models/GlobalFiles';
+import { CellData } from '@/backend/models/Cell';
 
 const DraggableCardsCanvas = () => {
   const manager = ModuleManager.getInstance();
@@ -236,7 +237,6 @@ const DraggableCardsCanvas = () => {
 
     if (!activeWire) {
       console.log('Starting new wire from card:', cardId);
-      // Starting a new wire
       setActiveWire({
         startCard: cardId,
         startX: snapPoint.x,
@@ -250,29 +250,45 @@ const DraggableCardsCanvas = () => {
         endCard: cardId 
       });
       
-      // Completing a wire
-      if (activeWire.startCard === cardId) {
-        console.log('Clicked same card, canceling wire');
-        setActiveWire(null);
-        setIsWiring(false);
-        return;
+      // Get source module's postprocessing cell data
+      const sourceModule = modules.find(m => m.card.id === activeWire.startCard);
+      const destinationModule = modules.find(m => m.card.id === cardId);
+      
+      if (sourceModule && destinationModule) {
+        const postprocessingCell = sourceModule.cells.find(
+          cell => cell.type === 'postprocessing' && cell.output?.postProcessedData
+        );
+        
+        const preprocessingCell = destinationModule.cells.find(
+          cell => cell.type === 'preprocessing'
+        );
+
+        if (postprocessingCell?.output?.postProcessedData && preprocessingCell) {
+          // Update the preprocessing cell with the input data
+          const updatedCell: CellData = {
+            ...preprocessingCell,
+            input: {
+              sourceModuleId: sourceModule.card.id,
+              inputData: {
+                type: 'wired_input',
+                version: '1.0',
+                timestamp: new Date().toISOString(),
+                data: postprocessingCell.output.postProcessedData,
+                metadata: {
+                  sourceModule: sourceModule.card.title,
+                  sourceCell: postprocessingCell.title
+                }
+              }
+            }
+          };
+
+          // Update the module's cells
+          destinationModule.updateCell(updatedCell);
+          manager.updateModuleCells(destinationModule.card.id, destinationModule.cells);
+        }
       }
 
-      const hasExistingConnection = wires.some(
-        wire =>
-          (wire.startCard === activeWire.startCard && wire.endCard === cardId) ||
-          (wire.startCard === cardId && wire.endCard === activeWire.startCard)
-      );
-
-      if (hasExistingConnection) {
-        console.log('Connection already exists');
-        alert('These cards are already connected!');
-        setActiveWire(null);
-        setIsWiring(false);
-        return;
-      }
-
-      // Create the new wire
+      // Create the wire as before
       const newWire = {
         id: wires.length,
         startCard: activeWire.startCard,
@@ -286,12 +302,7 @@ const DraggableCardsCanvas = () => {
         endRelX: snapPoint.relX,
         endRelY: snapPoint.relY
       };
-
-      console.log('Creating new wire:', newWire);
       setWires([...wires, newWire]);
-      
-      // Reset wiring state
-      console.log('Resetting wiring state');
       setActiveWire(null);
       setIsWiring(false);
     }

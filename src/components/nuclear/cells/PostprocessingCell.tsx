@@ -30,6 +30,14 @@ const PostprocessingCell: React.FC<PostprocessingCellProps> = ({
   const [chartData, setChartData] = useState<any[]>([]);
   const [probabilityOfFailure, setProbabilityOfFailure] = useState<number>(0);
 
+  useEffect(() => {
+    if (cell.output?.postProcessedData) {
+      setChartData(cell.output.postProcessedData.chartData);
+      setProbabilityOfFailure(cell.output.postProcessedData.probabilityOfFailure);
+      setShowChart(true);
+    }
+  }, [cell.output?.postProcessedData]);
+
   const getExternalCellResults = () => {
     // Debug logging
     console.log('Available Cells:', availableCells);
@@ -126,11 +134,39 @@ const PostprocessingCell: React.FC<PostprocessingCellProps> = ({
       const failureCount = dataArray.filter((d: any) => d.T > d.sigma_f).length;
       const pof = failureCount / dataArray.length;
       
+      // Update local state for immediate UI feedback
       setChartData(mergedData);
       setProbabilityOfFailure(pof);
       setShowChart(true);
+
+      // Store results in cell output
+      const updatedCell = {
+        ...cell,
+        status: 'completed',
+        output: {
+          ...cell.output,
+          postProcessedData: {
+            type: 'post_processing_results',
+            version: '1.0',
+            timestamp: new Date().toISOString(),
+            chartData: mergedData,
+            probabilityOfFailure: pof,
+            metadata: {
+              analysisTimestamp: new Date().toISOString(),
+              sourceAnalysis: 'kde_analysis'
+            }
+          }
+        }
+      };
+
+      onCellChange(updatedCell);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Execution failed');
+      const updatedCell = {
+        ...cell,
+        status: 'error'
+      };
+      onCellChange(updatedCell);
     } finally {
       setIsExecuting(false);
     }
