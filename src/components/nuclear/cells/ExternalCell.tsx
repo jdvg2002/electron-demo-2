@@ -87,14 +87,21 @@ const ExternalCell: React.FC<ExternalCellProps> = ({
 
   // Get preprocessed data from the preprocessing cell (if it exists)
   const getPreprocessedData = () => {
-    
     const preprocessingCell = availableCells.find(c => 
       c.type === 'preprocessing' && 
       c.status === 'completed' && 
       c.output?.preprocessedData
     );
     
-    return preprocessingCell?.output?.preprocessedData;
+    // Ensure we're using the local variables data
+    if (preprocessingCell?.output?.preprocessedData) {
+      const data = preprocessingCell.output.preprocessedData;
+      // The data structure is already correct from the preprocessing cell
+      // since we modified it there to use local variables
+      return data;
+    }
+    
+    return null;
   };
 
   // Render the preprocessed data if available

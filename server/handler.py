@@ -171,8 +171,8 @@ def analysis_setup(variables: list[Variable], mesh=Mesh(mesh_type=MeshType.PIPE)
                 values = line.split()
                 result_dict = {
                     'eval_id': int(values[0]),
-                    'T': float(values[3]),
-                    'sigma_f': float(values[4]),
+                    'T': float(values[2]),
+                    'sigma_f': float(values[3]),
                     'response_fn_1': float(values[5])
                 }
                 results.append(result_dict)

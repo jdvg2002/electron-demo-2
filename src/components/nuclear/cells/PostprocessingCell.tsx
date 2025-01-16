@@ -52,8 +52,8 @@ const PostprocessingCell: React.FC<PostprocessingCellProps> = ({
       throw new Error('No external cell results available. Please run the external analysis first.');
     }
     
-    // The output is directly an array of results
-    return externalCell.output;
+    // Access the results array from the structured output
+    return externalCell.output.results;
   };
 
   // Add this function to safely check for results

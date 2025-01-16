@@ -124,8 +124,8 @@ def crack_init_fatigue(
     return time_to_initiation, angle_offset, error_code
 
 
-def main():
-    # Example parameters
+def main(preprocessed_data=None):
+    # Default parameters
     params = {
         'num_angular_divisions': 36,
         'selected_angular_index': 1,
@@ -135,27 +135,42 @@ def main():
         'phase_fraction': 0.0,
         'cycles_per_case': [100.0],
         'stress_factor_per_case': [1.0],
-        'cycles_per_realization': [0.1],
+        'cycles_per_realization': [1.0],
         'stress_normalizer': [[1.0]],
-        'max_stress_realization': [[200.0]],
+        'max_stress_realization': [[400.0]],
         'min_stress_realization': [[0.0]],
-        'mean_stress_estimate_1': [[100.0]],
-        'mean_stress_estimate_2': [[100.0]],
+        'mean_stress_estimate_1': [[200.0]],
+        'mean_stress_estimate_2': [[200.0]],
         'user_defined_damage': [[1.0]],
         'temperature_factor': 50.0,
         'reference_stress': 100.0,
-        'stress_range_scaling': 1.0,
-        'fatigue_threshold': 10.0,
-        'baseline_exponent_offset': 12.0,
-        'surface_factor': 1.0,
-        'loading_factor': 1.0,
-        'calibration_factor': 1.0
+        'stress_range_scaling': 0.5,
+        'fatigue_threshold': 5.0,
+        'baseline_exponent_offset': 10.0,
+        'surface_factor': 2.0,
+        'loading_factor': 2.0,
+        'calibration_factor': 1.5
     }
-    
+
+    # Update parameters from preprocessed data if available
+    if preprocessed_data:
+        distributions = preprocessed_data['data']['files'][0]['distributions']
+        for dist in distributions.values():
+            param_name = dist['name'].split(' ')[0]  # Get base parameter name
+            if param_name in params:
+                # Handle array parameters
+                if isinstance(params[param_name], list):
+                    params[param_name] = [float(dist['mean'])]
+                # Handle nested array parameters
+                elif isinstance(params[param_name], list) and isinstance(params[param_name][0], list):
+                    params[param_name] = [[float(dist['mean'])]]
+                # Handle scalar parameters
+                else:
+                    params[param_name] = float(dist['mean'])
+
     # Call the function
     time_to_init, angle, error = crack_init_fatigue(**params)
     
-    # Return structured results
     return {
         "timeToInitiation": float(time_to_init),
         "angleOffset": float(angle),

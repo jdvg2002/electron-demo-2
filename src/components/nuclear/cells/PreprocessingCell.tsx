@@ -88,19 +88,22 @@ const PreprocessingCell: React.FC<PreprocessingCellProps> = ({
           const file = globalFileManager.getFileById(id);
           if (!file) return undefined;
           
-          const measurements = globalFileManager.getMeasurementsForFile(id)
-            .reduce((acc, m) => ({ ...acc, [m.name]: m.value }), {});
-          
-          const distributions = globalFileManager.getDistributionsForFile(id)
-            .reduce((acc, d) => ({ 
-              ...acc, 
-              [d.label]: { label: d.label, mean: d.mean, stdDev: d.stdDev, name: d.name }
+          // Get local variables for this file instead of global measurements/distributions
+          const localVars = Array.from(cell.localVariables.values())
+            .filter(v => v.fileId === id)
+            .reduce((acc, v) => ({
+              ...acc,
+              [v.label]: { 
+                label: v.label, 
+                mean: v.mean, 
+                stdDev: v.stdDev,
+                name: v.name 
+              }
             }), {});
 
           return {
             stlFile: file.stlFile,
-            measurements,
-            distributions,
+            distributions: localVars,
             metadata: {
               file_name: file.originalFileName,
               timestamp: file.timestamp
@@ -110,12 +113,13 @@ const PreprocessingCell: React.FC<PreprocessingCellProps> = ({
         .filter(file => file !== undefined)
     };
 
-    // Get the first file to extract available variable names
-    const firstFile = globalFileManager.getFileById(cell.globalFileIds[0]);
+    // Get available variables from local variables
+    const firstFileId = cell.globalFileIds[0];
     const availableVariables = {
-      stlFile: firstFile?.stlFile ? ['vertices', 'faces'] : [],
-      measurements: Object.keys(firstFile?.pipeMeasurements || {}),
-      distributions: Object.keys(firstFile?.distributions || {}),
+      stlFile: ['vertices', 'faces'],
+      distributions: Array.from(cell.localVariables.values())
+        .filter(v => v.fileId === firstFileId)
+        .map(v => v.label),
       metadata: ['file_name', 'timestamp']
     };
 
