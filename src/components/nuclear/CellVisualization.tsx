@@ -1,5 +1,8 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
-import { StlViewer } from 'react-stl-viewer';
+import { Canvas } from '@react-three/fiber'
+import { OrbitControls, Stage } from '@react-three/drei'
+import { useLoader } from '@react-three/fiber'
+import { STLLoader } from 'three/examples/jsm/loaders/STLLoader'
 import { DistributionChart } from '../charts/ReactorCharts';
 import { Card } from '@/components/ui/card';
 import { BarChart2, X, Ruler } from 'lucide-react';
@@ -30,6 +33,15 @@ interface CardRendererProps {
   content: CardContent;
   cards: VisualizationCard[];
   onAddDistribution?: (key: string, value: number, stdDev?: number) => void;
+}
+
+const Model = ({ url }: { url: string }) => {
+  const geometry = useLoader(STLLoader, url)
+  return (
+    <mesh geometry={geometry}>
+      <meshStandardMaterial color="#b8b8b8" />
+    </mesh>
+  )
 }
 
 const CardRenderer: React.FC<CardRendererProps> = React.memo(({ content, cards, onAddDistribution }) => {
@@ -74,18 +86,16 @@ const CardRenderer: React.FC<CardRendererProps> = React.memo(({ content, cards, 
       if (!objectUrl) return <div>Loading...</div>;
       return (
         <div className="w-full h-full -ml-2 -mr-2 -mb-2">
-          <StlViewer
-            style={{ width: '100%', height: '100%' }}
-            orbitControls
-            shadows
-            url={URL.createObjectURL(content.file)}
-            modelProps={{
-              scale: 1.25,
-              rotationX: 0,
-              rotationY: 0,
-              rotationZ: 0
-            }}
-          />
+          <Canvas>
+            <Stage environment="city" intensity={0.6}>
+              <Model url={objectUrl} />
+            </Stage>
+            <OrbitControls 
+              makeDefault
+              minPolarAngle={0}
+              maxPolarAngle={Math.PI / 1.75}
+            />
+          </Canvas>
         </div>
       );
 
