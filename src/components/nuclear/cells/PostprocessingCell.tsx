@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CellData } from '@/backend/models/Cell';
+import { CellData } from '@/backend/Cell';
 import CellExecutionManager from '../managers/CellExecutionManager';
 import CellCodeEditor from './shared/CellCodeEditor';
 import ErrorDisplay from './shared/ErrorDisplay';
@@ -32,12 +32,12 @@ const PostprocessingCell: React.FC<PostprocessingCellProps> = ({
   const [probabilityOfFailure, setProbabilityOfFailure] = useState<number>(0);
 
   useEffect(() => {
-    if (cell.output?.postProcessedData) {
-      setChartData(cell.output.postProcessedData.chartData);
-      setProbabilityOfFailure(cell.output.postProcessedData.probabilityOfFailure);
+    if (cell.output?.processedData) {
+      setChartData(cell.output.processedData.chartData);
+      setProbabilityOfFailure(cell.output.processedData.probabilityOfFailure);
       setShowChart(true);
     }
-  }, [cell.output?.postProcessedData]);
+  }, [cell.output?.processedData]);
 
   const getExternalCellResults = () => {
     // Debug logging
@@ -146,7 +146,7 @@ const PostprocessingCell: React.FC<PostprocessingCellProps> = ({
         status: 'completed',
         output: {
           ...cell.output,
-          postProcessedData: {
+          processedData: {
             type: 'post_processing_results',
             version: '1.0',
             timestamp: new Date().toISOString(),
@@ -193,14 +193,14 @@ const PostprocessingCell: React.FC<PostprocessingCellProps> = ({
   };
 
   const renderAnalysisOutput = () => {
-    if (!cell.output?.postProcessedData) return null;
+    if (!cell.output?.processedData) return null;
 
     const fileData = {
       name: 'post_processing_results.json',
-      size: `${JSON.stringify(cell.output.postProcessedData).length} bytes`,
+      size: `${JSON.stringify(cell.output.processedData).length} bytes`,
       format: 'JSON',
-      timestamp: cell.output.postProcessedData.timestamp,
-      data: cell.output.postProcessedData
+      timestamp: cell.output.processedData.timestamp,
+      data: cell.output.processedData
     };
 
     return (

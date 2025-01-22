@@ -1,5 +1,5 @@
 import { Module } from '@/backend/models/Module';
-import { CellData } from '@/backend/models/Cell';
+import { CellData } from '@/backend/Cell';
 import { GlobalFileData } from '@/backend/models/GlobalFiles';
 
 interface ModuleCard {

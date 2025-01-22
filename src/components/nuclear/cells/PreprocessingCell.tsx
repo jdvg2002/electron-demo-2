@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CellData } from '@/backend/models/Cell';
+import { CellData } from '@/backend/Cell';
 import { GlobalFileManager } from '@/backend/models/GlobalFiles';
 import CellExecutionManager from '../managers/CellExecutionManager';
 import CellCodeEditor from './shared/CellCodeEditor';

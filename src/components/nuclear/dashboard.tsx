@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Demo from './demo';
 import FileUploadSection from './FileUploadSection';
 import { GlobalFileManager } from '@/backend/models/GlobalFiles';
-import { CellData } from '@/backend/models/Cell';
+import { CellData } from '@/backend/Cell';
 
 const DraggableCardsCanvas = () => {
   const manager = ModuleManager.getInstance();
@@ -256,14 +256,14 @@ const DraggableCardsCanvas = () => {
       
       if (sourceModule && destinationModule) {
         const postprocessingCell = sourceModule.cells.find(
-          cell => cell.type === 'postprocessing' && cell.output?.postProcessedData
+          cell => cell.type === 'postprocessing' && cell.output?.processedData
         );
         
         const preprocessingCell = destinationModule.cells.find(
           cell => cell.type === 'preprocessing'
         );
 
-        if (postprocessingCell?.output?.postProcessedData && preprocessingCell) {
+        if (postprocessingCell?.output?.processedData && preprocessingCell) {
           // Update the preprocessing cell with the input data
           const updatedCell: CellData = {
             ...preprocessingCell,
@@ -273,7 +273,7 @@ const DraggableCardsCanvas = () => {
                 type: 'wired_input',
                 version: '1.0',
                 timestamp: new Date().toISOString(),
-                data: postprocessingCell.output.postProcessedData,
+                data: postprocessingCell.output.processedData,
                 metadata: {
                   sourceModule: sourceModule.card.title,
                   sourceCell: postprocessingCell.title

@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { CellData } from '@/backend/models/Cell';
+import { CellData } from '@/backend/Cell';
 
 interface FileUploadHandlerProps {
   onFileSelect: (file: File) => void;

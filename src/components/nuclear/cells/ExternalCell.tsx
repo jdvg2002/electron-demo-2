@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CellData } from '@/backend/models/Cell';
+import { CellData } from '@/backend/Cell';
 import CellExecutionManager from '../managers/CellExecutionManager';
 import ErrorDisplay from './shared/ErrorDisplay';
 import ExecutionOutput from './shared/ExecutionOutput';

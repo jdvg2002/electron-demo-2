@@ -1,5 +1,5 @@
 import React from 'react';
-import { CellData } from '@/backend/models/Cell';
+import { CellData } from '@/backend/Cell';
 import { RenderedFileInfo } from './FileRenderInfo';
 import { GlobalFileManager } from '@/backend/models/GlobalFiles';
 
