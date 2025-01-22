@@ -1,22 +1,23 @@
 import { VariableRecord } from './Variable';
+import { FileRecord } from './File';
+
+export interface CellInput {
+  files?: FileRecord;
+  variables?: VariableRecord[];
+}
 
 export interface CellOutput {
   //  Either pre or post processed data
-  processedData?: {
-    type: string;
-    version: string;
-    timestamp: string;
-    data?: any;
-    chartData?: Array<{
-      x: number;
-      appliedStress: number;
-      flowStress: number;
-    }>;
-    probabilityOfFailure?: number;
-    metadata: {
-      analysisTimestamp: string;
-      sourceAnalysis: string;
-    };
+  processedData?: FileRecord;
+  probabilityOfFailure?: number;
+  chartData?: Array<{
+    x: number;
+    appliedStress: number;
+    flowStress: number;
+  }>;
+  metadata: {
+    analysisTimestamp: string;
+    sourceAnalysis: string;
   };
   stdout?: string;
   data?: any;
@@ -29,20 +30,8 @@ export interface CellData {
   code?: string;
   tool?: string;
   status?: 'pending' | 'running' | 'completed' | 'error';
+  input?: CellInput;
   output?: CellOutput;
-  input?: {
-    sourceModuleId?: number;
-    inputData?: {
-      type: string;
-      version: string;
-      timestamp: string;
-      data: any;
-      metadata: {
-        sourceModule: string;
-        sourceCell: string;
-      };
-    };
-  };
   globalFileIds?: string[];
   dependencyCellId?: string;
   localVariables: Map<string, VariableRecord>;

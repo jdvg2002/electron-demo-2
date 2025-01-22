@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CellData } from '@/backend/Cell';
 import { GlobalFileManager } from '@/backend/models/GlobalFiles';
+import { VariableRecord } from '@/backend/Variable';
 import CellExecutionManager from '../managers/CellExecutionManager';
 import CellCodeEditor from './shared/CellCodeEditor';
 import FileUploadHandler from './shared/FileUploadHandler';
@@ -135,8 +136,8 @@ const PreprocessingCell: React.FC<PreprocessingCellProps> = ({
       setIsExecuting(true);
       setErrorMessage(null);
 
-      const preprocessedData = prepareInputData(stepFilesData);
-      if (!preprocessedData) {
+      const processedData = prepareInputData(stepFilesData);
+      if (!processedData) {
         throw new Error('No input data available for preprocessing');
       }
       
@@ -145,7 +146,7 @@ const PreprocessingCell: React.FC<PreprocessingCellProps> = ({
         type: 'preprocessed_data',
         version: '1.0',
         timestamp: new Date().toISOString(),
-        data: preprocessedData,
+        data: processedData,
         metadata: {
           sourceFiles: cell.globalFileIds,
           processingSteps: ['data_preparation', 'preprocessing']
@@ -157,7 +158,7 @@ const PreprocessingCell: React.FC<PreprocessingCellProps> = ({
         ...cell,
         status: 'completed',
         output: {
-          preprocessedData: outputData
+          processedData: outputData
         }
       };
 
@@ -168,7 +169,7 @@ const PreprocessingCell: React.FC<PreprocessingCellProps> = ({
       setExecutionResult({
         success: true,
         message: "Data prepared successfully",
-        preprocessedData: outputData
+        processedData: outputData
       });
 
     } catch (error) {
@@ -187,7 +188,11 @@ const PreprocessingCell: React.FC<PreprocessingCellProps> = ({
 
   const handleAddLocalVariable = (fileId: string, variable: Omit<VariableRecord, 'id'>) => {
     const id = crypto.randomUUID();
-    const variableRecord: VariableRecord = { id, fileId, ...variable };
+    const variableRecord: VariableRecord = { 
+        ...variable,
+        id,
+        fileId 
+    };
     
     const newLocalVariables = new Map(localVariables);
     newLocalVariables.set(id, variableRecord);
@@ -232,14 +237,14 @@ const PreprocessingCell: React.FC<PreprocessingCellProps> = ({
   };
 
   const renderOutputs = (executionResult: any) => {
-    if (!executionResult?.preprocessedData) return null;
+    if (!executionResult?.processedData) return null;
 
     const fileData = {
       name: 'preprocessed_data.json',
-      size: `${JSON.stringify(executionResult.preprocessedData).length} bytes`,
+      size: `${JSON.stringify(executionResult.processedData).length} bytes`,
       format: 'JSON',
       timestamp: new Date().toLocaleString(),
-      data: executionResult.preprocessedData
+      data: executionResult.processedData
     };
 
     return (

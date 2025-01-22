@@ -8,7 +8,7 @@ import { Card } from '@/components/ui/card';
 import { BarChart2, X, Ruler } from 'lucide-react';
 import { DistributionSelector, MeasurementSelector } from './DistributionSelector';
 import { GlobalFileManager } from '@/backend/models/GlobalFiles';
-import { VariableRecord } from '@/backend/models/VariableRecord';
+import { VariableRecord } from '@/backend/Variable';
 
 // Define possible card content types
 type CardContent = 

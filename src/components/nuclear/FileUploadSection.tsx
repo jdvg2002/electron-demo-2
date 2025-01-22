@@ -3,6 +3,7 @@ import { createFileUploadHandler } from './FileUploadHandler';
 import VisualizationGrid, { createVisualizationCards } from './CellVisualization';
 import FileRenderInfo, { RenderedFileInfo } from './FileRenderInfo';
 import { GlobalFileManager } from '@/backend/models/GlobalFiles';
+import { VariableRecord } from '@/backend/Variable';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const FileUploadSection: React.FC = () => {

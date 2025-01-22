@@ -40,37 +40,40 @@ const PostprocessingCell: React.FC<PostprocessingCellProps> = ({
   }, [cell.output?.processedData]);
 
   const getExternalCellResults = () => {
-    // Debug logging
-    console.log('Available Cells:', availableCells);
-    
     const externalCell = availableCells
-      .filter(c => {
-        console.log('Checking cell:', {
-          type: c.type,
-          status: c.status,
-          hasOutput: !!c.output,
-          output: c.output
-        });
-        return c.type === 'external' && c.status === 'completed' && c.output;
-      })
-      .pop();
+      .find(c => c.type === 'external');
     
-    console.log('Found External Cell:', externalCell);
-    
-    if (!externalCell?.output) {
-      throw new Error('No external cell results available. Please run the external analysis first.');
+    if (!externalCell) {
+      throw new Error('No external analysis cell found.');
     }
     
-    // Access the results array from the structured output
-    return externalCell.output.results;
+    if (externalCell.status === 'pending') {
+      throw new Error('External analysis is pending. Please run the external analysis first.');
+    }
+    
+    if (externalCell.status !== 'completed') {
+      throw new Error(`External analysis is in state: ${externalCell.status}. Please run the external analysis first.`);
+    }
+    
+    if (!externalCell.output) {
+      throw new Error('External analysis completed but no results available. Please try running the analysis again.');
+    }
+    
+    return externalCell.output;
   };
 
-  // Add this function to safely check for results
   const hasExternalResults = () => {
     try {
-      return !!getExternalCellResults();
+      const results = getExternalCellResults();
+      return !!results;
     } catch (e) {
-      return false;
+      // Update the warning message to be more specific
+      const warningMessage = e instanceof Error ? e.message : 'External analysis results not available';
+      return (
+        <div className="text-amber-600 bg-amber-50 p-4 rounded-md">
+          {warningMessage}
+        </div>
+      );
     }
   };
 
@@ -79,7 +82,16 @@ const PostprocessingCell: React.FC<PostprocessingCellProps> = ({
       setIsExecuting(true);
       setErrorMessage(null);
 
-      const dataArray = getExternalCellResults();
+      const externalOutput = getExternalCellResults();
+      
+      // Ensure we're accessing the results array correctly
+      const dataArray = Array.isArray(externalOutput) ? externalOutput :
+                       Array.isArray(externalOutput.results) ? externalOutput.results :
+                       Array.isArray(externalOutput.data) ? externalOutput.data : null;
+      
+      if (!dataArray) {
+        throw new Error('External analysis results are not in the expected format. Expected an array of data points.');
+      }
       
       // Extract T and sigma_f values
       const T = dataArray.map((d: any) => d.T);
@@ -140,13 +152,12 @@ const PostprocessingCell: React.FC<PostprocessingCellProps> = ({
       setProbabilityOfFailure(pof);
       setShowChart(true);
 
-      // Store results in cell output
+      // Update the output structure to match the new format
       const updatedCell = {
         ...cell,
         status: 'completed',
         output: {
-          ...cell.output,
-          processedData: {
+          data: {
             type: 'post_processing_results',
             version: '1.0',
             timestamp: new Date().toISOString(),
@@ -162,6 +173,7 @@ const PostprocessingCell: React.FC<PostprocessingCellProps> = ({
 
       onCellChange(updatedCell);
     } catch (error) {
+      console.error('Execution error:', error);
       setErrorMessage(error instanceof Error ? error.message : 'Execution failed');
       const updatedCell = {
         ...cell,
@@ -174,22 +186,34 @@ const PostprocessingCell: React.FC<PostprocessingCellProps> = ({
   };
 
   const renderExternalResults = () => {
-    const externalResults = getExternalCellResults();
-    if (!externalResults) return null;
+    try {
+      const externalCell = availableCells
+        .find(c => c.type === 'external' && c.status === 'completed');
+      
+      if (!externalCell?.output) {
+        return null;
+      }
 
-    const fileData = {
-      name: 'external_analysis_results.json',
-      size: `${JSON.stringify(externalResults).length} bytes`,
-      format: 'JSON',
-      timestamp: new Date().toLocaleString(),
-      data: externalResults
-    };
+      const fileData = {
+        name: 'analysis_results.json',
+        size: `${JSON.stringify(externalCell.output).length} bytes`,
+        format: 'JSON',
+        timestamp: new Date().toLocaleString(),
+        data: externalCell.output
+      };
 
-    return (
-      <div className="mb-4">
-        <FileOutput file={fileData} type="input" />
-      </div>
-    );
+      return (
+        <div className="mb-4">
+          <div className="text-sm font-medium text-gray-500 mb-2">
+            External Analysis Results
+          </div>
+          <FileOutput file={fileData} type="input" />
+        </div>
+      );
+    } catch (error) {
+      console.warn('Error rendering external results:', error);
+      return null;
+    }
   };
 
   const renderAnalysisOutput = () => {
@@ -212,11 +236,7 @@ const PostprocessingCell: React.FC<PostprocessingCellProps> = ({
 
   return (
     <div className="space-y-4">
-      {!hasExternalResults() && (
-        <div className="text-amber-600 bg-amber-50 p-4 rounded-md">
-          Please run the external analysis cell first to generate results for post-processing.
-        </div>
-      )}
+      {typeof hasExternalResults() === 'boolean' ? null : hasExternalResults()}
 
       {/* Input File Output */}
       {renderExternalResults()}

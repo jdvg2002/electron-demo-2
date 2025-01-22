@@ -1,4 +1,4 @@
-import { CellData } from './Cell';
+import { CellData } from '/Users/javi/nuclear_software/electron-demo-2/src/backend/Cell';
 
 export class Module {
   public card: {

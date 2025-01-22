@@ -53,14 +53,14 @@ const ExternalCell: React.FC<ExternalCellProps> = ({
       }
 
       // Get the preprocessed data
-      const preprocessedData = getPreprocessedData();
+      const processedData = getprocessedData();
 
       // Pass preprocessed data to runExternalTool
       const result = await cellExecutionManager.runExternalTool(
         cell.tool, 
         projectRoot, 
         selectedAnalysis,
-        preprocessedData
+        processedData
       );
       
       setExecutionResult(result);
@@ -86,16 +86,16 @@ const ExternalCell: React.FC<ExternalCellProps> = ({
   };
 
   // Get preprocessed data from the preprocessing cell (if it exists)
-  const getPreprocessedData = () => {
+  const getprocessedData = () => {
     const preprocessingCell = availableCells.find(c => 
       c.type === 'preprocessing' && 
       c.status === 'completed' && 
-      c.output?.preprocessedData
+      c.output?.processedData
     );
     
     // Ensure we're using the local variables data
-    if (preprocessingCell?.output?.preprocessedData) {
-      const data = preprocessingCell.output.preprocessedData;
+    if (preprocessingCell?.output?.processedData) {
+      const data = preprocessingCell.output.processedData;
       // The data structure is already correct from the preprocessing cell
       // since we modified it there to use local variables
       return data;
@@ -105,16 +105,16 @@ const ExternalCell: React.FC<ExternalCellProps> = ({
   };
 
   // Render the preprocessed data if available
-  const renderPreprocessedData = () => {
-    const preprocessedData = getPreprocessedData();
-    if (!preprocessedData) return null;
+  const renderprocessedData = () => {
+    const processedData = getprocessedData();
+    if (!processedData) return null;
 
     const fileData = {
       name: 'preprocessed_data.json',
-      size: `${JSON.stringify(preprocessedData).length} bytes`,
+      size: `${JSON.stringify(processedData).length} bytes`,
       format: 'JSON',
       timestamp: new Date().toLocaleString(),
-      data: preprocessedData
+      data: processedData
     };
 
     return (
@@ -150,13 +150,13 @@ const ExternalCell: React.FC<ExternalCellProps> = ({
 
   return (
     <div className="space-y-4">
-      {!getPreprocessedData() && (
+      {!getprocessedData() && (
         <div className="text-gray-500 italic">
           No preprocessed data available. Please run the preprocessing cell first.
         </div>
       )}
       
-      {renderPreprocessedData()}
+      {renderprocessedData()}
       
       {errorMessage && <ErrorDisplay message={errorMessage} />}
 

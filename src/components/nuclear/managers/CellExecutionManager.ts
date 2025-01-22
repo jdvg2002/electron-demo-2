@@ -45,7 +45,7 @@ print(json.dumps({"result": result}))
     /**
      * Executes external tools with specific configurations
      */
-    public async runExternalTool(tool: string, projectRoot: string, analysisType: string, preprocessedData: any = null) {
+    public async runExternalTool(tool: string, projectRoot: string, analysisType: string, processedData: any = null) {
       try {
         let scriptPath;
         switch (analysisType) {
@@ -75,7 +75,7 @@ try:
     sys.path.append(os.path.dirname(script_path))
 
     from ${scriptPath.replace('.py', '')} import main
-    preprocessed_data = ${preprocessedData ? JSON.stringify(preprocessedData) : 'None'}
+    preprocessed_data = ${processedData ? JSON.stringify(processedData) : 'None'}
     analysis_type = "${analysisType.replace(/([A-Z])/g, '_$1').toLowerCase().replace(/^_/, '')}"
     result = main(preprocessed_data, analysis_type)
     print(json.dumps({"data": result}))
