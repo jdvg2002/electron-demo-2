@@ -9,6 +9,7 @@ import { BarChart2, X, Ruler } from 'lucide-react';
 import { DistributionSelector, MeasurementSelector } from './DistributionSelector';
 import { GlobalFileManager } from '@/backend/models/GlobalFiles';
 import { VariableRecord } from '@/backend/Variable';
+import StableSTLViewer from './3d/StableSTLViewer';
 
 // Define possible card content types
 type CardContent = 
@@ -50,52 +51,11 @@ const CardRenderer: React.FC<CardRendererProps> = React.memo(({ content, cards, 
       new Intl.NumberFormat('en-US').format(Math.round(value));
   };
 
-  // For STL files, memoize the URL creation
-  const stlUrl = useMemo(() => {
-    if (content.type === 'stl') {
-      return URL.createObjectURL(content.file);
-    }
-    return null;
-  }, [content.type === 'stl' ? content.file : null]);
-
-  // Cleanup URL when component unmounts
-  React.useEffect(() => {
-    return () => {
-      if (stlUrl) {
-        URL.revokeObjectURL(stlUrl);
-      }
-    };
-  }, [stlUrl]);
-
-  // Create and manage URL for STL files
-  const [objectUrl, setObjectUrl] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    if (content.type === 'stl') {
-      
-      const url = URL.createObjectURL(content.file);
-      setObjectUrl(url);
-      return () => {
-        URL.revokeObjectURL(url);
-      };
-    }
-  }, [content]);
-
   switch (content.type) {
     case 'stl':
-      if (!objectUrl) return <div>Loading...</div>;
       return (
         <div className="w-full h-full -ml-2 -mr-2 -mb-2">
-          <Canvas>
-            <Stage environment="city" intensity={0.6}>
-              <Model url={objectUrl} />
-            </Stage>
-            <OrbitControls 
-              makeDefault
-              minPolarAngle={0}
-              maxPolarAngle={Math.PI / 1.75}
-            />
-          </Canvas>
+          <StableSTLViewer file={content.file} />
         </div>
       );
 
@@ -403,7 +363,7 @@ export const createVisualizationCards = (
   return cards;
 };
 
-const VisualizationGrid: React.FC<VisualizationGridProps> = ({ 
+const VisualizationGrid: React.FC<VisualizationGridProps> = React.memo(({ 
   cards: initialCards, 
   cardsPerRow = 3,
   fileId,
@@ -444,11 +404,9 @@ const VisualizationGrid: React.FC<VisualizationGridProps> = ({
       .replace(/\s+distribution$/i, '')
       .replace(/\s+/g, '_');
     
-    const fullName = name.endsWith('Distribution') ? name : `${name} Distribution`;
-
     onAddVariable({
       type: 'distribution',
-      name: fullName,
+      name: name.endsWith('Distribution') ? name : `${name} Distribution`,
       label: key,
       mean,
       stdDev,
@@ -508,6 +466,14 @@ const VisualizationGrid: React.FC<VisualizationGridProps> = ({
       )}
     </>
   );
-};
+}, (prevProps, nextProps) => {
+  // Only rerender if the cards actually changed
+  return (
+    prevProps.fileId === nextProps.fileId &&
+    JSON.stringify(prevProps.cards) === JSON.stringify(nextProps.cards)
+  );
+});
+
+VisualizationGrid.displayName = 'VisualizationGrid';
 
 export default VisualizationGrid; 

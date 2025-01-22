@@ -203,7 +203,6 @@ const FileUploadSection: React.FC = () => {
                 >
                   <div className="mt-4">
                     <VisualizationGrid 
-                      key={`grid-${updateTrigger}`}
                       cards={fileIds.flatMap(fileId => {
                         const file = globalFileManager.getFileById(fileId);
                         return file ? createVisualizationCards(fileId, file.stlFile) : [];
