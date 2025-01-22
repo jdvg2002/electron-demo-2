@@ -147,31 +147,29 @@ const PostprocessingCell: React.FC<PostprocessingCellProps> = ({
       const failureCount = dataArray.filter((d: any) => d.T > d.sigma_f).length;
       const pof = failureCount / dataArray.length;
       
-      // Update local state for immediate UI feedback
-      setChartData(mergedData);
-      setProbabilityOfFailure(pof);
-      setShowChart(true);
-
-      // Update the output structure to match the new format
+      // Update cell with structured output using new format
       const updatedCell = {
         ...cell,
         status: 'completed',
         output: {
-          data: {
-            type: 'post_processing_results',
-            version: '1.0',
-            timestamp: new Date().toISOString(),
+          processedData: {
             chartData: mergedData,
-            probabilityOfFailure: pof,
-            metadata: {
-              analysisTimestamp: new Date().toISOString(),
-              sourceAnalysis: 'kde_analysis'
-            }
+            probabilityOfFailure: pof
+          },
+          metadata: {
+            analysisTimestamp: new Date().toISOString(),
+            sourceAnalysis: 'kde_analysis'
           }
         }
       };
 
       onCellChange(updatedCell);
+      
+      // Update local state for display
+      setChartData(mergedData);
+      setProbabilityOfFailure(pof);
+      setShowChart(true);
+
     } catch (error) {
       console.error('Execution error:', error);
       setErrorMessage(error instanceof Error ? error.message : 'Execution failed');
@@ -220,15 +218,19 @@ const PostprocessingCell: React.FC<PostprocessingCellProps> = ({
     if (!cell.output?.processedData) return null;
 
     const fileData = {
-      name: 'post_processing_results.json',
+      name: 'analysis_results.json',
       size: `${JSON.stringify(cell.output.processedData).length} bytes`,
       format: 'JSON',
-      timestamp: cell.output.processedData.timestamp,
-      data: cell.output.processedData
+      timestamp: new Date().toLocaleString(),
+      data: {
+        chartData: cell.output.processedData.chartData,
+        probabilityOfFailure: cell.output.processedData.probabilityOfFailure,
+        metadata: cell.output.metadata
+      }
     };
 
     return (
-      <div className="mt-4">
+      <div className="space-y-4">
         <FileOutput file={fileData} type="output" />
       </div>
     );
