@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { DistributionChart } from '../charts/ReactorCharts';
+import { DistributionChart } from '@/components/nuclear/charts/ReactorCharts';
 import { Ruler, BarChart2 } from 'lucide-react';
 
 interface DistributionSelectorProps {

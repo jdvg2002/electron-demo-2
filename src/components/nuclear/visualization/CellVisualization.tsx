@@ -3,13 +3,13 @@ import { Canvas } from '@react-three/fiber'
 import { OrbitControls, Stage } from '@react-three/drei'
 import { useLoader } from '@react-three/fiber'
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader'
-import { DistributionChart } from '../charts/ReactorCharts';
+import { DistributionChart } from '../../charts/ReactorCharts';
 import { Card } from '@/components/ui/card';
 import { BarChart2, X, Ruler } from 'lucide-react';
 import { DistributionSelector, MeasurementSelector } from './DistributionSelector';
 import { GlobalFileManager } from '@/backend/models/GlobalFiles';
 import { VariableRecord } from '@/backend/Variable';
-import StableSTLViewer from './3d/StableSTLViewer';
+import StableSTLViewer from '../3d/StableSTLViewer';
 
 // Define possible card content types
 type CardContent = 

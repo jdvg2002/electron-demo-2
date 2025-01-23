@@ -1,6 +1,6 @@
 import React from 'react';
 import { ParsedFileResult } from '@/backend/models/FileUploadManager';
-import VisualizationGrid, { createVisualizationCards } from '../CellVisualization';
+import VisualizationGrid, { createVisualizationCards } from '../visualization/CellVisualization';
 import { useFileUpload } from '@/hooks/useFileUpload';
 
 interface VisualizationManagerProps {

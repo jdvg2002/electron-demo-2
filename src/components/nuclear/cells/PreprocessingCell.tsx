@@ -7,7 +7,7 @@ import CellCodeEditor from './shared/CellCodeEditor';
 import ErrorDisplay from './shared/ErrorDisplay';
 import ExecutionOutput from './shared/ExecutionOutput';
 import LoadingIndicator from './shared/LoadingIndicator';
-import VisualizationGrid, { createVisualizationCards } from '../CellVisualization';
+import VisualizationGrid, { createVisualizationCards } from '../visualization/CellVisualization';
 import { Upload } from 'lucide-react';
 import FileOutput from '../FileOutput';
 
