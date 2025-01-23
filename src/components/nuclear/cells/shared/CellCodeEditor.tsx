@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import CodeBlock from '../../CodeBlock';
+import CodeBlock from './CodeBlock';
 
 interface CellCodeEditorProps {
   code: string;

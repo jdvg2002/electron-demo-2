@@ -5,7 +5,7 @@ import ErrorDisplay from './shared/ErrorDisplay';
 import LoadingIndicator from './shared/LoadingIndicator';
 import { AreaChart, Area, XAxis, YAxis,Legend, ResponsiveContainer } from 'recharts';
 import { Card } from '@/components/ui/card';
-import FileOutput from '../FileOutput';
+import FileOutput from './shared/FileOutput';
 
 interface PostprocessingCellProps {
   cell: CellData;

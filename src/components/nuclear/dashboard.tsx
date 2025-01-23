@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { ModuleManager } from '@/backend/manager/ModuleManager';
 import { motion, AnimatePresence } from 'framer-motion';
 import Demo from './demo';
-import FileUploadSection from './FileUploadSection';
+import FileUploadSection from './upload/FileUploadSection';
 import { GlobalFileManager } from '@/backend/models/GlobalFiles';
 import { CellData } from '@/backend/Cell';
 

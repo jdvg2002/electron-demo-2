@@ -1,6 +1,6 @@
 import React from 'react';
 import { ParsedFileResult } from '@/backend/models/FileUploadManager';
-import FileRenderInfo from '../FileRenderInfo';
+import FileRenderInfo from './FileRenderInfo';
 
 interface FileListProps {
   files: ParsedFileResult[];

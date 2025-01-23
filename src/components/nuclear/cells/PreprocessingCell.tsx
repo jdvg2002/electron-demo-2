@@ -4,12 +4,9 @@ import { GlobalFileManager } from '@/backend/models/GlobalFiles';
 import { VariableRecord } from '@/backend/Variable';
 import CellExecutionManager from '../managers/CellExecutionManager';
 import CellCodeEditor from './shared/CellCodeEditor';
-import ErrorDisplay from './shared/ErrorDisplay';
-import ExecutionOutput from './shared/ExecutionOutput';
 import LoadingIndicator from './shared/LoadingIndicator';
 import VisualizationGrid, { createVisualizationCards } from '../visualization/CellVisualization';
-import { Upload } from 'lucide-react';
-import FileOutput from '../FileOutput';
+import FileOutput from './shared/FileOutput';
 
 interface PreprocessingCellProps {
   cell: CellData;

@@ -9,7 +9,7 @@ import { BarChart2, X, Ruler } from 'lucide-react';
 import { DistributionSelector, MeasurementSelector } from './DistributionSelector';
 import { GlobalFileManager } from '@/backend/models/GlobalFiles';
 import { VariableRecord } from '@/backend/Variable';
-import StableSTLViewer from '../3d/StableSTLViewer';
+import StableSTLViewer from './StableSTLViewer';
 
 // Define possible card content types
 type CardContent = 

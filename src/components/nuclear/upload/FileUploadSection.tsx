@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileUploadContainer } from './upload/FileUploadContainer';
+import { FileUploadContainer } from './FileUploadContainer';
 
 const FileUploadSection: React.FC = () => {
   return <FileUploadContainer />;

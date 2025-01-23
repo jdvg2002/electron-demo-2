@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import NotebookCell from '@/components/nuclear/NotebookCell';
+import NotebookCell from './cells/NotebookCell';
 import { ModuleManager } from '@/backend/manager/ModuleManager';
 import { CellData } from '@/backend/Cell';
 import { Module } from '@/backend/models/Module';

@@ -2,10 +2,8 @@ import React, { useState } from 'react';
 import { CellData } from '@/backend/Cell';
 import CellExecutionManager from '../managers/CellExecutionManager';
 import ErrorDisplay from './shared/ErrorDisplay';
-import ExecutionOutput from './shared/ExecutionOutput';
 import LoadingIndicator from './shared/LoadingIndicator';
-import ExternalTool from '../ExternalTool';
-import FileOutput from '../FileOutput';
+import FileOutput from './shared/FileOutput';
 
 // Define the analysis options once
 const ANALYSIS_OPTIONS = {

@@ -2,9 +2,9 @@ import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Play, ChevronDown, Upload, Box, BarChart2 } from 'lucide-react';
 import { CellData } from '@/backend/Cell';
-import PreprocessingCell from './cells/PreprocessingCell';
-import ExternalCell from './cells/ExternalCell';
-import PostprocessingCell from './cells/PostprocessingCell';
+import PreprocessingCell from './PreprocessingCell';
+import ExternalCell from './ExternalCell';
+import PostprocessingCell from './PostprocessingCell';
 
 interface NotebookCellProps {
   cell: CellData;

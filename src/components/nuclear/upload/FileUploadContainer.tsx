@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { FileList } from '@/components/nuclear/upload/FileList';
-import { VisualizationManager } from '@/components/nuclear/upload/VisualizationManager';
+import { VisualizationManager } from '@/components/nuclear/visualization/VisualizationManager';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const FileUploadContainer: React.FC = () => {

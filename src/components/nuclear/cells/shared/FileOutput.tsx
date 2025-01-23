@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FileText, Download, Eye } from 'lucide-react';
-import ExecutionOutput from './cells/shared/ExecutionOutput';
+import ExecutionOutput from './ExecutionOutput';
 
 interface FileOutputProps {
   file: {

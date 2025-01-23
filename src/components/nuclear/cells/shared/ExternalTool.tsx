@@ -1,6 +1,4 @@
 import React from 'react';
-import { FileText } from 'lucide-react';
-import StatusIndicator from './StatusIndicator';
 
 interface ExternalToolProps {
   tool: string;
