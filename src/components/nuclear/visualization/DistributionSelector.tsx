@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Ruler, BarChart2 } from 'lucide-react';
+import { DistributionChart } from '../charts/ReactorCharts';
 
 interface DistributionSelectorProps {
   value?: number;
@@ -110,9 +111,13 @@ export const DistributionSelector: React.FC<DistributionSelectorProps> = ({
           </div>
 
           <div className="h-40">
-          <div className="w-full h-full">
-              Distribution Chart (Mean: {mean}, StdDev: {currentStdDev || mean * 0.05})
-            </div>
+          <DistributionChart
+              mean={mean}
+              stdDev={currentStdDev || mean * 0.05}
+              type="normal"
+              data={[]}
+              className="w-full h-full"
+            />
           </div>
 
           <div className="flex justify-end gap-2">
