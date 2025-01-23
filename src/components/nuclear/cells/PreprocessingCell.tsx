@@ -4,7 +4,6 @@ import { GlobalFileManager } from '@/backend/models/GlobalFiles';
 import { VariableRecord } from '@/backend/Variable';
 import CellExecutionManager from '../managers/CellExecutionManager';
 import CellCodeEditor from './shared/CellCodeEditor';
-import FileUploadHandler from './shared/FileUploadHandler';
 import ErrorDisplay from './shared/ErrorDisplay';
 import ExecutionOutput from './shared/ExecutionOutput';
 import LoadingIndicator from './shared/LoadingIndicator';

@@ -1,4 +1,4 @@
-import { VariableRecord } from './Variable';
+import { VariableRecord } from '../Variable';
 
 export interface FileRecord {
   id: string;
