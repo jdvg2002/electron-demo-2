@@ -1,12 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { CellData } from '@/backend/Cell';
-import CellExecutionManager from '../managers/CellExecutionManager';
 import CellCodeEditor from './shared/CellCodeEditor';
 import ErrorDisplay from './shared/ErrorDisplay';
-import ExecutionOutput from './shared/ExecutionOutput';
 import LoadingIndicator from './shared/LoadingIndicator';
-import AnalysisSummary from '../AnalysisSummary';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis,Legend, ResponsiveContainer } from 'recharts';
 import { Card } from '@/components/ui/card';
 import FileOutput from '../FileOutput';
 
@@ -327,14 +324,6 @@ const PostprocessingCell: React.FC<PostprocessingCellProps> = ({
             Probability of Failure: {(probabilityOfFailure * 100).toFixed(2)}%
           </div>
         </Card>
-      )}
-
-      {/* Analysis Summary if present */}
-      {cell.output?.summary && (
-        <AnalysisSummary
-          status={cell.output.summary.status}
-          metrics={cell.output.summary.key_metrics}
-        />
       )}
 
       {/* Output File Output */}
