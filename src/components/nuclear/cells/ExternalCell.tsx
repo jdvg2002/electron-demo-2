@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { CellData } from '@/backend/Cell';
-import CellExecutionManager from '../managers/CellExecutionManager';
+import CellExecutionManager from './shared/CellExecutionManager';
 import ErrorDisplay from './shared/ErrorDisplay';
 import LoadingIndicator from './shared/LoadingIndicator';
 import FileOutput from './shared/FileOutput';

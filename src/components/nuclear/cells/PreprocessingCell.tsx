@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { CellData } from '@/backend/Cell';
 import { GlobalFileManager } from '@/backend/models/GlobalFiles';
 import { VariableRecord } from '@/backend/Variable';
-import CellExecutionManager from '../managers/CellExecutionManager';
+import CellExecutionManager from './shared/CellExecutionManager';
 import CellCodeEditor from './shared/CellCodeEditor';
 import LoadingIndicator from './shared/LoadingIndicator';
 import VisualizationGrid, { createVisualizationCards } from '../visualization/CellVisualization';
