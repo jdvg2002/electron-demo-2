@@ -1,29 +1,19 @@
 import { VariableRecord } from '../Variable';
+import { FileRecord } from '../File';
 
-export interface FileRecord {
-  id: string;
-  stlFile: {
-    data: string;
-    name: string;
-    type: string;
-  };
-  originalFileName: string;
-  timestamp: string;
-}
-
-export class GlobalFileManager {
-  private static instance: GlobalFileManager;
+export class GlobalManager {
+  private static instance: GlobalManager;
   private files: Map<string, FileRecord> = new Map();
   private variables: Map<string, VariableRecord> = new Map();
   private listeners: Set<() => void> = new Set();
 
   private constructor() {}
 
-  static getInstance(): GlobalFileManager {
-    if (!GlobalFileManager.instance) {
-      GlobalFileManager.instance = new GlobalFileManager();
+  static getInstance(): GlobalManager {
+    if (!GlobalManager.instance) {
+      GlobalManager.instance = new GlobalManager();
     }
-    return GlobalFileManager.instance;
+    return GlobalManager.instance;
   }
 
   async addFileFromUpload(
@@ -38,13 +28,12 @@ export class GlobalFileManager {
           const id = crypto.randomUUID();
           const fileData: FileRecord = {
             id,
-            stlFile: {
-              data: reader.result as string,
-              name: file.name,
-              type: file.type
-            },
-            originalFileName,
-            timestamp: new Date().toISOString()
+            type: file.type,
+            version: '1.0',
+            timestamp: new Date().toISOString(),
+            originalFileName: originalFileName,
+            sourceEnvironment: 'web-upload',
+            data: reader.result as string,
           };
           
           this.files.set(id, fileData);

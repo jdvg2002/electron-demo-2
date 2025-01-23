@@ -7,7 +7,7 @@ import { DistributionChart } from '../charts/ReactorCharts';
 import { Card } from '@/components/ui/card';
 import { BarChart2, X, Ruler } from 'lucide-react';
 import { DistributionSelector, MeasurementSelector } from './DistributionSelector';
-import { GlobalFileManager } from '@/backend/models/GlobalFiles';
+import { GlobalManager } from '@/backend/manager/GlobalManager';
 import { VariableRecord } from '@/backend/Variable';
 import StableSTLViewer from './StableSTLViewer';
 
@@ -276,11 +276,13 @@ export const createVisualizationCards = (
   stlFile: File | { name: string; data: string; type: string },
   localVariables?: Map<string, VariableRecord>
 ): VisualizationCard[] => {
-  const globalFileManager = GlobalFileManager.getInstance();
+  const globalManager = GlobalManager.getInstance();
   
-  // Get global variables
-  const globalMeasurements = globalFileManager.getMeasurementsForFile(fileId);
-  const globalDistributions = globalFileManager.getDistributionsForFile(fileId);
+  // Get global variables - update to use GlobalManager methods
+  const globalMeasurements = globalManager.getVariablesForFile(fileId)
+    .filter(v => v.type === 'measurement');
+  const globalDistributions = globalManager.getVariablesForFile(fileId)
+    .filter(v => v.type === 'distribution');
   
   // Get local variables for this file (with null check)
   const localMeasurements = localVariables ? 
@@ -329,7 +331,7 @@ export const createVisualizationCards = (
         mean: dist.mean,
         stdDev: dist.stdDev,
         label: dist.label,
-        isLocal: false // This indicates it's a global distribution
+        isLocal: false
       }
     });
   });
@@ -345,7 +347,7 @@ export const createVisualizationCards = (
         mean: dist.mean,
         stdDev: dist.stdDev,
         label: dist.label,
-        isLocal: true // This indicates it's a local distribution
+        isLocal: true
       }
     });
   });
@@ -355,7 +357,7 @@ export const createVisualizationCards = (
   if (!localVariables) {
     cards.forEach(card => {
       if (card.content.type === 'distribution') {
-        card.content.isLocal = true; // Make all distributions deletable in FileUploadSection
+        card.content.isLocal = true;
       }
     });
   }

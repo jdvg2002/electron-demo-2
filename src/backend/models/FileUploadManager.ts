@@ -1,4 +1,4 @@
-import { GlobalFileManager } from './GlobalFiles';
+import { GlobalManager } from '@/backend/manager/GlobalManager';
 import { VariableRecord } from '../Variable';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
 import { CellData } from '@/backend/Cell';
@@ -23,10 +23,10 @@ export interface FileUploadState {
 
 export class FileUploadManager {
   private static instance: FileUploadManager;
-  private globalFileManager: GlobalFileManager;
+  private globalManager: GlobalManager;
 
   private constructor() {
-    this.globalFileManager = GlobalFileManager.getInstance();
+    this.globalManager = GlobalManager.getInstance();
   }
 
   static getInstance(): FileUploadManager {
@@ -56,7 +56,7 @@ export class FileUploadManager {
     const measurements = await this.extractSTLMeasurements(file);
 
     // Store in GlobalFileManager
-    await this.globalFileManager.addFileFromUpload(file, file.name);
+    await this.globalManager.addFileFromUpload(file, file.name);
 
     // Update cell if provided
     if (cell) {
@@ -100,12 +100,12 @@ export class FileUploadManager {
     const stlFile = new File([stlBlob], newFileName, { type: 'model/stl' });
     
     const timestamp = new Date().toISOString();
-    const fileId = await this.globalFileManager.addFileFromUpload(stlFile, file.name);
+    const fileId = await this.globalManager.addFileFromUpload(stlFile, file.name);
 
     // Add measurements from STEP conversion
     if (result.pipe_measurements) {
       Object.entries(result.pipe_measurements).forEach(([name, value]) => {
-        this.globalFileManager.addMeasurement(fileId, name, value as number);
+        this.globalManager.addMeasurement(fileId, name, value as number);
       });
     }
 
@@ -161,11 +161,13 @@ export class FileUploadManager {
   }
 
   removeFile(fileId: string): void {
-    this.globalFileManager.removeFile(fileId);
+    this.globalManager.removeFile(fileId);
   }
 
   addMeasurement(fileId: string, measurement: Omit<VariableRecord, 'id'>): void {
-    this.globalFileManager.addMeasurement(
+    if (measurement.type !== 'measurement') return;
+    
+    this.globalManager.addMeasurement(
       fileId,
       measurement.name ?? measurement.label,
       measurement.value ?? 0,
@@ -176,7 +178,7 @@ export class FileUploadManager {
   addDistribution(fileId: string, distribution: Omit<VariableRecord, 'id'>): void {
     if (distribution.type !== 'distribution') return;
     
-    this.globalFileManager.addDistribution(
+    this.globalManager.addDistribution(
       fileId,
       distribution.label ?? distribution.name,
       distribution.mean ?? 0,
@@ -186,7 +188,7 @@ export class FileUploadManager {
   }
 
   getFilesState(): FileUploadState {
-    const files = this.globalFileManager.getAllFiles();
+    const files = this.globalManager.getAllFiles();
     const state: FileUploadState = {
       files: [],
       measurements: {},
@@ -196,17 +198,17 @@ export class FileUploadManager {
     };
 
     files.forEach(file => {
-      state.measurements[file.id] = this.globalFileManager.getMeasurementsForFile(file.id);
-      state.distributions[file.id] = this.globalFileManager.getDistributionsForFile(file.id);
+      state.measurements[file.id] = this.globalManager.getMeasurementsForFile(file.id);
+      state.distributions[file.id] = this.globalManager.getDistributionsForFile(file.id);
       
       state.files.push({
         fileId: file.id,
         fileType: file.originalFileName.toLowerCase().endsWith('.stl') ? 'stl' : 'step',
         measurements: {},
         rawFile: new File(
-          [Uint8Array.from(atob(file.stlFile.data.split(',')[1]), c => c.charCodeAt(0))],
-          file.stlFile.name,
-          { type: file.stlFile.type }
+          [Uint8Array.from(atob(file.data.split(',')[1]), c => c.charCodeAt(0))],
+          file.originalFileName,
+          { type: 'model/stl' }
         ),
         originalFileName: file.originalFileName,
         timestamp: file.timestamp

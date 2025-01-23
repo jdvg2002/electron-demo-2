@@ -4,12 +4,12 @@ import { ModuleManager } from '@/backend/manager/ModuleManager';
 import { motion, AnimatePresence } from 'framer-motion';
 import Demo from './demo';
 import FileUploadSection from './upload/FileUploadSection';
-import { GlobalFileManager } from '@/backend/models/GlobalFiles';
+import { GlobalManager } from '@/backend/manager/GlobalManager';
 import { CellData } from '@/backend/Cell';
 
 const DraggableCardsCanvas = () => {
   const manager = ModuleManager.getInstance();
-  const fileManager = GlobalFileManager.getInstance();
+  const fileManager = GlobalManager.getInstance();
   const [modules, setModules] = useState(manager.getAllModules());
   const [wires, setWires] = useState([]);
   const [isWiring, setIsWiring] = useState(false);

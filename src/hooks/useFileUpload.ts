@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { FileUploadManager, FileUploadState } from '@/backend/models/FileUploadManager';
 import { VariableRecord } from '@/backend/Variable';
-import { GlobalFileManager } from '@/backend/models/GlobalFiles';
+import { GlobalManager } from '@/backend/manager/GlobalManager';
 
 export function useFileUpload() {
   const [state, setState] = useState<FileUploadState>(() => 
@@ -10,7 +10,7 @@ export function useFileUpload() {
   const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
-    const globalFileManager = GlobalFileManager.getInstance();
+    const globalFileManager = GlobalManager.getInstance();
     return globalFileManager.addListener(() => {
       setState(FileUploadManager.getInstance().getFilesState());
     });
