@@ -7,11 +7,25 @@ import FileUploadSection from './upload/FileUploadSection';
 import { GlobalManager } from '@/backend/manager/GlobalManager';
 import { CellData } from '@/backend/models/Cell';
 
+interface WireData {
+  id: number;
+  startCard: number;
+  endCard: number;
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+  startRelX: number;
+  startRelY: number;
+  endRelX: number;
+  endRelY: number;
+}
+
 const DraggableCardsCanvas = () => {
   const manager = ModuleManager.getInstance();
   const fileManager = GlobalManager.getInstance();
   const [modules, setModules] = useState(manager.getAllModules());
-  const [wires, setWires] = useState([]);
+  const [wires, setWires] = useState<WireData[]>([]);
   const [isWiring, setIsWiring] = useState(false);
   const [activeWire, setActiveWire] = useState<{
     startCard: number;
@@ -268,17 +282,8 @@ const DraggableCardsCanvas = () => {
           const updatedCell: CellData = {
             ...preprocessingCell,
             input: {
-              sourceModuleId: sourceModule.card.id,
-              inputData: {
-                type: 'wired_input',
-                version: '1.0',
-                timestamp: new Date().toISOString(),
-                data: postprocessingCell.output.processedData,
-                metadata: {
-                  sourceModule: sourceModule.card.title,
-                  sourceCell: postprocessingCell.title
-                }
-              }
+              files: postprocessingCell.output.processedData,
+              variables: []  // Include empty array if no variables are being passed
             }
           };
 
@@ -426,7 +431,7 @@ const DraggableCardsCanvas = () => {
         onMouseLeave={handleMouseUp}
       >
         <svg className="absolute inset-0 w-full h-full pointer-events-none">
-          {wires.map(wire => {
+          {wires.map((wire: WireData) => {
             const dx = wire.endX - wire.startX;
             const dy = wire.endY - wire.startY;
             const distance = Math.sqrt(dx * dx + dy * dy);
