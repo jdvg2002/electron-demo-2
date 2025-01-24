@@ -1,7 +1,11 @@
 import { Module } from '@/backend/models/Module';
-import { CellData } from '@/backend/Cell';
-import { GlobalFileData } from '@/backend/models/GlobalFiles';
+import { CellData } from '@/backend/models/Cell';
+import { GlobalManager } from '@/backend/manager/GlobalManager';
 
+/**
+ * Represents the card (front-end) portion of a Module.
+ * Typically includes positioning and display info.
+ */
 interface ModuleCard {
   id: number;
   x: number;
@@ -10,6 +14,15 @@ interface ModuleCard {
   dragOffset: { x: number; y: number };
   title: string;
   content: string;
+}
+
+/**
+ * Light interface for passing global files into a newly-created Module.
+ * (Used by createPreprocessingModuleWithGlobalFiles)
+ */
+interface GlobalFileData {
+  id: string;
+  // Extend with other properties if needed
 }
 
 /**
@@ -30,16 +43,90 @@ export class ModuleManager {
     return ModuleManager.instance;
   }
 
+  /**
+   * Retrieve a single module by its unique id
+   */
   public getModuleById(id: number): Module | undefined {
     return this.modules.get(id);
   }
 
+  /**
+   * Return all modules as an array
+   */
+  public getAllModules(): Module[] {
+    return Array.from(this.modules.values());
+  }
+
+  /**
+   * Create a new module and store it in the internal registry
+   */
   public createModule(card: ModuleCard, cells: CellData[] = []): Module {
     const module = new Module(card, cells);
     this.modules.set(card.id, module);
     return module;
   }
 
+  /**
+   * Allows the front-end to create a "preprocessing" type module,
+   * automatically attaching any passed-in global files.
+   */
+  public createPreprocessingModuleWithGlobalFiles(files: GlobalFileData[]): Module {
+    // Generate new module ID
+    const newId = this.getAllModules().length 
+      ? Math.max(...this.getAllModules().map(m => m.card.id)) + 1 
+      : 1;
+    
+    const card: ModuleCard = {
+      id: newId,
+      x: 20 + (this.getAllModules().length % 3) * 300,
+      y: 20 + Math.floor(this.getAllModules().length / 3) * 150,
+      isDragging: false,
+      dragOffset: { x: 0, y: 0 },
+      title: `Module ${newId}`,
+      content: '',
+    };
+
+    // Basic cells for a "preprocessing → external → postprocessing" pipeline
+    const baseTimestamp = Date.now();
+    const cells: CellData[] = [
+      {
+        id: baseTimestamp.toString(),
+        type: 'preprocessing',
+        title: 'Input Preprocessing',
+        status: 'pending',
+        code: '#Add variables and calculations here\n',
+        globalFileIds: files.map(f => f.id),
+        localVariables: new Map(),
+        input: {},
+        output: {},
+      },
+      {
+        id: (baseTimestamp + 1).toString(),
+        type: 'external',
+        title: 'External Analysis',
+        tool: 'nuclear_analysis',
+        status: 'pending',
+        code: '#Add variables and calculations here\n',
+        input: {},
+        output: {},
+      },
+      {
+        id: (baseTimestamp + 2).toString(),
+        type: 'postprocessing',
+        title: 'Results Analysis',
+        status: 'pending',
+        code: '#Add variables and calculations here\n',
+        input: {},
+        output: {},
+      }
+    ];
+
+    return this.createModule(card, cells);
+  }
+
+  /**
+   * Updates the cells of a specific module
+   */
   public updateModuleCells(moduleId: number, cells: CellData[]): void {
     const module = this.modules.get(moduleId);
     if (module) {
@@ -47,12 +134,21 @@ export class ModuleManager {
     }
   }
 
-  public deleteModule(moduleId: number): void {
-    this.modules.delete(moduleId);
+  /**
+   * Updates the card (front-end display info) of a specific module
+   */
+  public updateModuleCard(moduleId: number, updates: Partial<ModuleCard>): void {
+    const module = this.modules.get(moduleId);
+    if (module) {
+      module.card = { ...module.card, ...updates };
+    }
   }
 
-  public getAllModules(): Module[] {
-    return Array.from(this.modules.values());
+  /**
+   * Removes a module from the registry entirely
+   */
+  public deleteModule(moduleId: number): void {
+    this.modules.delete(moduleId);
   }
 
   /**
@@ -75,57 +171,5 @@ export class ModuleManager {
         }
       });
     });
-  }
-
-  public createPreprocessingModuleWithGlobalFiles(files: GlobalFileData[]): Module {
-    const newId = this.getAllModules().length ? 
-      Math.max(...this.getAllModules().map(m => m.card.id)) + 1 : 1;
-    
-    const card: ModuleCard = {
-      id: newId,
-      x: 20 + (this.getAllModules().length % 3) * 300,
-      y: 20 + Math.floor(this.getAllModules().length / 3) * 150,
-      isDragging: false,
-      dragOffset: { x: 0, y: 0 },
-      title: `Module ${newId}`,
-      content: ''
-    };
-
-    const cells: CellData[] = [
-      {
-        id: Date.now(),
-        type: 'preprocessing',
-        title: 'Input Preprocessing',
-        globalFileIds: files.map(f => f.id),
-        localVariables: new Map(),
-        timestamp: new Date().toISOString(),
-        code: '#Add variables and calculations here\n'
-      },
-      {
-        id: Date.now() + 1,
-        type: 'external',
-        title: 'External Analysis',
-        tool: 'nuclear_analysis',
-        status: 'pending'
-      },
-      {
-        id: Date.now() + 2,
-        type: 'postprocessing',
-        title: 'Results Analysis',
-        code: '#Add variables and calculations here\n'
-      }
-    ];
-
-    return this.createModule(card, cells);
-  }
-
-  public updateModuleCard(moduleId: number, updates: Partial<ModuleCard>): void {
-    const module = this.modules.get(moduleId);
-    if (module) {
-      module.card = {
-        ...module.card,
-        ...updates
-      };
-    }
   }
 } 

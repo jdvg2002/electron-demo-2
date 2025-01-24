@@ -1,5 +1,9 @@
 import { CellData } from '@/backend/models/Cell';
 
+/**
+ * A Module holds a "card" object for frontend positioning/details,
+ * and a list of cells that describe various steps or transformations.
+ */
 export class Module {
   public card: {
     id: number;
@@ -20,10 +24,16 @@ export class Module {
     this.cells = cells;
   }
 
+  /**
+   * Replace all cells in this module
+   */
   public setCells(cells: CellData[]): void {
     this.cells = cells;
   }
 
+  /**
+   * Update a specific cell by ID
+   */
   public updateCell(updatedCell: CellData): void {
     const index = this.cells.findIndex(cell => cell.id === updatedCell.id);
     if (index !== -1) {
@@ -31,11 +41,17 @@ export class Module {
     }
   }
 
+  /**
+   * Add a new cell to the module
+   */
   public addCell(cell: CellData): void {
     this.cells.push(cell);
   }
 
-  public removeCell(cellId: number): void {
+  /**
+   * Remove a cell from the module by ID
+   */
+  public removeCell(cellId: string): void {
     this.cells = this.cells.filter(cell => cell.id !== cellId);
   }
 } 

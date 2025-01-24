@@ -15,7 +15,7 @@ export interface CellOutput {
     appliedStress: number;
     flowStress: number;
   }>;
-  metadata: {
+  metadata?: {
     analysisTimestamp: string;
     sourceAnalysis: string;
   };
@@ -27,12 +27,12 @@ export interface CellData {
   id: string;
   type: 'preprocessing' | 'external' | 'postprocessing';
   title: string;
-  code?: string;
-  tool?: string;
-  status?: 'pending' | 'running' | 'completed' | 'error';
-  input?: CellInput;
-  output?: CellOutput;
-  globalFileIds?: string[];
-  dependencyCellId?: string;
-  localVariables: Map<string, VariableRecord>;
+  code: string;
+  status: 'pending' | 'running' | 'completed' | 'error';
+  input: CellInput;
+  output: CellOutput;
+  globalFileIds?: string[]; // Preprocessing Cell
+  dependencyCellId?: string; // Preprocessing Cell (and maybe postprocessing)
+  tool?: string; // External Cell
+  localVariables?: Map<string, VariableRecord>; // Preprocessing Cell
 } 
