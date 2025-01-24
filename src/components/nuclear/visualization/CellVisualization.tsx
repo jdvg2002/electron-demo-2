@@ -34,6 +34,7 @@ interface CardRendererProps {
   content: CardContent;
   cards: VisualizationCard[];
   onAddDistribution?: (key: string, value: number, stdDev?: number) => void;
+  onChartClick?: (data: { key: string; value: number; stdDev: number }) => void;
 }
 
 const Model = ({ url }: { url: string }) => {
@@ -45,7 +46,7 @@ const Model = ({ url }: { url: string }) => {
   )
 }
 
-const CardRenderer: React.FC<CardRendererProps> = React.memo(({ content, cards, onAddDistribution }) => {
+const CardRenderer: React.FC<CardRendererProps> = React.memo(({ content, cards, onAddDistribution, onChartClick }) => {
   const formatNumber = (value: number): string => {
     return Math.abs(value) < 10 ? value.toFixed(2) : 
       new Intl.NumberFormat('en-US').format(Math.round(value));
@@ -126,11 +127,15 @@ const CardRenderer: React.FC<CardRendererProps> = React.memo(({ content, cards, 
             stdDev={content.stdDev}
             type="normal"
             data={[]}
-            height="100%"
+            height={100}
             className="w-full h-full"
             onChartClick={() => {
-              if (onAddDistribution) {
-                onAddDistribution(content.label, content.mean, content.stdDev);
+              if (onChartClick && content.type === 'distribution') {
+                onChartClick({
+                  key: content.label,
+                  value: content.mean,
+                  stdDev: content.stdDev
+                });
               }
             }}
           />
@@ -158,7 +163,8 @@ const VisualizationCard = React.memo<{
   index: number;
   onAddDistribution?: (key: string, value: number, stdDev?: number) => void;
   onDeleteVariable?: (label: string) => void;
-}>(({ card, cards, index, onAddDistribution, onDeleteVariable }) => {
+  onChartClick?: (data: { key: string; value: number; stdDev: number }) => void;
+}>(({ card, cards, index, onAddDistribution, onDeleteVariable, onChartClick }) => {
   const isStlViewer = card.content.type === 'stl';
   
   return (
@@ -180,6 +186,7 @@ const VisualizationCard = React.memo<{
           content={card.content}
           cards={cards}
           onAddDistribution={onAddDistribution}
+          onChartClick={onChartClick}
         />
       </div>
     </Card>
@@ -379,6 +386,7 @@ const VisualizationGrid: React.FC<VisualizationGridProps> = React.memo(({
   } | null>(null);
 
   const handleAddDistribution = useCallback((key: string, value: number, stdDev?: number) => {
+    console.log('handleAddDistribution called:', { key, value, stdDev });
     setSelectedMeasurement({ key, value, stdDev });
   }, []);
 
@@ -388,18 +396,35 @@ const VisualizationGrid: React.FC<VisualizationGridProps> = React.memo(({
         .map(word => word.charAt(0).toUpperCase() + word.slice(1))
         .join(' ');
 
-      onAddVariable({
+      // Create the variable record
+      const variableRecord: VariableRecord = {
         type: 'distribution',
         name: `${name} Distribution`,
         label: selectedMeasurement.key,
         mean,
         stdDev,
-        fileId
-      });
+        fileId,
+        id: selectedMeasurement.key
+      };
+
+      // Check if this is an update or new distribution
+      const existingDistribution = initialCards.find(
+        card => 
+          card.content.type === 'distribution' && 
+          card.content.label === selectedMeasurement.key
+      );
+
+      if (existingDistribution) {
+        // Use the GlobalManager's updateDistribution method
+        GlobalManager.getInstance().updateDistribution(fileId, variableRecord);
+      } else {
+        // Create new distribution
+        onAddVariable(variableRecord);
+      }
 
       setSelectedMeasurement(null);
     }
-  }, [selectedMeasurement, onAddVariable, fileId]);
+  }, [selectedMeasurement, fileId, initialCards, onAddVariable]);
 
   const handleNewDistribution = useCallback((mean: number, stdDev: number, name: string) => {
     const key = name.toLowerCase()
@@ -444,6 +469,7 @@ const VisualizationGrid: React.FC<VisualizationGridProps> = React.memo(({
             index={index}
             onAddDistribution={handleAddDistribution}
             onDeleteVariable={onDeleteVariable}
+            onChartClick={setSelectedMeasurement}
           />
         ))}
         <PlusCard 

@@ -147,4 +147,25 @@ export class GlobalManager {
     // Force an immediate update
     requestAnimationFrame(() => this.notifyListeners());
   }
+
+  updateDistribution(fileId: string, distribution: VariableRecord): void {
+    // Find existing distribution by label
+    const existingVarId = Array.from(this.variables.entries()).find(
+      ([_, v]) => 
+        v.fileId === fileId && 
+        v.type === 'distribution' && 
+        v.label === distribution.label
+    )?.[0];
+
+    if (existingVarId) {
+      // Update existing distribution
+      this.variables.set(existingVarId, {
+        ...this.variables.get(existingVarId)!,
+        mean: distribution.mean,
+        stdDev: distribution.stdDev,
+        name: distribution.name
+      });
+      this.notifyListeners();
+    }
+  }
 } 
