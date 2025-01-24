@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ModuleManager } from '@/backend/manager/ModuleManager';
-import { CellData } from '@/backend/Cell';
+import { CellData } from '@/backend/models/Cell';
 import { Module } from '@/backend/models/Module';
 
 interface DemoProps {

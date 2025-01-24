@@ -1,7 +1,7 @@
 import { createRoute } from "@tanstack/react-router";
 import { RootRoute } from "./__root";
-import Demo from "@/components/nuclear/demo";
-import Dashboard from "@/components/nuclear/dashboard";
+import Demo from "@/components/demo";
+import Dashboard from "@/components/dashboard";
 
 export const HomeRoute = createRoute({
     getParentRoute: () => RootRoute,

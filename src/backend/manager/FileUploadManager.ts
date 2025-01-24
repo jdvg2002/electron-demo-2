@@ -1,7 +1,7 @@
 import { GlobalManager } from '@/backend/manager/GlobalManager';
-import { VariableRecord } from '../Variable';
+import { VariableRecord } from '../models/Variable';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
-import { CellData } from '@/backend/Cell';
+import { CellData } from '@/backend/models/Cell';
 
 export interface ParsedFileResult {
   fileId: string;

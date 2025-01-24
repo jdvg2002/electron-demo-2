@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Demo from './demo';
 import FileUploadSection from './upload/FileUploadSection';
 import { GlobalManager } from '@/backend/manager/GlobalManager';
-import { CellData } from '@/backend/Cell';
+import { CellData } from '@/backend/models/Cell';
 
 const DraggableCardsCanvas = () => {
   const manager = ModuleManager.getInstance();

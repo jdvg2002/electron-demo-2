@@ -1,7 +1,7 @@
 import React from "react";
-import ToggleTheme from "@/components/ToggleTheme";
+import ToggleTheme from "@/components/ui/ToggleTheme";
 import { useTranslation } from "react-i18next";
-import LangToggle from "@/components/LangToggle";
+import LangToggle from "@/components/ui/LangToggle";
 
 export default function HomePage() {
     const { t } = useTranslation();

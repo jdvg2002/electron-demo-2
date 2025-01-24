@@ -228,6 +228,8 @@ export const DistributionChart: React.FC<DistributionChartProps> = ({
   className = '',
   onChartClick
 }) => {
+  // Generate a new key when mean or stdDev changes to force complete re-render
+  const chartKey = React.useMemo(() => `dist-${mean}-${stdDev}`, [mean, stdDev]);
   const data = generateNormalDistribution(mean, stdDev);
   
   return (
@@ -238,6 +240,7 @@ export const DistributionChart: React.FC<DistributionChartProps> = ({
     >
       <ResponsiveContainer width="100%" height="100%">
         <LineChart 
+          key={chartKey}  // Add key here to force re-render
           data={data}
           margin={{ top: 0, right: 0, bottom: 0, left: 0 }}
         >
@@ -258,6 +261,10 @@ export const DistributionChart: React.FC<DistributionChartProps> = ({
             stroke={chartConfig.colors.flux} 
             dot={false}
             strokeWidth={2}
+            // Add animation properties
+            isAnimationActive={true}
+            animationDuration={500}
+            animationBegin={0}
           />
         </LineChart>
       </ResponsiveContainer>

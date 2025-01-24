@@ -1,5 +1,5 @@
-import { VariableRecord } from '../Variable';
-import { FileRecord } from '../File';
+import { VariableRecord } from '../models/Variable';
+import { FileRecord } from '../models/File';
 
 export class GlobalManager {
   private static instance: GlobalManager;
@@ -68,13 +68,17 @@ export class GlobalManager {
     value: number,
     units: string = 'mm'
   ): string {
-    return this.addVariable({
+    const id = this.addVariable({
       fileId,
       type: 'measurement',
       name,
       value,
       units
     });
+    // Force an immediate update like we do for distributions
+    requestAnimationFrame(() => this.notifyListeners());
+    
+    return id;
   }
 
   addDistribution(
@@ -165,7 +169,8 @@ export class GlobalManager {
         stdDev: distribution.stdDev,
         name: distribution.name
       });
-      this.notifyListeners();
+      // Force an immediate update like we do for other operations
+      requestAnimationFrame(() => this.notifyListeners());
     }
   }
 } 

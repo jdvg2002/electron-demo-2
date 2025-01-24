@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group";
+import { ToggleGroup, ToggleGroupItem } from "./toggle-group";
 import langs from "@/localization/langs";
 import { useTranslation } from "react-i18next";
 import { setAppLanguage } from "@/helpers/language_helpers";

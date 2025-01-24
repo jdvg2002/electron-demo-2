@@ -1,7 +1,7 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { useFileUpload } from '@/hooks/useFileUpload';
-import { FileList } from '@/components/nuclear/upload/FileList';
-import { VisualizationManager } from '@/components/nuclear/visualization/VisualizationManager';
+import { FileList } from '@/components/upload/FileList';
+import { VisualizationManager } from '@/components/visualization/VisualizationManager';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const FileUploadContainer: React.FC = () => {
@@ -19,8 +19,17 @@ export const FileUploadContainer: React.FC = () => {
   const handleFiles = (fileList: FileList) => {
     if (fileList.length > 0) {
       uploadFile(fileList[0]);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
+
+  useEffect(() => {
+    if (fileInputRef.current && files.length === 0) {
+      fileInputRef.current.value = '';
+    }
+  }, [files.length]);
 
   return (
     <div className="w-full p-6 bg-[#f6f6f6] border-2 border-gray-200 rounded-lg">

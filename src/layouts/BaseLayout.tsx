@@ -1,5 +1,5 @@
 import React from "react";
-import NavigationMenu from "@/components/NavigationMenu";
+import NavigationMenu from "@/components/ui/NavigationMenu";
 
 export default function BaseLayout({ children }: { children: React.ReactNode }) {
     return (
