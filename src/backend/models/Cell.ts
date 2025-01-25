@@ -31,8 +31,7 @@ export interface CellData {
   status: 'pending' | 'running' | 'completed' | 'error';
   input: CellInput;
   output: CellOutput;
-  globalFileIds?: string[]; // Preprocessing Cell
-  dependencyCellId?: string; // Preprocessing Cell (and maybe postprocessing)
-  tool?: string; // External Cell
-  localVariables?: Map<string, VariableRecord>; // Preprocessing Cell
+  dependencyCellId?: string;
+  tool?: string;
+  localVariables?: Map<string, VariableRecord>;
 } 

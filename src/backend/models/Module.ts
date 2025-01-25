@@ -1,8 +1,7 @@
 import { CellData } from '@/backend/models/Cell';
 
 /**
- * A Module holds a "card" object for frontend positioning/details,
- * and a list of cells that describe various steps or transformations.
+ * A Module is now just a data structure holding card info and cell IDs
  */
 export class Module {
   public card: {
@@ -14,44 +13,16 @@ export class Module {
     title: string;
     content: string;
   };
-  public cells: CellData[];
+  public cellIds: string[]; // Now we just store IDs, not the full cells
+  public globalFileIds: string[]; // Add this at the module level
 
   constructor(
     card: Module['card'],
-    cells: CellData[] = []
+    cellIds: string[] = [],
+    globalFileIds: string[] = []
   ) {
     this.card = card;
-    this.cells = cells;
-  }
-
-  /**
-   * Replace all cells in this module
-   */
-  public setCells(cells: CellData[]): void {
-    this.cells = cells;
-  }
-
-  /**
-   * Update a specific cell by ID
-   */
-  public updateCell(updatedCell: CellData): void {
-    const index = this.cells.findIndex(cell => cell.id === updatedCell.id);
-    if (index !== -1) {
-      this.cells[index] = updatedCell;
-    }
-  }
-
-  /**
-   * Add a new cell to the module
-   */
-  public addCell(cell: CellData): void {
-    this.cells.push(cell);
-  }
-
-  /**
-   * Remove a cell from the module by ID
-   */
-  public removeCell(cellId: string): void {
-    this.cells = this.cells.filter(cell => cell.id !== cellId);
+    this.cellIds = cellIds;
+    this.globalFileIds = globalFileIds;
   }
 } 

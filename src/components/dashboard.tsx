@@ -6,6 +6,7 @@ import Demo from './demo';
 import FileUploadSection from './upload/FileUploadSection';
 import { GlobalManager } from '@/backend/manager/GlobalManager';
 import { CellData } from '@/backend/models/Cell';
+import { CellManager } from '@/backend/manager/CellManager';
 
 interface WireData {
   id: number;
@@ -269,11 +270,15 @@ const DraggableCardsCanvas = () => {
       const destinationModule = modules.find(m => m.card.id === cardId);
       
       if (sourceModule && destinationModule) {
-        const postprocessingCell = sourceModule.cells.find(
+        const cellManager = CellManager.getInstance();
+        const sourceCells = cellManager.getCellsForModule(sourceModule.card.id);
+        const destCells = cellManager.getCellsForModule(destinationModule.card.id);
+
+        const postprocessingCell = sourceCells.find(
           cell => cell.type === 'postprocessing' && cell.output?.processedData
         );
         
-        const preprocessingCell = destinationModule.cells.find(
+        const preprocessingCell = destCells.find(
           cell => cell.type === 'preprocessing'
         );
 
@@ -287,9 +292,12 @@ const DraggableCardsCanvas = () => {
             }
           };
 
-          // Update the module's cells
-          destinationModule.updateCell(updatedCell);
-          manager.updateModuleCells(destinationModule.card.id, destinationModule.cells);
+          // Update the cell directly through CellManager
+          cellManager.updateCell(
+            destinationModule.card.id,
+            preprocessingCell.id,
+            updatedCell
+          );
         }
       }
 
@@ -357,7 +365,7 @@ const DraggableCardsCanvas = () => {
 
   const addNewCard = () => {
     const globalFiles = fileManager.getAllFiles();
-    const newModule = manager.createPreprocessingModuleWithGlobalFiles(globalFiles);
+    const newModule = manager.createModule();
     setModules([...modules, newModule]);
   };
 

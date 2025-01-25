@@ -110,3 +110,6 @@ out/
 
 # Python bundle directory
 bundled-python/
+
+# Refactor reference
+src/components/refactor_reference/
