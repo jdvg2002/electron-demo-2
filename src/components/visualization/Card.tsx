@@ -26,35 +26,11 @@ export const Card = React.memo<CardProps>(({
 
   React.useEffect(() => {
     renderCount.current += 1;
-    console.log('Card mounted/updated:', {
-      title: card.title,
-      type: card.content.type,
-      renderCount: renderCount.current,
-      timestamp: new Date().toISOString(),
-      dimensions: cardRef.current ? {
-        width: cardRef.current.offsetWidth,
-        height: cardRef.current.offsetHeight,
-        scrollHeight: cardRef.current.scrollHeight
-      } : null
-    });
 
     // Use a layout effect equivalent for the visibility update
     const timer = setTimeout(() => {
       if (cardRef.current) {
         const computedStyle = window.getComputedStyle(cardRef.current);
-        console.log('Card layout before visibility update:', {
-          title: card.title,
-          dimensions: {
-            width: cardRef.current.offsetWidth,
-            height: cardRef.current.offsetHeight,
-            scrollHeight: cardRef.current.scrollHeight
-          },
-          style: {
-            display: computedStyle.display,
-            visibility: computedStyle.visibility,
-            opacity: computedStyle.opacity
-          }
-        });
         
         setIsVisible(true);
       }
@@ -62,15 +38,6 @@ export const Card = React.memo<CardProps>(({
 
     return () => clearTimeout(timer);
   }, [card.title]);
-
-  console.log('Rendering card:', {
-    title: card.title,
-    type: card.content.type,
-    renderCount: renderCount.current,
-    isVisible,
-    contentData: card.content.type === 'measurements' ? 
-      Object.keys(card.content.data).length : null
-  });
 
   return (
     <UICard 

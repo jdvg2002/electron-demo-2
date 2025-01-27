@@ -28,8 +28,34 @@ const NotebookCell: React.FC<NotebookCellProps> = (props) => {
     cell.output !== undefined &&
     cell.status === 'completed';
 
+  const shouldShowPostprocessingOutput = 
+    cell.type === 'postprocessing' &&
+    cell.output !== undefined &&
+    cell.status === 'completed';
+
+  const shouldShowWiredInput = 
+    cell.type === 'preprocessing' &&
+    cell.input?.files !== undefined;
+
   return (
     <>
+      {shouldShowWiredInput && (
+        <CellOutputDisplay 
+          previousCell={{
+            ...cell,
+            type: 'postprocessing',
+            output: {
+              processedData: cell.input.files,
+              metadata: {
+                analysisTimestamp: new Date().toISOString(),
+                sourceAnalysis: 'postprocessing'
+              }
+            }
+          }}
+          nextCell={cell}
+        />
+      )}
+
       {shouldShowPreprocessingOutput && (
         <CellOutputDisplay 
           previousCell={previousCell} 
@@ -53,6 +79,13 @@ const NotebookCell: React.FC<NotebookCellProps> = (props) => {
       {shouldShowExternalOutput && (
         <CellOutputDisplay 
           previousCell={cell} 
+          nextCell={nextCell}
+        />
+      )}
+
+      {shouldShowPostprocessingOutput && (
+        <CellOutputDisplay 
+          previousCell={cell}
           nextCell={nextCell}
         />
       )}

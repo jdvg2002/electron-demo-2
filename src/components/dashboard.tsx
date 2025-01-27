@@ -260,12 +260,13 @@ const DraggableCardsCanvas = () => {
         startRelY: snapPoint.relY
       });
     } else {
-      console.log('Completing wire:', { 
-        startCard: activeWire.startCard, 
-        endCard: cardId 
-      });
-      
-      // Get source module's postprocessing cell data
+      // Don't allow self-connections
+      if (activeWire.startCard === cardId) {
+        setActiveWire(null);
+        setIsWiring(false);
+        return;
+      }
+
       const sourceModule = modules.find(m => m.card.id === activeWire.startCard);
       const destinationModule = modules.find(m => m.card.id === cardId);
       
@@ -274,48 +275,51 @@ const DraggableCardsCanvas = () => {
         const sourceCells = cellManager.getCellsForModule(sourceModule.card.id);
         const destCells = cellManager.getCellsForModule(destinationModule.card.id);
 
-        const postprocessingCell = sourceCells.find(
-          cell => cell.type === 'postprocessing' && cell.output?.processedData
-        );
+        // Find the last postprocessing cell with output from source
+        const postprocessingCell = sourceCells
+          .filter(cell => cell.type === 'postprocessing' && cell.output?.processedData)
+          .pop();
         
-        const preprocessingCell = destCells.find(
-          cell => cell.type === 'preprocessing'
-        );
+        // Find the first preprocessing cell from destination
+        const preprocessingCell = destCells
+          .find(cell => cell.type === 'preprocessing');
 
         if (postprocessingCell?.output?.processedData && preprocessingCell) {
           // Update the preprocessing cell with the input data
-          const updatedCell: CellData = {
+          const updatedCell = {
             ...preprocessingCell,
             input: {
               files: postprocessingCell.output.processedData,
-              variables: []  // Include empty array if no variables are being passed
+              variables: []
             }
           };
 
-          // Update the cell directly through CellManager
+          // Update the cell through CellManager
           cellManager.updateCell(
             destinationModule.card.id,
             preprocessingCell.id,
             updatedCell
           );
+
+          // Create the wire connection
+          const newWire = {
+            id: wires.length,
+            startCard: activeWire.startCard,
+            endCard: cardId,
+            startX: snapPoint.x,
+            startY: snapPoint.y,
+            endX: activeWire.startX,
+            endY: activeWire.startY,
+            startRelX: snapPoint.relX,
+            startRelY: snapPoint.relY,
+            endRelX: activeWire.startRelX,
+            endRelY: activeWire.startRelY
+          };
+
+          setWires([...wires, newWire]);
         }
       }
 
-      // Create the wire as before
-      const newWire = {
-        id: wires.length,
-        startCard: activeWire.startCard,
-        endCard: cardId,
-        startX: activeWire.startX,
-        startY: activeWire.startY,
-        endX: snapPoint.x,
-        endY: snapPoint.y,
-        startRelX: activeWire.startRelX,
-        startRelY: activeWire.startRelY,
-        endRelX: snapPoint.relX,
-        endRelY: snapPoint.relY
-      };
-      setWires([...wires, newWire]);
       setActiveWire(null);
       setIsWiring(false);
     }

@@ -13,16 +13,18 @@ export const CellOutputDisplay: React.FC<CellOutputDisplayProps> = ({
 }) => {
   const [showPreview, setShowPreview] = useState(false);
 
-  // Show for either preprocessing->external OR external->postprocessing
-  if (!previousCell?.output || 
-      !((previousCell.type === 'preprocessing' && nextCell?.type === 'external') ||
-        (previousCell.type === 'external' && nextCell?.type === 'postprocessing'))) {
-    return null;
-  }
+  if (!previousCell?.output) return null;
 
   const isPreprocessing = previousCell.type === 'preprocessing';
-  const title = isPreprocessing ? 'Preprocessing Output' : 'Analysis Output';
-  const filename = isPreprocessing ? 'preprocessing-output.json' : 'analysis-output.json';
+  const isPostprocessing = previousCell.type === 'postprocessing';
+  
+  const title = isPreprocessing ? 'Preprocessing Output' : 
+                isPostprocessing ? 'Postprocessing Output' : 
+                'Analysis Output';
+  
+  const filename = isPreprocessing ? 'preprocessing-output.json' : 
+                  isPostprocessing ? 'postprocessing-output.json' : 
+                  'analysis-output.json';
 
   const handleDownload = () => {
     const jsonString = JSON.stringify(previousCell.output, null, 2);

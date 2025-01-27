@@ -18,6 +18,9 @@ export interface CellOutput {
   metadata?: {
     analysisTimestamp: string;
     sourceAnalysis: string;
+    displayState?: {
+      showChart?: boolean;
+    };
   };
   stdout?: string;
   data?: any;

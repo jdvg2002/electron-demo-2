@@ -94,11 +94,6 @@ const VisualizationGrid: React.FC<VisualizationGridProps> = React.memo(({
     });
   }, [fileId, onAddVariable]);
 
-  console.log('Rendering visualization grid with cards:', initialCards.map(card => ({
-    title: card.title,
-    type: card.content.type
-  })));
-
   return (
     <>
       <div

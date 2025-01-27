@@ -55,8 +55,6 @@ const CardRenderer: React.FC<CardRendererProps> = React.memo(({ content, cards, 
       );
 
     case 'measurements':
-      console.log('Rendering measurements card with data:', content.data);
-      console.log('Number of measurements:', Object.keys(content.data).length);
       
       // Log the entire parent chain
       const measurementsElement = document.querySelector('[data-measurements-container]');
@@ -65,23 +63,19 @@ const CardRenderer: React.FC<CardRendererProps> = React.memo(({ content, cards, 
         <div className="h-full px-2" data-measurements-container>
           <div 
             className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
-            onScroll={(e) => console.log('Scrolling measurements container:', e.currentTarget.scrollTop)}
           >
             <div className="flex flex-col gap-1 py-1">
               {Object.entries(content.data).map(([key, value], index) => {
-                console.log(`Rendering measurement ${index + 1}/${Object.keys(content.data).length}:`, { key, value });
                 const existingDistribution = cards.find(
                   card => 
                     card.content.type === 'distribution' && 
                     'label' in card.content && 
                     card.content.label === key
                 );
-                console.log('Found existing distribution:', existingDistribution);
 
                 const formattedKey = key.split('_').map(word => 
                   word.charAt(0).toUpperCase() + word.slice(1)
                 ).join(' ');
-                console.log('Formatted key:', formattedKey);
 
                 const element = (
                   <div 
@@ -94,31 +88,17 @@ const CardRenderer: React.FC<CardRendererProps> = React.memo(({ content, cards, 
                         label: key,
                         value: value
                       };
-                      console.log('Starting drag with data:', dragData);
                       e.dataTransfer.setData('application/json', JSON.stringify(dragData));
                     }}
                     style={{ opacity: 1 }} // Force opacity
                     ref={(el) => {
-                      if (el) {
-                        console.log(`Measurement element mounted - ${formattedKey}:`, {
-                          width: el.offsetWidth,
-                          height: el.offsetHeight,
-                          visible: el.offsetParent !== null
-                        });
-                      }
+                      if (el) {}
                     }}
                   >
                     <div>
                       <p 
                         className="text-xs text-gray-500 leading-tight"
                         ref={(el) => {
-                          if (el) {
-                            console.log(`Label element - ${formattedKey}:`, {
-                              width: el.offsetWidth,
-                              height: el.offsetHeight,
-                              computedStyle: window.getComputedStyle(el).display
-                            });
-                          }
                         }}
                       >
                         {formattedKey}
@@ -127,11 +107,6 @@ const CardRenderer: React.FC<CardRendererProps> = React.memo(({ content, cards, 
                         className="font-medium text-sm leading-tight"
                         ref={(el) => {
                           if (el) {
-                            console.log(`Value element - ${formattedKey}:`, {
-                              width: el.offsetWidth,
-                              height: el.offsetHeight,
-                              computedStyle: window.getComputedStyle(el).display
-                            });
                           }
                         }}
                       >
@@ -140,7 +115,6 @@ const CardRenderer: React.FC<CardRendererProps> = React.memo(({ content, cards, 
                     </div>
                     <button
                       onClick={() => {
-                        console.log('Add distribution clicked for:', { key, value, existingStdDev: existingDistribution?.content.type === 'distribution' ? existingDistribution.content.stdDev : undefined });
                         onAddDistribution?.(key, value, existingDistribution?.content.type === 'distribution' ? existingDistribution.content.stdDev : undefined);
                       }}
                       className="p-1 hover:bg-gray-100 rounded flex-shrink-0"
@@ -149,7 +123,6 @@ const CardRenderer: React.FC<CardRendererProps> = React.memo(({ content, cards, 
                     </button>
                   </div>
                 );
-                console.log(`Returning element for ${formattedKey}`);
                 return element;
               })}
             </div>
