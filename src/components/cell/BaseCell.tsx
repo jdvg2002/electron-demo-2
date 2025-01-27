@@ -29,6 +29,8 @@ export const BaseCell: React.FC<BaseCellProps> = ({
     }
   };
 
+  const capitalizedType = cell.type.charAt(0).toUpperCase() + cell.type.slice(1);
+
   return (
     <Card className={`mb-4 border-l-4 ${borderColor} w-full`}>
       <CardHeader 
@@ -37,7 +39,7 @@ export const BaseCell: React.FC<BaseCellProps> = ({
       >
         <div className="flex items-center gap-2">
           {icon}
-          <CardTitle className="text-lg font-medium">Cell Type: {cell.type}</CardTitle>
+          <CardTitle className="text-lg font-medium">{capitalizedType}</CardTitle>
         </div>
         <div className="flex items-center gap-2">
           <button 
