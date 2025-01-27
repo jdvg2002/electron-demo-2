@@ -22,7 +22,7 @@ export function useVariableManager(cellId: string) {
 
     return module.globalFileIds.reduce((acc, fileId) => {
       const variables = globalManager.getVariablesForFile(fileId);
-      variables.forEach((value, key) => acc.set(key, value));
+      variables.forEach(variable => acc.set(variable.id, variable));
       return acc;
     }, new Map<string, VariableRecord>());
   }, [getModule]);
