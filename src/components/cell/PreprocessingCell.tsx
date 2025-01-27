@@ -80,17 +80,19 @@ export const PreprocessingCell: React.FC<NotebookCellProps> = (props) => {
     setIsExecuting(true);
 
     try {
-      // Prepare input data from files and variables
-      const inputData = {
-        files,
-        variables: Array.from(localVariables?.entries() || [])
-          .map(([key, value]) => ({
+      // Format the variables into distributions
+      const distributions = Array.from(localVariables?.entries() || [])
+        .reduce((acc, [key, value]) => ({
+          ...acc,
+          [key]: {
+            name: value.name || key,
             label: key,
-            ...value
-          }))
-      };
+            mean: value.mean,
+            stdDev: value.stdDev
+          }
+        }), {});
 
-      // Create the output data structure
+      // Create the output data structure that matches handler.py's expectations
       const outputData = {
         processedData: {
           id: crypto.randomUUID(),
@@ -99,7 +101,11 @@ export const PreprocessingCell: React.FC<NotebookCellProps> = (props) => {
           timestamp: new Date().toISOString(),
           originalFileName: 'preprocessed_data.json',
           sourceEnvironment: 'preprocessing',
-          data: inputData
+          data: {
+            files: [{
+              distributions: distributions
+            }]
+          }
         },
         metadata: {
           analysisTimestamp: new Date().toISOString(),
@@ -119,7 +125,7 @@ export const PreprocessingCell: React.FC<NotebookCellProps> = (props) => {
           ...nextCell,
           input: {
             files: outputData.processedData,
-            variables: inputData.variables
+            variables: []
           }
         });
       }

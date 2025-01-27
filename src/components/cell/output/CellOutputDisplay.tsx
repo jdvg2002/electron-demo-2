@@ -3,8 +3,8 @@ import { FileText, Download, Eye } from 'lucide-react';
 import { CellData } from '@/backend/models/Cell';
 
 interface CellOutputDisplayProps {
-  previousCell: CellData;
-  nextCell: CellData;
+  previousCell?: CellData;
+  nextCell?: CellData;
 }
 
 export const CellOutputDisplay: React.FC<CellOutputDisplayProps> = ({
@@ -13,12 +13,16 @@ export const CellOutputDisplay: React.FC<CellOutputDisplayProps> = ({
 }) => {
   const [showPreview, setShowPreview] = useState(false);
 
-  // Only show if preprocessing has been run (output exists)
+  // Show for either preprocessing->external OR external->postprocessing
   if (!previousCell?.output || 
-      previousCell.type !== 'preprocessing' || 
-      nextCell.type !== 'external') {
+      !((previousCell.type === 'preprocessing' && nextCell?.type === 'external') ||
+        (previousCell.type === 'external' && nextCell?.type === 'postprocessing'))) {
     return null;
   }
+
+  const isPreprocessing = previousCell.type === 'preprocessing';
+  const title = isPreprocessing ? 'Preprocessing Output' : 'Analysis Output';
+  const filename = isPreprocessing ? 'preprocessing-output.json' : 'analysis-output.json';
 
   const handleDownload = () => {
     const jsonString = JSON.stringify(previousCell.output, null, 2);
@@ -26,7 +30,7 @@ export const CellOutputDisplay: React.FC<CellOutputDisplayProps> = ({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `preprocessing-output.json`;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -39,7 +43,7 @@ export const CellOutputDisplay: React.FC<CellOutputDisplayProps> = ({
         <div className="flex items-center gap-4">
           <FileText className="w-4 h-4 text-gray-500" />
           <div>
-            <p className="font-medium">Preprocessing Output</p>
+            <p className="font-medium">{title}</p>
             <p className="text-sm text-gray-500">
               JSON • {new Date(previousCell.output.metadata?.analysisTimestamp || '').toLocaleString()}
             </p>

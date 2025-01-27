@@ -17,14 +17,20 @@ export interface NotebookCellProps {
 const NotebookCell: React.FC<NotebookCellProps> = (props) => {
   const { cell, previousCell, nextCell } = props;
 
-  const shouldShowOutput = cell.type === 'external' && 
+  const shouldShowPreprocessingOutput = cell.type === 'external' && 
     previousCell?.type === 'preprocessing' &&
     previousCell?.output !== undefined &&
-    previousCell?.status === 'completed';  // Only show if preprocessing completed successfully
+    previousCell?.status === 'completed';
+
+  const shouldShowExternalOutput = 
+    nextCell?.type === 'postprocessing' && 
+    cell.type === 'external' &&
+    cell.output !== undefined &&
+    cell.status === 'completed';
 
   return (
     <>
-      {shouldShowOutput && (
+      {shouldShowPreprocessingOutput && (
         <CellOutputDisplay 
           previousCell={previousCell} 
           nextCell={cell} 
@@ -43,6 +49,13 @@ const NotebookCell: React.FC<NotebookCellProps> = (props) => {
             return null;
         }
       })()}
+
+      {shouldShowExternalOutput && (
+        <CellOutputDisplay 
+          previousCell={cell} 
+          nextCell={nextCell}
+        />
+      )}
     </>
   );
 };

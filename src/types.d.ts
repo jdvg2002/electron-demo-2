@@ -17,6 +17,7 @@ interface ElectronWindow {
     maximize: () => Promise<void>;
     close: () => Promise<void>;
     saveTempFile: (data: File | ArrayBuffer) => Promise<string>;
+    getProjectRoot: () => Promise<string>;
 }
 
 declare interface Window {
