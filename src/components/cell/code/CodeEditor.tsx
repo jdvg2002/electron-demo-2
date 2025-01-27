@@ -260,14 +260,82 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   // --------------------------------------------------------------------------
   // 7. Render
   // --------------------------------------------------------------------------
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+    setIsDragOver(true);
   };
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
+
+  const handleDragLeave = () => {
+    setIsDragOver(false);
   };
-  const handleDrop = (e: React.DragEvent) => {
+
+  const ensureNumpyImport = (currentCode: string): string => {
+    if (!currentCode.includes('import numpy')) {
+      return 'import numpy as np\n\n' + currentCode;
+    }
+    return currentCode;
+  };
+
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+    setIsDragOver(false);
+
+    try {
+      // Handle JSON data (measurements and distributions)
+      const jsonData = e.dataTransfer.getData('application/json');
+      if (jsonData) {
+        const data = JSON.parse(jsonData);
+        const variableName = data.label.replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase();
+        let newCode = code;
+
+        switch (data.type) {
+          case 'measurement':
+            newCode += `${variableName} = ${data.value}\n`;
+            break;
+          case 'distribution':
+            newCode = ensureNumpyImport(newCode);
+            newCode += `${variableName} = np.random.normal(loc=${data.mean}, scale=${data.stdDev}, size=1000)\n`;
+            break;
+        }
+
+        if (newCode !== code) {
+          onChange(newCode);
+          return;
+        }
+      }
+
+      // Handle CSV files
+      const files = Array.from(e.dataTransfer.files);
+      const csvFile = files.find(file => file.name.endsWith('.csv'));
+      if (csvFile) {
+        const text = await csvFile.text();
+        const lines = text.split('\n');
+        const header = lines[0].trim();
+        const values = lines.slice(1).filter(line => line.trim()).map(line => 
+          line.split(',').map(val => 
+            isNaN(Number(val)) ? `'${val.trim()}'` : Number(val)
+          )
+        );
+        
+        const variableName = csvFile.name
+          .replace('.csv', '')
+          .replace(/[^a-zA-Z0-9_]/g, '_')
+          .toLowerCase();
+
+        let newCode = ensureNumpyImport(code);
+        
+        newCode += `# Data from ${csvFile.name}\n`;
+        newCode += `${variableName}_header = [${header.split(',').map(h => `'${h.trim()}'`).join(', ')}]\n`;
+        newCode += `${variableName}_data = [\n`;
+        newCode += values.map(row => `    [${row.join(', ')}]`).join(',\n');
+        newCode += '\n]\n';
+        newCode += `${variableName}_array = np.array(${variableName}_data)\n`;
+
+        onChange(newCode);
+      }
+    } catch (error) {
+      console.error('Failed to process dropped data:', error);
+    }
   };
 
   return (
