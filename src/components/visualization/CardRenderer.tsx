@@ -7,7 +7,8 @@ import StableSTLViewer from './StableSTLViewer';
 export type CardContent = 
   | { type: 'stl'; file: File }
   | { type: 'measurements'; data: Record<string, number> }
-  | { type: 'distribution'; mean: number; stdDev: number; label: string; isLocal?: boolean };
+  | { type: 'distribution'; mean: number; stdDev: number; label: string; isLocal?: boolean }
+  | { type: 'csv'; file: File; fileName: string };
 
 export interface VisualizationCard {
   title: string;
@@ -28,6 +29,24 @@ const CardRenderer: React.FC<CardRendererProps> = React.memo(({ content, cards, 
   };
 
   switch (content.type) {
+    case 'csv':
+      return (
+        <div 
+          className="w-full h-full flex items-center justify-center text-gray-600 px-4"
+          draggable
+          onDragStart={(e) => {
+            const dragData = {
+              type: 'csv',
+              fileName: content.fileName,
+              file: content.file
+            };
+            e.dataTransfer.setData('application/json', JSON.stringify(dragData));
+          }}
+        >
+          <span className="text-sm break-all text-center cursor-move">{content.fileName}</span>
+        </div>
+      );
+
     case 'stl':
       return (
         <div className="w-full h-full -ml-2 -mr-2 -mb-2">

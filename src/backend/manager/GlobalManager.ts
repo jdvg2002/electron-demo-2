@@ -1,10 +1,16 @@
 import { VariableRecord } from '../models/Variable';
 import { FileRecord } from '../models/File';
 
+interface CSVData {
+  headers: string[];
+  rows: string[][];
+}
+
 export class GlobalManager {
   private static instance: GlobalManager;
   private files: Map<string, FileRecord> = new Map();
   private variables: Map<string, VariableRecord> = new Map();
+  private csvData: Map<string, CSVData> = new Map();
   private listeners: Set<() => void> = new Set();
 
   private constructor() {}
@@ -128,6 +134,7 @@ export class GlobalManager {
 
   removeFile(id: string): void {
     this.files.delete(id);
+    this.csvData.delete(id);
     // Remove all variables associated with this file
     for (const [varId, variable] of this.variables.entries()) {
       if (variable.fileId === id) {
@@ -186,5 +193,14 @@ export class GlobalManager {
         });
     });
     requestAnimationFrame(() => this.notifyListeners());
+  }
+
+  addCSVData(fileId: string, data: CSVData): void {
+    this.csvData.set(fileId, data);
+    this.notifyListeners();
+  }
+
+  getCSVData(fileId: string): CSVData | undefined {
+    return this.csvData.get(fileId);
   }
 } 

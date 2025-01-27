@@ -1,0 +1,12 @@
+Component,Measurement Type,Value,Units
+Pipe-001,Inner Diameter,50.8,mm
+Pipe-001,Outer Diameter,60.3,mm
+Pipe-001,Wall Thickness,4.75,mm
+Pipe-001,Length,2400,mm
+Flange-A,Main Diameter,152.4,mm
+Flange-A,Bolt Hole Diameter,19.05,mm
+Flange-A,Bolt Count,8,count
+Bend-X,Inner Diameter,50.8,mm
+Bend-X,Wall Thickness,4.75,mm
+Bend-X,Bend Angle,90,degrees
+Bend-X,Bend Radius,76.2,mm 

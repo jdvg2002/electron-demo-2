@@ -6,7 +6,7 @@ import { ModuleManager } from '@/backend/manager/ModuleManager';
 
 export interface ParsedFileResult {
   fileId: string;
-  fileType: 'stl' | 'step' | 'local';
+  fileType: 'stl' | 'step' | 'local' | 'csv';
   measurements: Record<string, number>;
   rawFile: File;
   originalFileName: string;
@@ -47,7 +47,10 @@ export class FileUploadManager {
     } 
     else if (fileType.endsWith('.step') || fileType.endsWith('.stp')) {
       return this.handleStepUpload(file, cell);
-    } 
+    }
+    else if (fileType.endsWith('.csv')) {
+      return this.handleCsvUpload(file, cell);
+    }
     else {
       throw new Error('Unsupported file type');
     }
@@ -153,6 +156,45 @@ export class FileUploadManager {
         originalFileName: file.name,
         timestamp,
         cell
+    };
+  }
+
+  private async handleCsvUpload(file: File, cell?: CellData): Promise<ParsedFileResult> {
+    const timestamp = new Date().toISOString();
+    const fileId = `csv_${timestamp}_${file.name}`;
+
+    // Parse CSV content
+    const text = await file.text();
+    const rows = text.split('\n').map(row => row.split(',').map(cell => cell.trim()));
+    const headers = rows[0];
+    const data = rows.slice(1).filter(row => row.length === headers.length);
+
+    // Store in GlobalManager
+    await this.globalManager.addFileFromUpload(file, file.name);
+    this.globalManager.addCSVData(fileId, {
+      headers,
+      rows: data
+    });
+
+    // After file is uploaded, add it to all existing modules
+    const modules = this.moduleManager.getAllModules();
+    modules.forEach(module => {
+      if (!module.globalFileIds.includes(fileId)) {
+        module.globalFileIds.push(fileId);
+      }
+    });
+    
+    // Notify listeners of the change
+    this.moduleManager.notifyListeners();
+
+    return {
+      fileId,
+      fileType: 'csv',
+      measurements: {},
+      rawFile: file,
+      originalFileName: file.name,
+      timestamp,
+      cell
     };
   }
 

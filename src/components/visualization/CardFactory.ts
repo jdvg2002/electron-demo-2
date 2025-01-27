@@ -43,9 +43,20 @@ export class CardFactory {
     };
   }
 
+  private static createCsvCard(csvFile: File): VisualizationCard {
+    return {
+      title: 'CSV Data',
+      content: { 
+        type: 'csv',
+        file: csvFile,
+        fileName: csvFile.name
+      }
+    };
+  }
+
   static createCards(
     fileId: string,
-    stlFile: File | { name: string; data: string; type: string },
+    file: File | { name: string; data: string; type: string },
     localVariables?: Map<string, VariableRecord>,
     isPreprocessing: boolean = !!localVariables
   ): VisualizationCard[] {
@@ -58,8 +69,19 @@ export class CardFactory {
     const globalManager = GlobalManager.getInstance();
     const cards: VisualizationCard[] = [];
     
-    // Add STL card
-    cards.push(this.createStlCard(stlFile));
+    // Check file type
+    const fileName = file instanceof File ? file.name : file.name;
+    if (fileName.toLowerCase().endsWith('.csv')) {
+      cards.push(this.createCsvCard(file instanceof File ? file : new File(
+        [Uint8Array.from(atob(file.data.split(',')[1]), c => c.charCodeAt(0))],
+        file.name,
+        { type: file.type }
+      )));
+      return cards;  // Return early for CSV files
+    }
+
+    // Only add STL card for STL or STEP files
+    cards.push(this.createStlCard(file));
 
     // Get and process measurements
     const globalMeasurements = globalManager.getVariablesForFile(fileId)
