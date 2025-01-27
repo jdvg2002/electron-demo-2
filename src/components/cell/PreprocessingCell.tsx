@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Box } from 'lucide-react';
 import { BaseCell } from './BaseCell';
 import type { NotebookCellProps } from './NotebookCell';
@@ -8,10 +8,12 @@ import { VisualizationManager } from '../visualization/VisualizationManager';
 import { useVariableManager } from '@/hooks/useVariableManager';
 import { CellManager } from '@/backend/manager/CellManager';
 import { VariableRecord } from '@/backend/models/Variable';
+import { CodeEditor } from './code/CodeEditor';
 
 export const PreprocessingCell: React.FC<NotebookCellProps> = (props) => {
-  const { cell } = props;
+  const { cell, nextCell, onCellChange } = props;
   const { module, localVariables } = useVariableManager(cell.id);
+  const [isExecuting, setIsExecuting] = useState(false);
   const globalManager = GlobalManager.getInstance();
   const cellManager = CellManager.getInstance();
   
@@ -73,13 +75,100 @@ export const PreprocessingCell: React.FC<NotebookCellProps> = (props) => {
     });
   };
 
+  const handleRunPreprocessing = async () => {
+    if (!module) return;
+    setIsExecuting(true);
+
+    try {
+      // Prepare input data from files and variables
+      const inputData = {
+        files,
+        variables: Array.from(localVariables?.entries() || [])
+          .map(([key, value]) => ({
+            label: key,
+            ...value
+          }))
+      };
+
+      // Create the output data structure
+      const outputData = {
+        processedData: {
+          id: crypto.randomUUID(),
+          type: 'preprocessed_data',
+          version: '1.0',
+          timestamp: new Date().toISOString(),
+          originalFileName: 'preprocessed_data.json',
+          sourceEnvironment: 'preprocessing',
+          data: inputData
+        },
+        metadata: {
+          analysisTimestamp: new Date().toISOString(),
+          sourceAnalysis: 'preprocessing'
+        }
+      };
+
+      // Update both cells
+      onCellChange({
+        ...cell,
+        output: outputData,
+        status: 'completed'
+      });
+
+      if (nextCell?.type === 'external') {
+        cellManager.updateCell(module.card.id, nextCell.id, {
+          ...nextCell,
+          input: {
+            files: outputData.processedData,
+            variables: inputData.variables
+          }
+        });
+      }
+
+    } catch (error) {
+      console.error('Preprocessing failed:', error);
+      onCellChange({
+        ...cell,
+        status: 'error',
+        output: {
+          metadata: {
+            analysisTimestamp: new Date().toISOString(),
+            sourceAnalysis: 'preprocessing_error'
+          }
+        }
+      });
+    } finally {
+      setIsExecuting(false);
+    }
+  };
+
   return (
     <BaseCell {...props} icon={<Box className="text-blue-500" />} borderColor="border-l-blue-500">
-      <VisualizationManager 
-        files={files} 
-        localVariables={localVariables}
-        onAddLocalVariable={handleLocalVariableChange}
-      />
+      <div className="space-y-4">
+        <VisualizationManager 
+          files={files} 
+          localVariables={localVariables}
+          onAddLocalVariable={handleLocalVariableChange}
+        />
+
+        <CodeEditor
+          code={cell.code || ''}
+          onChange={(newCode) => {
+            onCellChange({
+              ...cell,
+              code: newCode
+            });
+          }}
+        />
+
+        <button
+          onClick={handleRunPreprocessing}
+          disabled={isExecuting}
+          className={`px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 
+                     transition-colors ${isExecuting ? 'opacity-50 cursor-not-allowed' : ''}`}
+        >
+          {isExecuting ? 'Running...' : 'Run Preprocessing'}
+        </button>
+      </div>
     </BaseCell>
   );
 }; 

@@ -53,10 +53,12 @@ const Demo = ({ className = '', cardId }: DemoProps) => {
       </div>
 
       <div className="space-y-4">
-        {cells.map(cell => (
+        {cells.map((cell, index) => (
           <NotebookCell
             key={cell.id}
             cell={cell}
+            previousCell={index > 0 ? cells[index - 1] : undefined}
+            nextCell={index < cells.length - 1 ? cells[index + 1] : undefined}
             isActive={activeCells.includes(cell.id)}
             onToggle={() => {
               setActiveCells(prev =>

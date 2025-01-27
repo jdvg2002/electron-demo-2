@@ -57,24 +57,6 @@ export const BaseCell: React.FC<BaseCellProps> = ({
       {isActive && (
         <CardContent className="p-2 space-y-4 w-full">
           {children}
-          <div className="mt-4">
-            <textarea
-              value={cell.code || ''}
-              onChange={(e) => onCellChange({ code: e.target.value })}
-              className="w-full p-2 border rounded"
-              rows={4}
-              placeholder="Enter code..."
-            />
-          </div>
-
-          {cell.output && (
-            <div className="mt-4 p-2 bg-gray-50 rounded">
-              <div className="font-medium text-sm text-gray-600">Output:</div>
-              <pre className="mt-1 text-sm">
-                {JSON.stringify(cell.output, null, 2)}
-              </pre>
-            </div>
-          )}
         </CardContent>
       )}
     </Card>
