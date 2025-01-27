@@ -43,13 +43,14 @@ export class CardFactory {
     };
   }
 
-  private static createCsvCard(csvFile: File): VisualizationCard {
+  private static createCsvCard(file: File, fileId: string): VisualizationCard {
     return {
       title: 'CSV Data',
       content: { 
         type: 'csv',
-        file: csvFile,
-        fileName: csvFile.name
+        file,
+        fileName: file.name,
+        fileId
       }
     };
   }
@@ -69,9 +70,8 @@ export class CardFactory {
     if (fileName.toLowerCase().endsWith('.csv')) {
       cards.push(this.createCsvCard(file instanceof File ? file : new File(
         [Uint8Array.from(atob(file.data.split(',')[1]), c => c.charCodeAt(0))],
-        file.name,
-        { type: file.type }
-      )));
+        fileId
+      ), fileId));
       return cards;  // Return early for CSV files
     }
 

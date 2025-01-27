@@ -33,11 +33,6 @@ const Demo = ({ className = '', cardId }: DemoProps) => {
   }
 
   const handleCellChange = (cellId: string, updates: Partial<CellData>) => {
-    console.log('Demo: Cell Change:', {
-      moduleId: moduleObj?.card.id,
-      cellId,
-      updates
-    });
     updateCell(cellId, updates);
   };
 

@@ -8,7 +8,7 @@ export type CardContent =
   | { type: 'stl'; file: File }
   | { type: 'measurements'; data: Record<string, number> }
   | { type: 'distribution'; mean: number; stdDev: number; label: string; isLocal?: boolean }
-  | { type: 'csv'; file: File; fileName: string };
+  | { type: 'csv'; file: File; fileName: string; fileId: string };
 
 export interface VisualizationCard {
   title: string;
@@ -31,19 +31,24 @@ const CardRenderer: React.FC<CardRendererProps> = React.memo(({ content, cards, 
   switch (content.type) {
     case 'csv':
       return (
-        <div 
+        <div
           className="w-full h-full flex items-center justify-center text-gray-600 px-4"
           draggable
           onDragStart={(e) => {
+            console.log('Starting drag with fileId:', content.fileId); // Debug log
             const dragData = {
               type: 'csv',
               fileName: content.fileName,
+              fileId: content.fileId, // Make sure we're including fileId
               file: content.file
             };
+            console.log('Drag data:', dragData); // Debug log
             e.dataTransfer.setData('application/json', JSON.stringify(dragData));
           }}
         >
-          <span className="text-sm break-all text-center cursor-move">{content.fileName}</span>
+          <span className="text-sm break-all text-center cursor-move">
+            {content.fileName}
+          </span>
         </div>
       );
 

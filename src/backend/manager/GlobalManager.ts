@@ -10,7 +10,7 @@ export class GlobalManager {
   private static instance: GlobalManager;
   private files: Map<string, FileRecord> = new Map();
   private variables: Map<string, VariableRecord> = new Map();
-  private csvData: Map<string, CSVData> = new Map();
+  private csvData: Map<string, { headers: string[]; rows: string[][] }> = new Map();
   private listeners: Set<() => void> = new Set();
 
   private constructor() {}
@@ -195,12 +195,11 @@ export class GlobalManager {
     requestAnimationFrame(() => this.notifyListeners());
   }
 
-  addCSVData(fileId: string, data: CSVData): void {
+  addCSVData(fileId: string, data: { headers: string[]; rows: string[][] }) {
     this.csvData.set(fileId, data);
-    this.notifyListeners();
   }
 
-  getCSVData(fileId: string): CSVData | undefined {
+  getCSVData(fileId: string) {
     return this.csvData.get(fileId);
   }
 } 

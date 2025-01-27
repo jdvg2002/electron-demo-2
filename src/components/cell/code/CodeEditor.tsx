@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Editor } from '@monaco-editor/react';
 import { Copy, Check, Play } from 'lucide-react';
+import { GlobalManager } from '../../../backend/manager/GlobalManager';
 
 interface CodeEditorProps {
   code: string;
@@ -30,28 +31,19 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   // 1. Code for detecting Python lists
   // --------------------------------------------------------------------------
   const detectPythonLists = (pythonCode: string) => {
-    console.log('Detecting lists in code:', pythonCode);
     const listRegex = /\[((?:[^[\]]*|\[[^[\]]*\])*)\]/g;
     const ranges: { start: number; end: number; content: string }[] = [];
     let match;
     
     while ((match = listRegex.exec(pythonCode)) !== null) {
-      console.log('Found potential list match:', match[0]);
-      // Only consider matches that look like Python lists (comma-separated values)
       if (match[1].includes(',')) {
         ranges.push({
           start: match.index,
           end: match.index + match[0].length,
           content: match[0]
         });
-        console.log('Added range:', {
-          start: match.index,
-          end: match.index + match[0].length,
-          content: match[0]
-        });
       }
     }
-    console.log('Detected ranges:', ranges);
     return ranges;
   };
 
@@ -60,38 +52,23 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   // --------------------------------------------------------------------------
   const handleSortList = (range: { start: number; end: number; content: string }) => {
     try {
-      console.log('Starting sort with range:', range);
-      
-      // Parse the list content (remove brackets and split by commas)
       const listContent = range.content.slice(1, -1).split(',').map(item => item.trim());
-      console.log('Parsed list content:', listContent);
-      
-      // Sort numbers numerically; otherwise sort strings alphabetically
       const sortedList = listContent.sort((a, b) => {
         const numA = Number(a);
         const numB = Number(b);
         if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
         return a.localeCompare(b);
       });
-      console.log('Sorted list:', sortedList);
       
       const newListStr = `[${sortedList.join(', ')}]`;
-      console.log('New list string:', newListStr);
-      
-      // Create the new code by replacing the old list with the sorted one
       const newCode =
         code.substring(0, range.start) +
         newListStr +
         code.substring(range.end);
-      console.log('New complete code:', newCode);
       
-      // Update the editor content
       onChange(newCode);
-      console.log('Called onChange with new code');
 
-      // Force refresh decorations for updated code
       const newRanges = detectPythonLists(newCode);
-      console.log('New detected ranges:', newRanges);
       setListRanges(newRanges);
     } catch (error) {
       console.error('Failed to sort list:', error);
@@ -103,15 +80,9 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   // --------------------------------------------------------------------------
   const getDecorations = useCallback(
     (editor: any, monacoInstance: any) => {
-      console.log('Creating decorations for ranges:', listRanges);
       return listRanges.map(range => {
         const startPos = editor.getModel().getPositionAt(range.start);
         const endPos = editor.getModel().getPositionAt(range.end);
-        console.log('Position conversion:', {
-          range,
-          startPos,
-          endPos
-        });
         
         return {
           range: new monacoInstance.Range(
@@ -137,15 +108,12 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   );
 
   const updateDecorations = useCallback(() => {
-    console.log('Updating decorations, editor ref:', editorRef.current);
     if (editorRef.current && monaco) {
       const decorations = getDecorations(editorRef.current, monaco);
-      console.log('Created decorations:', decorations);
       decorationsRef.current = editorRef.current.deltaDecorations(
         decorationsRef.current,
         decorations
       );
-      console.log('Applied decorations:', decorationsRef.current);
     }
   }, [monaco, getDecorations]);
 
@@ -154,9 +122,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   // --------------------------------------------------------------------------
   // Re-run detectPythonLists every time code changes
   useEffect(() => {
-    console.log('Code changed, detecting lists');
     const ranges = detectPythonLists(code);
-    console.log('Setting list ranges:', ranges);
     setListRanges(ranges);
   }, [code]);
 
@@ -173,35 +139,26 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
     // We'll create a fresh listener each time listRanges changes. 
     // Dispose the old one before adding a new one.
     const disposable = editor.onMouseDown((e: any) => {
-      console.log('Mouse down event:', e);
       if (!e.target.position) {
-        console.log('No position in click target');
         return;
       }
 
       const position = e.target.position;
       const model = editor.getModel();
       const offset = model.getOffsetAt(position);
-      console.log('Click position:', position, 'offset:', offset);
-      console.log('Current list ranges:', listRanges);
       
       const clickedRange = listRanges.find(range => {
         const isInRange = range.start <= offset && offset <= range.end;
-        console.log('Checking range:', range, 'isInRange:', isInRange);
         return isInRange;
       });
       
-      console.log('Found clicked range:', clickedRange);
-
       if (clickedRange) {
-        console.log('Handling sort for range:', clickedRange);
         handleSortList(clickedRange);
       }
     });
 
     // Cleanup: remove the old event listener
     return () => {
-      console.log('Disposing previous mouseDown listener');
       disposable.dispose();
     };
   }, [listRanges, code, handleSortList]);
@@ -281,57 +238,37 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
     setIsDragOver(false);
 
     try {
-      // Handle JSON data (measurements and distributions)
       const jsonData = e.dataTransfer.getData('application/json');
+      
       if (jsonData) {
         const data = JSON.parse(jsonData);
-        const variableName = data.label.replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase();
-        let newCode = code;
-
-        switch (data.type) {
-          case 'measurement':
-            newCode += `${variableName} = ${data.value}\n`;
-            break;
-          case 'distribution':
-            newCode = ensureNumpyImport(newCode);
-            newCode += `${variableName} = np.random.normal(loc=${data.mean}, scale=${data.stdDev}, size=1000)\n`;
-            break;
-        }
-
-        if (newCode !== code) {
-          onChange(newCode);
-          return;
-        }
-      }
-
-      // Handle CSV files
-      const files = Array.from(e.dataTransfer.files);
-      const csvFile = files.find(file => file.name.endsWith('.csv'));
-      if (csvFile) {
-        const text = await csvFile.text();
-        const lines = text.split('\n');
-        const header = lines[0].trim();
-        const values = lines.slice(1).filter(line => line.trim()).map(line => 
-          line.split(',').map(val => 
-            isNaN(Number(val)) ? `'${val.trim()}'` : Number(val)
-          )
-        );
         
-        const variableName = csvFile.name
-          .replace('.csv', '')
-          .replace(/[^a-zA-Z0-9_]/g, '_')
-          .toLowerCase();
+        if (data.type === 'csv' && data.fileId) {
+          const globalManager = GlobalManager.getInstance();
+          const csvData = globalManager.getCSVData(data.fileId);
+          
+          if (csvData) {
+            const variableName = data.fileName.split('.')[0].replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase();
+            let newCode = ensureNumpyImport(code);
+            
+            // Add CSV data as Python lists
+            newCode += `\n# Data from ${data.fileName}\n`;
+            newCode += `${variableName}_header = [${csvData.headers.map(h => `'${h}'`).join(', ')}]\n`;
+            newCode += `${variableName}_data = [\n`;
+            // Quote string values in the rows
+            newCode += csvData.rows.map(row => 
+              `    [${row.map(cell => 
+                // If the cell can be parsed as a number, don't quote it
+                isNaN(Number(cell)) ? `'${cell}'` : cell
+              ).join(', ')}]`
+            ).join(',\n');
+            newCode += '\n]\n';
+            newCode += `${variableName}_array = np.array(${variableName}_data)\n`;
 
-        let newCode = ensureNumpyImport(code);
-        
-        newCode += `# Data from ${csvFile.name}\n`;
-        newCode += `${variableName}_header = [${header.split(',').map(h => `'${h.trim()}'`).join(', ')}]\n`;
-        newCode += `${variableName}_data = [\n`;
-        newCode += values.map(row => `    [${row.join(', ')}]`).join(',\n');
-        newCode += '\n]\n';
-        newCode += `${variableName}_array = np.array(${variableName}_data)\n`;
-
-        onChange(newCode);
+            onChange(newCode);
+            return;
+          }
+        }
       }
     } catch (error) {
       console.error('Failed to process dropped data:', error);
@@ -382,7 +319,6 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
           theme="vs-light"
           beforeMount={editorWillMount}
           onMount={(editor, monacoInstance) => {
-            console.log('Editor mounted');
             editorRef.current = editor;
             setMonaco(monacoInstance);
             // Decorations will be updated in useEffect
