@@ -2,10 +2,11 @@ import { GlobalManager } from '@/backend/manager/GlobalManager';
 import { VariableRecord } from '../models/Variable';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
 import { CellData } from '@/backend/models/Cell';
+import { ModuleManager } from '@/backend/manager/ModuleManager';
 
 export interface ParsedFileResult {
   fileId: string;
-  fileType: 'stl' | 'step';
+  fileType: 'stl' | 'step' | 'local';
   measurements: Record<string, number>;
   rawFile: File;
   originalFileName: string;
@@ -24,9 +25,11 @@ export interface FileUploadState {
 export class FileUploadManager {
   private static instance: FileUploadManager;
   private globalManager: GlobalManager;
+  private moduleManager: ModuleManager;
 
   private constructor() {
     this.globalManager = GlobalManager.getInstance();
+    this.moduleManager = ModuleManager.getInstance();
   }
 
   static getInstance(): FileUploadManager {
@@ -65,12 +68,18 @@ export class FileUploadManager {
         reader.onload = () => resolve(reader.result as string);
         reader.readAsDataURL(file);
       });
-
-      cell = {
-        ...cell,
-        globalFileIds: [...(cell.globalFileIds || []), fileId]
-      };
     }
+
+    // After file is uploaded, add it to all existing modules
+    const modules = this.moduleManager.getAllModules();
+    modules.forEach(module => {
+      if (!module.globalFileIds.includes(fileId)) {
+        module.globalFileIds.push(fileId);
+      }
+    });
+    
+    // Notify listeners of the change
+    this.moduleManager.notifyListeners();
 
     return {
       fileId,
@@ -109,13 +118,16 @@ export class FileUploadManager {
       });
     }
 
-    // Update cell if provided
-    if (cell) {
-      cell = {
-        ...cell,
-        globalFileIds: [...(cell.globalFileIds || []), fileId]
-      };
-    }
+    // After file is uploaded, add it to all existing modules
+    const modules = this.moduleManager.getAllModules();
+    modules.forEach(module => {
+      if (!module.globalFileIds.includes(fileId)) {
+        module.globalFileIds.push(fileId);
+      }
+    });
+    
+    // Notify listeners of the change
+    this.moduleManager.notifyListeners();
 
     return {
       fileId,

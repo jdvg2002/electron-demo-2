@@ -132,7 +132,7 @@ export class ModuleManager {
     return () => this.listeners.delete(callback);
   }
 
-  private notifyListeners(): void {
+  public notifyListeners(): void {
     this.listeners.forEach(callback => callback());
   }
 } 

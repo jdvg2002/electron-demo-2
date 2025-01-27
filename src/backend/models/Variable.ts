@@ -8,6 +8,7 @@ export interface VariableRecord {
   stdDev?: number; // for distributions
   units?: string;
   label?: string;
+  _delete?: boolean; // Flag to indicate if this variable should be deleted
 }
 
 export class VariableManager {

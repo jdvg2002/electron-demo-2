@@ -44,9 +44,15 @@ export function useVariableManager(cellId: string) {
     return new Map([...globalVars, ...localVars]);
   }, [cellId, getGlobalVariables, getModule]);
 
+  const module = getModule();
+  const cell = module ? cellManager.getCellsForModule(module.card.id)
+    .find(c => c.id === cellId) : null;
+  const localVariables = cell?.localVariables || new Map();
+
   return {
     variables: combinedVariables,
-    module: getModule(),
+    module,
     getGlobalVariables,
+    localVariables
   };
 } 
