@@ -49,6 +49,12 @@ export class CardFactory {
     localVariables?: Map<string, VariableRecord>,
     isPreprocessing: boolean = !!localVariables
   ): VisualizationCard[] {
+    console.log('CardFactory.createCards called:', {
+      fileId,
+      timestamp: new Date().toISOString(),
+      stack: new Error().stack
+    });
+
     const globalManager = GlobalManager.getInstance();
     const cards: VisualizationCard[] = [];
     
@@ -63,15 +69,44 @@ export class CardFactory {
         .filter(v => v.fileId === fileId && v.type === 'measurement')
       : [];
 
-    const measurementData = [...globalMeasurements, ...localMeasurements]
-      .reduce((acc, m) => ({ ...acc, [m.name]: m.value }), {});
+    console.log('Global measurements:', globalMeasurements);
+    console.log('Local measurements:', localMeasurements);
+    
+    const measurementsByComponent = [...globalMeasurements, ...localMeasurements]
+      .reduce((acc, m) => {
+        const component = m.component || 'General';
+        if (!acc[component]) {
+          acc[component] = [];
+        }
+        acc[component].push(m);
+        return acc;
+      }, {} as Record<string, VariableRecord[]>);
 
-    if (Object.keys(measurementData).length > 0) {
+    console.log('Measurements by component:', measurementsByComponent);
+    
+    // Create measurement cards per component
+    Object.entries(measurementsByComponent).forEach(([component, measurements]) => {
+      console.log('Creating measurement card for component:', component);
+      console.log('Component measurements:', measurements);
+      
+      const measurementData = measurements.reduce((acc, m) => {
+        const key = m.name.split(' - ')[1] || m.name;
+        console.log('Processing measurement:', { 
+          original: m.name, 
+          key, 
+          value: m.value,
+          timestamp: new Date().toISOString()
+        });
+        return { ...acc, [key]: m.value };
+      }, {});
+      
+      console.log('Final measurement data for card:', measurementData);
+      
       cards.push({
-        title: 'Measurements',
+        title: `${component} Measurements`,
         content: { type: 'measurements', data: measurementData }
       });
-    }
+    });
 
     // Process distributions
     const globalDistributions = globalManager.getVariablesForFile(fileId)

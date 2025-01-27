@@ -104,7 +104,15 @@ export class FileUploadManager {
     if (!result.stl_data) {
       throw new Error('No STL data received from conversion');
     }
-    const stlBlob = new Blob([result.stl_data], { type: 'model/stl' });
+
+    // Decode base64 STL data to binary
+    const binaryString = atob(result.stl_data);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+    }
+    
+    const stlBlob = new Blob([bytes], { type: 'model/stl' });
     const newFileName = file.name.replace(/\.(step|stp)$/i, '.stl');
     const stlFile = new File([stlBlob], newFileName, { type: 'model/stl' });
     
@@ -113,30 +121,38 @@ export class FileUploadManager {
 
     // Add measurements from STEP conversion
     if (result.pipe_measurements) {
-      Object.entries(result.pipe_measurements).forEach(([name, value]) => {
-        this.globalManager.addMeasurement(fileId, name, value as number);
-      });
+        this.globalManager.addMeasurementBatch(
+            fileId,
+            result.pipe_measurements.map(componentMeasurements => {
+                const { Component, ...measurements } = componentMeasurements;
+                return Object.entries(measurements).map(([name, value]) => ({
+                    name: `${Component} - ${name}`,
+                    value: value as number,
+                    component: Component
+                }));
+            }).flat()
+        );
     }
 
     // After file is uploaded, add it to all existing modules
     const modules = this.moduleManager.getAllModules();
     modules.forEach(module => {
-      if (!module.globalFileIds.includes(fileId)) {
-        module.globalFileIds.push(fileId);
-      }
+        if (!module.globalFileIds.includes(fileId)) {
+            module.globalFileIds.push(fileId);
+        }
     });
     
     // Notify listeners of the change
     this.moduleManager.notifyListeners();
 
     return {
-      fileId,
-      fileType: 'step',
-      measurements: result.pipe_measurements || {},
-      rawFile: stlFile,
-      originalFileName: file.name,
-      timestamp,
-      cell
+        fileId,
+        fileType: 'step',
+        measurements: result.pipe_measurements || {},
+        rawFile: stlFile,
+        originalFileName: file.name,
+        timestamp,
+        cell
     };
   }
 

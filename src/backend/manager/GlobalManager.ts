@@ -173,4 +173,18 @@ export class GlobalManager {
       requestAnimationFrame(() => this.notifyListeners());
     }
   }
+
+  public addMeasurementBatch(fileId: string, measurements: Omit<VariableRecord, 'id'>[]): void {
+    measurements.forEach(measurement => {
+        const id = crypto.randomUUID();
+        this.variables.set(id, {
+            ...measurement,
+            id,
+            fileId,
+            type: 'measurement',
+            units: measurement.units || 'mm'
+        });
+    });
+    requestAnimationFrame(() => this.notifyListeners());
+  }
 } 

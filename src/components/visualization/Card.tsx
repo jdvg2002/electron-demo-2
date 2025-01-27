@@ -20,8 +20,63 @@ export const Card = React.memo<CardProps>(({
   onDeleteVariable,
   onChartClick
 }) => {
+  const renderCount = React.useRef(0);
+  const [isVisible, setIsVisible] = React.useState(false);
+  const cardRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    renderCount.current += 1;
+    console.log('Card mounted/updated:', {
+      title: card.title,
+      type: card.content.type,
+      renderCount: renderCount.current,
+      timestamp: new Date().toISOString(),
+      dimensions: cardRef.current ? {
+        width: cardRef.current.offsetWidth,
+        height: cardRef.current.offsetHeight,
+        scrollHeight: cardRef.current.scrollHeight
+      } : null
+    });
+
+    // Use a layout effect equivalent for the visibility update
+    const timer = setTimeout(() => {
+      if (cardRef.current) {
+        const computedStyle = window.getComputedStyle(cardRef.current);
+        console.log('Card layout before visibility update:', {
+          title: card.title,
+          dimensions: {
+            width: cardRef.current.offsetWidth,
+            height: cardRef.current.offsetHeight,
+            scrollHeight: cardRef.current.scrollHeight
+          },
+          style: {
+            display: computedStyle.display,
+            visibility: computedStyle.visibility,
+            opacity: computedStyle.opacity
+          }
+        });
+        
+        setIsVisible(true);
+      }
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [card.title]);
+
+  console.log('Rendering card:', {
+    title: card.title,
+    type: card.content.type,
+    renderCount: renderCount.current,
+    isVisible,
+    contentData: card.content.type === 'measurements' ? 
+      Object.keys(card.content.data).length : null
+  });
+
   return (
-    <UICard className="aspect-square p-2 w-[180px] overflow-hidden relative">
+    <UICard 
+      ref={cardRef}
+      className="aspect-square p-2 w-[180px] overflow-hidden relative"
+    >
       {card.content.type === 'distribution' && card.content.isLocal && onDeleteVariable && (
         <button
           onClick={(e) => {
@@ -36,7 +91,15 @@ export const Card = React.memo<CardProps>(({
         </button>
       )}
       <h3 className="font-medium mb-2 px-2 text-sm">{card.title}</h3>
-      <div className="h-[calc(100%-2rem)] w-full">
+      <div 
+        className={`h-[calc(100%-2rem)] w-full transition-opacity duration-150 ${
+          isVisible ? 'opacity-100' : 'opacity-0'
+        }`}
+        style={{ 
+          willChange: 'opacity',
+          contain: 'layout style paint'
+        }}
+      >
         <CardRenderer 
           content={card.content}
           cards={cards}

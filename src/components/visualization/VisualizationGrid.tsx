@@ -94,6 +94,11 @@ const VisualizationGrid: React.FC<VisualizationGridProps> = React.memo(({
     });
   }, [fileId, onAddVariable]);
 
+  console.log('Rendering visualization grid with cards:', initialCards.map(card => ({
+    title: card.title,
+    type: card.content.type
+  })));
+
   return (
     <>
       <div
@@ -146,21 +151,13 @@ const VisualizationGrid: React.FC<VisualizationGridProps> = React.memo(({
   
   return prevProps.cards.every((card, index) => {
     const nextCard = nextProps.cards[index];
-    if (card.content.type !== nextCard.content.type) return false;
-    if (card.title !== nextCard.title) return false;
-    
-    if (card.content.type === 'distribution' && nextCard.content.type === 'distribution') {
+    if (card.content.type === 'distribution') {
       return (
         card.content.label === nextCard.content.label &&
         card.content.mean === nextCard.content.mean &&
         card.content.stdDev === nextCard.content.stdDev
       );
     }
-    
-    if (card.content.type === 'measurements' && nextCard.content.type === 'measurements') {
-      return JSON.stringify(card.content.data) === JSON.stringify(nextCard.content.data);
-    }
-    
     return true;
   });
 });
