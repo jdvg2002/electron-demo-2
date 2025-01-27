@@ -113,3 +113,7 @@ bundled-python/
 
 # Refactor reference
 src/components/refactor_reference/
+dakota/dakota_output.dat
+dakota/dakota-6.19.0-public-darwin.Darwin.x86_64-cli/share/dakota/Python/dakota/interfacing/__pycache__/dprepro.cpython-312.pyc
+dakota/dakota_output.dat
+dakota/dakota-6.21.0-public-darwin.Darwin.arm64-cli/share/dakota/Python/dakota/interfacing/__pycache__/dprepro.cpython-312.pyc
