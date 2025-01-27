@@ -18,6 +18,12 @@ interface ElectronWindow {
     close: () => Promise<void>;
     saveTempFile: (data: File | ArrayBuffer) => Promise<string>;
     getProjectRoot: () => Promise<string>;
+    executePython: (code: string) => Promise<{
+        success: boolean;
+        stdout?: string;
+        result?: string;
+        error?: string;
+    }>;
 }
 
 declare interface Window {

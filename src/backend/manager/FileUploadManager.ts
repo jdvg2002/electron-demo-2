@@ -23,6 +23,13 @@ export interface FileUploadState {
   error: string | null;
 }
 
+interface PipeMeasurement {
+    Component: string;
+    inner_diameter: number;
+    outer_diameter: number;
+    wall_thickness: number;
+}
+
 export class FileUploadManager {
   private static instance: FileUploadManager;
   private globalManager: GlobalManager;
@@ -127,14 +134,16 @@ export class FileUploadManager {
     if (result.pipe_measurements) {
         this.globalManager.addMeasurementBatch(
             fileId,
-            result.pipe_measurements.map(componentMeasurements => {
+            Array.isArray(result.pipe_measurements) ? result.pipe_measurements.map((componentMeasurements: PipeMeasurement) => {
                 const { Component, ...measurements } = componentMeasurements;
-                return Object.entries(measurements).map(([name, value]) => ({
+                return Object.entries(measurements).map(([name, value]): Omit<VariableRecord, 'id'> => ({
                     name: `${Component} - ${name}`,
                     value: value as number,
-                    component: Component
+                    component: Component,
+                    type: 'measurement' as const,
+                    fileId
                 }));
-            }).flat()
+            }).flat() : []
         );
     }
 
