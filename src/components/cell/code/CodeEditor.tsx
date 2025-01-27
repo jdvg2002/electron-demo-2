@@ -238,36 +238,105 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
     setIsDragOver(false);
 
     try {
+      // Get the drop position from the editor
+      const editor = editorRef.current;
+      if (!editor) return;
+
+      // Convert mouse position to editor position
+      const target = editor.getTargetAtClientPoint(e.clientX, e.clientY);
+      if (!target?.position) return;
+
+      const lineNumber = target.position.lineNumber;
+      const model = editor.getModel();
+      if (!model) return;
+
       const jsonData = e.dataTransfer.getData('application/json');
       
       if (jsonData) {
         const data = JSON.parse(jsonData);
         
+        // Handle CSV drops
         if (data.type === 'csv' && data.fileId) {
           const globalManager = GlobalManager.getInstance();
           const csvData = globalManager.getCSVData(data.fileId);
           
           if (csvData) {
             const variableName = data.fileName.split('.')[0].replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase();
-            let newCode = ensureNumpyImport(code);
+            let newCodeLines = [];
+            
+            // Check if we need to add numpy import
+            const needsNumpy = !code.includes('import numpy');
+            if (needsNumpy) {
+              newCodeLines.push('import numpy as np');
+              newCodeLines.push('');
+            }
             
             // Add CSV data as Python lists
-            newCode += `\n# Data from ${data.fileName}\n`;
-            newCode += `${variableName}_header = [${csvData.headers.map(h => `'${h}'`).join(', ')}]\n`;
-            newCode += `${variableName}_data = [\n`;
+            newCodeLines.push(`# Data from ${data.fileName}`);
+            newCodeLines.push(`${variableName}_header = [${csvData.headers.map(h => `'${h}'`).join(', ')}]`);
+            newCodeLines.push(`${variableName}_data = [`);
             // Quote string values in the rows
-            newCode += csvData.rows.map(row => 
+            newCodeLines.push(csvData.rows.map(row => 
               `    [${row.map(cell => 
                 // If the cell can be parsed as a number, don't quote it
                 isNaN(Number(cell)) ? `'${cell}'` : cell
               ).join(', ')}]`
-            ).join(',\n');
-            newCode += '\n]\n';
-            newCode += `${variableName}_array = np.array(${variableName}_data)\n`;
+            ).join(',\n'));
+            newCodeLines.push(']');
+            newCodeLines.push(`${variableName}_array = np.array(${variableName}_data)`);
+            newCodeLines.push(''); // Add blank line at end
 
-            onChange(newCode);
+            // Insert at the target line
+            const lineContent = model.getLineContent(lineNumber);
+            const indentation = lineContent.match(/^\s*/)?.[0] || '';
+            const newContent = newCodeLines.map(line => line ? indentation + line : line).join('\n');
+            
+            const range = new monaco.Range(
+              lineNumber, 1,
+              lineNumber, 1
+            );
+            
+            editor.executeEdits('drag-drop', [{
+              range,
+              text: newContent + '\n',
+              forceMoveMarkers: true
+            }]);
             return;
           }
+        }
+        
+        // Handle measurements and distributions
+        const variableName = data.label.replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase();
+        let newCode = '';
+        
+        switch (data.type) {
+          case 'measurement':
+            newCode = `${variableName} = ${data.value}\n`;
+            break;
+          case 'distribution':
+            if (!code.includes('import numpy')) {
+              newCode = 'import numpy as np\n\n';
+            }
+            newCode += `${variableName} = np.random.normal(loc=${data.mean}, scale=${data.stdDev}, size=1000)\n`;
+            break;
+        }
+        
+        if (newCode) {
+          // Get indentation of target line
+          const lineContent = model.getLineContent(lineNumber);
+          const indentation = lineContent.match(/^\s*/)?.[0] || '';
+          newCode = newCode.split('\n').map(line => line ? indentation + line : line).join('\n');
+
+          const range = new monaco.Range(
+            lineNumber, 1,
+            lineNumber, 1
+          );
+          
+          editor.executeEdits('drag-drop', [{
+            range,
+            text: newCode,
+            forceMoveMarkers: true
+          }]);
         }
       }
     } catch (error) {
