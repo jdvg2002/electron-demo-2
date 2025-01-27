@@ -3,7 +3,7 @@ import { ModuleManager } from '@/backend/manager/ModuleManager';
 import { CellData } from '@/backend/models/Cell';
 import { Module } from '@/backend/models/Module';
 import NotebookCell from './cell/NotebookCell';
-import { CellManager } from '@/backend/manager/CellManager';
+import { useCellManager } from '@/hooks/useCellManager';
 
 interface DemoProps {
   className?: string;
@@ -13,11 +13,11 @@ interface DemoProps {
 const Demo = ({ className = '', cardId }: DemoProps) => {
   const manager = ModuleManager.getInstance();
   const [activeCells, setActiveCells] = useState<string[]>([]);
+  const { cells, updateCell } = useCellManager(cardId);
 
   let moduleObj: Module | undefined;
   if (cardId) {
     moduleObj = manager.getModuleById(cardId);
-    
     if (!moduleObj) {
       moduleObj = manager.createModule();
     }
@@ -32,21 +32,13 @@ const Demo = ({ className = '', cardId }: DemoProps) => {
     );
   }
 
-  const handleCellChange = (updatedCell: CellData) => {
-    if (!moduleObj) return;
-
+  const handleCellChange = (cellId: string, updates: Partial<CellData>) => {
     console.log('Demo: Cell Change:', {
-      moduleId: moduleObj.card.id,
-      cellId: updatedCell.id,
-      newCode: updatedCell.code
+      moduleId: moduleObj?.card.id,
+      cellId,
+      updates
     });
-
-    // Use CellManager directly to update the cell
-    CellManager.getInstance().updateCell(
-      moduleObj.card.id,
-      updatedCell.id,
-      updatedCell
-    );
+    updateCell(cellId, updates);
   };
 
   return (
@@ -61,34 +53,21 @@ const Demo = ({ className = '', cardId }: DemoProps) => {
       </div>
 
       <div className="space-y-4">
-        {CellManager.getInstance().getCellsForModule(moduleObj.card.id).map(cell => {
-          console.log('Rendering cell:', {
-            moduleId: moduleObj.card.id,
-            cellId: cell.id,
-            type: cell.type
-          });
-          return (
-            <NotebookCell
-              key={cell.id}
-              cell={cell}
-              isActive={activeCells.includes(cell.id)}
-              onToggle={() => {
-                console.log('Demo: Cell Toggle:', {
-                  cellId: cell.id,
-                  currentlyActive: activeCells.includes(cell.id)
-                });
-                
-                setActiveCells(prev =>
-                  prev.includes(cell.id)
-                    ? prev.filter(id => id !== cell.id)
-                    : [...prev, cell.id]
-                );
-              }}
-              onCellChange={handleCellChange}
-              availableCells={CellManager.getInstance().getCellsForModule(moduleObj.card.id)}
-            />
-          );
-        })}
+        {cells.map(cell => (
+          <NotebookCell
+            key={cell.id}
+            cell={cell}
+            isActive={activeCells.includes(cell.id)}
+            onToggle={() => {
+              setActiveCells(prev =>
+                prev.includes(cell.id)
+                  ? prev.filter(id => id !== cell.id)
+                  : [...prev, cell.id]
+              );
+            }}
+            onCellChange={(updates) => handleCellChange(cell.id, updates)}
+          />
+        ))}
       </div>
     </div>
   );
