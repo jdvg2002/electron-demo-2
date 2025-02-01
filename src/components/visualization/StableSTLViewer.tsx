@@ -39,7 +39,6 @@ interface StableSTLViewerProps {
 const StableSTLViewer = React.memo(({ file }: StableSTLViewerProps) => {
   // Ensure file is valid before rendering
   if (!file || !(file instanceof File)) {
-    console.error('Invalid file provided to StableSTLViewer');
     return null;
   }
 

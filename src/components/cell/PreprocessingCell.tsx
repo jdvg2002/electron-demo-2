@@ -131,7 +131,6 @@ export const PreprocessingCell: React.FC<NotebookCellProps> = (props) => {
       }
 
     } catch (error) {
-      console.error('Preprocessing failed:', error);
       onCellChange({
         ...cell,
         status: 'error',

@@ -222,16 +222,8 @@ const DraggableCardsCanvas = () => {
     cardId: number, 
     canvasRef: HTMLDivElement
   ) => {
-    console.log('Wire Logic Called:', { 
-      cardId, 
-      isWiring, 
-      activeWire: activeWire ? { ...activeWire } : null,
-      existingWires: wires.length 
-    });
-
     // If we're not in wiring mode, don't do anything
     if (!isWiring) {
-      console.log('Not in wiring mode, returning');
       return;
     }
 
@@ -251,7 +243,6 @@ const DraggableCardsCanvas = () => {
     const snapPoint = getSnapPoint(localCardRect, mouseX, mouseY);
 
     if (!activeWire) {
-      console.log('Starting new wire from card:', cardId);
       setActiveWire({
         startCard: cardId,
         startX: snapPoint.x,
@@ -388,7 +379,6 @@ const DraggableCardsCanvas = () => {
   };
 
   const startWiring = () => {
-    console.log('Starting wiring mode');
     setIsWiring(true);
     setActiveWire(null);
   };

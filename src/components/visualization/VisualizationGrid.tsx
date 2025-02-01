@@ -146,7 +146,7 @@ const VisualizationGrid: React.FC<VisualizationGridProps> = React.memo(({
   
   return prevProps.cards.every((card, index) => {
     const nextCard = nextProps.cards[index];
-    if (card.content.type === 'distribution') {
+    if (card.content.type === 'distribution' && nextCard.content.type === 'distribution') {
       return (
         card.content.label === nextCard.content.label &&
         card.content.mean === nextCard.content.mean &&

@@ -35,14 +35,12 @@ const CardRenderer: React.FC<CardRendererProps> = React.memo(({ content, cards, 
           className="w-full h-full flex items-center justify-center text-gray-600 px-4"
           draggable
           onDragStart={(e) => {
-            console.log('Starting drag with fileId:', content.fileId); // Debug log
             const dragData = {
               type: 'csv',
               fileName: content.fileName,
               fileId: content.fileId, // Make sure we're including fileId
               file: content.file
             };
-            console.log('Drag data:', dragData); // Debug log
             e.dataTransfer.setData('application/json', JSON.stringify(dragData));
           }}
         >

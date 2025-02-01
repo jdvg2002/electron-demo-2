@@ -77,7 +77,6 @@ export const ExternalCell: React.FC<NotebookCellProps> = (props) => {
       });
 
     } catch (error) {
-      console.error('External tool execution failed:', error);
       setErrorMessage(error instanceof Error ? error.message : 'External tool execution failed');
       onCellChange({
         ...cell,

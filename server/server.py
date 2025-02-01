@@ -15,6 +15,8 @@ import base64
 
 def convert_step_to_stl(file_path):
     try:
+        print("Starting STEP file processing...")
+        
         # Import FreeCAD modules
         sys.path.append('/Applications/FreeCAD.app/Contents/Resources/lib')
         sys.path.append('/Applications/FreeCAD.app/Contents/Resources/lib/python3.11/site-packages')
@@ -23,12 +25,11 @@ def convert_step_to_stl(file_path):
         import Import
         from shape_analysis import is_flange, is_bend, is_pipe
 
-        # Create new document and import STEP
+        print("Importing STEP file...")
         doc = FreeCAD.newDocument()
         Import.insert(file_path, doc.Name)
         
-        # Get measurements for each component
-        pipe_measurements = []  # Changed to array of component measurements
+        print("Processing components...")
         components = []
         for obj in doc.RootObjects:
             if hasattr(obj, 'Group'):
@@ -36,85 +37,58 @@ def convert_step_to_stl(file_path):
             else:
                 components.append(obj)
         
-        for obj in components:
-            is_likely_flange, flange_chars = is_flange(obj.Shape)
-            is_likely_bend, bend_chars = is_bend(obj.Shape)
-            is_likely_pipe, pipe_chars = is_pipe(obj.Shape)
-            
-            component_measurements = {'Component': obj.Label}  # Start with component name
-            
-            if is_likely_flange:
-                component_measurements.update({
-                    'Main Diameter': max(flange_chars['main_diameters']),
-                    'Bolt Hole Diameter': flange_chars['bolt_diameter'],
-                    'Bolt Count': flange_chars['bolt_count']
-                })
-            elif is_likely_bend:
-                component_measurements.update({
-                    'Inner Diameter': bend_chars['pipe_diameter'],
-                    'Wall Thickness': bend_chars['wall_thickness']
-                })
-                if bend_chars['bend_angle']:
-                    component_measurements['Bend Angle'] = bend_chars['bend_angle']
-                if bend_chars['bend_radius']:
-                    component_measurements['Bend Radius'] = bend_chars['bend_radius']
-            elif is_likely_pipe:
-                component_measurements.update({
-                    'Inner Diameter': pipe_chars['inner_diameter'],
-                    'Outer Diameter': pipe_chars['outer_diameter'],
-                    'Wall Thickness': pipe_chars['wall_thickness'],
-                    'Length': pipe_chars['length']
-                })
-            else:
-                bbox = obj.Shape.BoundBox
-                component_measurements.update({
-                    'Length': bbox.XLength,
-                    'Width': bbox.YLength,
-                    'Height': bbox.ZLength
-                })
-            
+        pipe_measurements = []
+        total_components = len(components)
+        
+        for i, obj in enumerate(components):
+            print(f"Processing component {i+1} of {total_components}")
+            component_measurements = {'Component': obj.Label}
             pipe_measurements.append(component_measurements)
-
-        # Create STL
+        
+        print("Creating STL mesh...")
         step_reader = STEPControl_Reader()
         status = step_reader.ReadFile(file_path)
+        
         if status == IFSelect_RetDone:
             step_reader.TransferRoots()
             shape = step_reader.OneShape()
             
-            # Create a combined STL from all shapes
-            mesh = BRepMesh_IncrementalMesh(shape, 5.0)
+            print("Generating mesh...")
+            mesh = BRepMesh_IncrementalMesh(shape, 0.1)
             mesh.Perform()
             
+            print("Writing STL file...")
             temp_stl = tempfile.NamedTemporaryFile(delete=False, suffix='.stl')
             stl_writer = StlAPI_Writer()
             stl_writer.Write(shape, temp_stl.name)
             
-            # Read in binary mode
+            print("Reading STL data...")
             with open(temp_stl.name, 'rb') as f:
                 stl_data = f.read()
             
             os.unlink(temp_stl.name)
             
-            # Convert binary data to base64 for JSON transport
+            print("Converting to base64...")
             stl_base64 = base64.b64encode(stl_data).decode('utf-8')
             
-            return json.dumps({
+            # Final result as JSON
+            print(json.dumps({
                 'success': True,
                 'stl_data': stl_base64,
                 'pipe_measurements': pipe_measurements
-            })
-        
-        return json.dumps({
+            }))
+            return
+            
+        print(json.dumps({
             'success': False,
             'error': 'Failed to read STEP file'
-        })
+        }))
         
     except Exception as e:
-        return json.dumps({
+        print(json.dumps({
             'success': False,
             'error': str(e)
-        })
+        }))
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:

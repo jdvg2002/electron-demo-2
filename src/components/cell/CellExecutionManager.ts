@@ -37,7 +37,6 @@ print(json.dumps({"result": result}))
         }
         return result;
       } catch (error) {
-        console.error("Preprocessing execution failed:", error);
         throw error;
       }
     }
@@ -91,24 +90,23 @@ except Exception as e:
         const result = await window.electronWindow.executePython(pythonCode);
 
         if (!result.success) {
-            console.error("Python execution failed:", result.error);
             throw new Error(`Python execution failed: ${result.error}`);
         }
 
         // Parse the JSON string from stdout to get the actual data
         try {
+            if (!result.stdout) {
+                throw new Error('No output from Python script');
+            }
             const parsedOutput = JSON.parse(result.stdout);
             if (parsedOutput.data.status === "error") {
-                console.error("Python analysis failed:", parsedOutput.data.errorCode);
                 throw new Error(parsedOutput.data.errorCode);
             }
             return parsedOutput.data;
-        } catch (e) {
-            console.error("Failed to parse Python output:", result.stdout);
-            throw new Error(`Invalid output format from Python script: ${e.message}\nOutput: ${result.stdout}`);
+        } catch (e: Error | unknown) {
+            throw new Error(`Invalid output format from Python script: ${e instanceof Error ? e.message : String(e)}\nOutput: ${result.stdout}`);
         }
       } catch (error) {
-        console.error("External tool execution failed:", error);
         throw error;
       }
     }
@@ -124,7 +122,6 @@ except Exception as e:
         }
         return result;
       } catch (error) {
-        console.error("Postprocessing execution failed:", error);
         throw error;
       }
     }

@@ -24,6 +24,7 @@ interface ElectronWindow {
         result?: string;
         error?: string;
     }>;
+    processChunk: (data: { chunk: ArrayBuffer, chunkIndex: number }) => Promise<any>;
 }
 
 declare interface Window {

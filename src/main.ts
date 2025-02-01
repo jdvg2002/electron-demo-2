@@ -4,6 +4,7 @@ import path from "path";
 import { PythonShell } from 'python-shell';
 import fs from 'fs';
 import os from 'os';
+import { WorkerPoolManager } from './backend/manager/WorkerPoolManager';
 
 const inDevelopment = process.env.NODE_ENV === "development";
 
@@ -103,6 +104,7 @@ ipcMain.handle('save-temp-file', async (_event, fileBuffer) => {
 // Replace the direct import with a function that calls Python
 async function convert_step_to_stl(filePath: string) {
   return new Promise((resolve, reject) => {
+    console.log('Starting Python conversion process...');
     const scriptPath = path.join(process.cwd(), 'server', 'server.py');
     const pythonPath = path.join(
       process.cwd(), 
@@ -115,21 +117,52 @@ async function convert_step_to_stl(filePath: string) {
     );
     
     if (!fs.existsSync(pythonPath)) {
+      console.error('Python path not found:', pythonPath);
       return {
         success: false,
         error: 'Python environment not properly configured'
       };
     }
+
+    const timeout = setTimeout(() => {
+      console.error('Conversion timeout after 15 minutes');
+      reject(new Error('Conversion timeout - file might be too large'));
+    }, 15 * 60 * 1000);
     
-    PythonShell.run(scriptPath, {
+    console.log('Running Python script...');
+    const pyshell = new PythonShell(scriptPath, {
       args: [filePath],
-      mode: 'json',
+      mode: 'text',
       pythonPath: pythonPath,
       pythonOptions: ['-u']
-    }).then(results => {
-      resolve(results[0]);
-    }).catch(error => {
-      reject(error);
+    });
+
+    let finalResult = '';
+    
+    pyshell.on('message', (message) => {
+      if (message.startsWith('{')) {
+        // This is our final JSON result
+        finalResult = message;
+      } else {
+        // This is a progress message
+        console.log('Python progress:', message);
+      }
+    });
+
+    pyshell.end((err) => {
+      clearTimeout(timeout);
+      if (err) {
+        console.error('Python conversion error:', err);
+        reject(err);
+      } else {
+        try {
+          const result = JSON.parse(finalResult);
+          console.log('Python conversion completed');
+          resolve(result);
+        } catch (parseError) {
+          reject(new Error('Failed to parse Python output'));
+        }
+      }
     });
   });
 }
@@ -207,4 +240,29 @@ function clearLocalStorage(mainWindow: BrowserWindow) {
 
 ipcMain.handle('get-project-root', () => {
   return process.cwd();
+});
+
+ipcMain.handle('init-worker-pool', async () => {
+  // Initialize worker pool when needed
+  return { success: true };
+});
+
+ipcMain.handle('terminate-worker-pool', async () => {
+  // Cleanup worker pool
+  return { success: true };
+});
+
+// Add these handlers
+ipcMain.handle('process-chunk', async (_event, { chunk, chunkIndex }) => {
+  try {
+    const workerPool = WorkerPoolManager.getInstance();
+    const result = await workerPool.processChunk(chunk, chunkIndex);
+    return result;
+  } catch (error) {
+    console.error('Chunk processing error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
 });

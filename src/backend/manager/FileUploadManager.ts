@@ -4,6 +4,8 @@ import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
 import { CellData } from '@/backend/models/Cell';
 import { ModuleManager } from '@/backend/manager/ModuleManager';
 import { v4 as uuidv4 } from 'uuid';
+import { WorkerPool, WorkerPoolTask } from '../utils/WorkerPool';
+import path from 'path';
 
 export interface ParsedFileResult {
   fileId: string;
@@ -34,6 +36,7 @@ export class FileUploadManager {
   private static instance: FileUploadManager;
   private globalManager: GlobalManager;
   private moduleManager: ModuleManager;
+  private readonly chunkSize = 5 * 1024 * 1024; // 5MB chunks
 
   private constructor() {
     this.globalManager = GlobalManager.getInstance();
@@ -104,19 +107,47 @@ export class FileUploadManager {
   }
 
   private async handleStepUpload(file: File, cell?: CellData): Promise<ParsedFileResult> {
+    console.log('Starting STEP file upload process:', file.name, 'Size:', file.size);
+    
+    // Split file into chunks
+    const chunks = await this.splitIntoChunks(file);
+    console.log('Split file into', chunks.length, 'chunks');
+    
+    // Process chunks in parallel
+    console.log('Starting chunk processing...');
+    const processedChunks = await this.processChunks(chunks);
+    console.log('Finished processing chunks, got', processedChunks.length, 'results');
+    
+    // Combine processed chunks
+    console.log('Combining chunk results...');
+    const combinedResult = this.combineChunkResults(processedChunks);
+    console.log('Combined result has', combinedResult.entities.length, 'entities');
+    
+    // Continue with existing STL conversion logic
+    console.log('Starting STL conversion...');
     const buffer = await file.arrayBuffer();
+    console.log('File buffer created, size:', buffer.byteLength);
+    
+    console.log('Saving temporary file...');
     const tempPath = await window.electronWindow.saveTempFile(buffer);
+    console.log('Temp file saved at:', tempPath);
+    
+    console.log('Converting STEP to STL...');
     const result = await window.stepConverter.convertStep(tempPath);
+    console.log('Conversion result:', result);
 
     if (!result.success) {
+      console.error('Conversion failed:', result.error);
       throw new Error(result.error || 'Failed to convert STEP file');
     }
 
     if (!result.stl_data) {
+      console.error('No STL data in result');
       throw new Error('No STL data received from conversion');
     }
 
     // Decode base64 STL data to binary
+    console.log('Processing STL data...');
     const binaryString = atob(result.stl_data);
     const bytes = new Uint8Array(binaryString.length);
     for (let i = 0; i < binaryString.length; i++) {
@@ -126,45 +157,15 @@ export class FileUploadManager {
     const stlBlob = new Blob([bytes], { type: 'model/stl' });
     const newFileName = file.name.replace(/\.(step|stp)$/i, '.stl');
     const stlFile = new File([stlBlob], newFileName, { type: 'model/stl' });
-    
-    const timestamp = new Date().toISOString();
-    const fileId = await this.globalManager.addFileFromUpload(stlFile, file.name);
-
-    // Add measurements from STEP conversion
-    if (result.pipe_measurements) {
-        this.globalManager.addMeasurementBatch(
-            fileId,
-            Array.isArray(result.pipe_measurements) ? result.pipe_measurements.map((componentMeasurements: PipeMeasurement) => {
-                const { Component, ...measurements } = componentMeasurements;
-                return Object.entries(measurements).map(([name, value]): Omit<VariableRecord, 'id'> => ({
-                    name: `${Component} - ${name}`,
-                    value: value as number,
-                    component: Component,
-                    type: 'measurement' as const,
-                    fileId
-                }));
-            }).flat() : []
-        );
-    }
-
-    // After file is uploaded, add it to all existing modules
-    const modules = this.moduleManager.getAllModules();
-    modules.forEach(module => {
-        if (!module.globalFileIds.includes(fileId)) {
-            module.globalFileIds.push(fileId);
-        }
-    });
-    
-    // Notify listeners of the change
-    this.moduleManager.notifyListeners();
+    console.log('STL file created:', newFileName, 'Size:', stlFile.size);
 
     return {
-        fileId,
+        fileId: stlFile.name,
         fileType: 'step',
         measurements: result.pipe_measurements || {},
         rawFile: stlFile,
         originalFileName: file.name,
-        timestamp,
+        timestamp: new Date().toISOString(),
         cell
     };
   }
@@ -227,6 +228,38 @@ export class FileUploadManager {
       
       reader.readAsArrayBuffer(file);
     });
+  }
+
+  private async splitIntoChunks(file: File): Promise<Blob[]> {
+    const chunks: Blob[] = [];
+    let offset = 0;
+    
+    while (offset < file.size) {
+      chunks.push(file.slice(offset, offset + this.chunkSize));
+      offset += this.chunkSize;
+    }
+    
+    return chunks;
+  }
+
+  private async processChunks(chunks: Blob[]): Promise<any[]> {
+    const results = await Promise.all(
+      chunks.map(async (chunk, index) => {
+        const buffer = await chunk.arrayBuffer();
+        return window.electronWindow.processChunk({ chunk: buffer, chunkIndex: index });
+      })
+    );
+
+    return results.sort((a, b) => a.chunkIndex - b.chunkIndex);
+  }
+
+  private combineChunkResults(results: any[]): any {
+    // Combine the processed chunk results
+    const combined = {
+      entities: results.flatMap(result => result.entities)
+    };
+    
+    return combined;
   }
 
   removeFile(fileId: string): void {
