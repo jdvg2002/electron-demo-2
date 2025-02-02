@@ -90,6 +90,7 @@
         "python-shell": "^5.0.0",
         "react": "^18.3.1",
         "react-dom": "^18.3.1",
+        "react-error-boundary": "^5.0.0",
         "react-i18next": "^15.4.0",
         "react-query": "^3.39.3",
         "react-stl-viewer": "^2.5.0",

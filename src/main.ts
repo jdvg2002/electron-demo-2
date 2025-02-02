@@ -115,10 +115,11 @@ async function convert_step_to_stl(filePath: string) {
     );
     
     if (!fs.existsSync(pythonPath)) {
-      return {
+      resolve({
         success: false,
         error: 'Python environment not properly configured'
-      };
+      });
+      return;
     }
     
     PythonShell.run(scriptPath, {
@@ -127,9 +128,31 @@ async function convert_step_to_stl(filePath: string) {
       pythonPath: pythonPath,
       pythonOptions: ['-u']
     }).then(results => {
-      resolve(results[0]);
+      if (!results || results.length === 0) {
+        resolve({
+          success: false,
+          error: 'No response from Python script'
+        });
+        return;
+      }
+      try {
+        const result = results[0];
+        if (typeof result === 'string') {
+          resolve(JSON.parse(result));
+        } else {
+          resolve(result);
+        }
+      } catch (error) {
+        resolve({
+          success: false,
+          error: `Failed to parse Python response: ${error}`
+        });
+      }
     }).catch(error => {
-      reject(error);
+      resolve({
+        success: false,
+        error: `Python script error: ${error}`
+      });
     });
   });
 }

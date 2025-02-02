@@ -1,13 +1,13 @@
 import { GlobalManager } from '@/backend/manager/GlobalManager';
 import { VariableRecord } from '../models/Variable';
-import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
 import { CellData } from '@/backend/models/Cell';
 import { ModuleManager } from '@/backend/manager/ModuleManager';
-import { v4 as uuidv4 } from 'uuid';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import * as THREE from 'three';
 
 export interface ParsedFileResult {
   fileId: string;
-  fileType: 'stl' | 'step' | 'local' | 'csv';
+  fileType: 'gltf' | 'step' | 'local' | 'csv' | 'glb';
   measurements: Record<string, number>;
   rawFile: File;
   originalFileName: string;
@@ -50,8 +50,8 @@ export class FileUploadManager {
   async uploadFile(file: File, cell?: CellData): Promise<ParsedFileResult> {
     const fileType = file.name.toLowerCase();
     
-    if (fileType.endsWith('.stl')) {
-      return this.handleStlUpload(file, cell);
+    if (fileType.endsWith('.gltf')) {
+      return this.handleGltfUpload(file, cell);
     } 
     else if (fileType.endsWith('.step') || fileType.endsWith('.stp')) {
       return this.handleStepUpload(file, cell);
@@ -64,10 +64,10 @@ export class FileUploadManager {
     }
   }
 
-  private async handleStlUpload(file: File, cell?: CellData): Promise<ParsedFileResult> {
+  private async handleGltfUpload(file: File, cell?: CellData): Promise<ParsedFileResult> {
     const timestamp = new Date().toISOString();
-    const fileId = `stl_${timestamp}_${file.name}`;
-    const measurements = await this.extractSTLMeasurements(file);
+    const fileId = `gltf_${timestamp}_${file.name}`;
+    const measurements = await this.extractGltfMeasurements(file);
 
     // Store in GlobalFileManager
     await this.globalManager.addFileFromUpload(file, file.name);
@@ -81,7 +81,7 @@ export class FileUploadManager {
       });
     }
 
-    // After file is uploaded, add it to all existing modules
+    // Add to modules and notify listeners
     const modules = this.moduleManager.getAllModules();
     modules.forEach(module => {
       if (!module.globalFileIds.includes(fileId)) {
@@ -89,12 +89,11 @@ export class FileUploadManager {
       }
     });
     
-    // Notify listeners of the change
     this.moduleManager.notifyListeners();
 
     return {
       fileId,
-      fileType: 'stl',
+      fileType: 'gltf',
       measurements,
       rawFile: file,
       originalFileName: file.name,
@@ -112,25 +111,24 @@ export class FileUploadManager {
       throw new Error(result.error || 'Failed to convert STEP file');
     }
 
-    if (!result.stl_data) {
-      throw new Error('No STL data received from conversion');
+    if (!result.gltf_data) {
+        throw new Error('No GLTF data received from conversion');
     }
 
-    // Decode base64 STL data to binary
-    const binaryString = atob(result.stl_data);
+    // Convert base64 to binary data
+    const binaryString = atob(result.gltf_data);
     const bytes = new Uint8Array(binaryString.length);
     for (let i = 0; i < binaryString.length; i++) {
         bytes[i] = binaryString.charCodeAt(i);
     }
     
-    const stlBlob = new Blob([bytes], { type: 'model/stl' });
-    const newFileName = file.name.replace(/\.(step|stp)$/i, '.stl');
-    const stlFile = new File([stlBlob], newFileName, { type: 'model/stl' });
+    const gltfBlob = new Blob([bytes], { type: 'model/gltf' });
+    const newFileName = file.name.replace(/\.(step|stp)$/i, '.gltf');
+    const gltfFile = new File([gltfBlob], newFileName, { type: 'model/gltf' });
     
     const timestamp = new Date().toISOString();
-    const fileId = await this.globalManager.addFileFromUpload(stlFile, file.name);
+    const fileId = await this.globalManager.addFileFromUpload(gltfFile, file.name);
 
-    // Add measurements from STEP conversion
     if (result.pipe_measurements) {
         this.globalManager.addMeasurementBatch(
             fileId,
@@ -160,9 +158,9 @@ export class FileUploadManager {
 
     return {
         fileId,
-        fileType: 'step',
+        fileType: 'glb',
         measurements: result.pipe_measurements || {},
-        rawFile: stlFile,
+        rawFile: gltfFile,
         originalFileName: file.name,
         timestamp,
         cell
@@ -197,7 +195,7 @@ export class FileUploadManager {
     }
   }
 
-  private async extractSTLMeasurements(file: File): Promise<Record<string, number>> {
+  private async extractGltfMeasurements(file: File): Promise<Record<string, number>> {
     return new Promise((resolve) => {
       const reader = new FileReader();
       reader.onload = (event) => {
@@ -206,23 +204,25 @@ export class FileUploadManager {
           return;
         }
 
-        const loader = new STLLoader();
-        const geometry = loader.parse(event.target.result as ArrayBuffer);
-        
-        // Calculate basic measurements
-        const bbox = geometry.boundingBox;
-        if (!bbox) {
-          geometry.computeBoundingBox();
-        }
-        
-        const measurements: Record<string, number> = {
-          'Width': Math.abs(bbox!.max.x - bbox!.min.x),
-          'Height': Math.abs(bbox!.max.y - bbox!.min.y),
-          'Depth': Math.abs(bbox!.max.z - bbox!.min.z),
-          'Volume': geometry.getAttribute('position').count / 3, // Approximate
-        };
-
-        resolve(measurements);
+        const loader = new GLTFLoader();
+        loader.parse(event.target.result as ArrayBuffer, '', 
+          (gltf) => {
+            const bbox = new THREE.Box3().setFromObject(gltf.scene);
+            const size = new THREE.Vector3();
+            bbox.getSize(size);
+            
+            const measurements: Record<string, number> = {
+              'Width': size.x,
+              'Height': size.y,
+              'Depth': size.z,
+            };
+            resolve(measurements);
+          },
+          (error) => {
+            console.error('Error parsing GLTF:', error);
+            resolve({});
+          }
+        );
       };
       
       reader.readAsArrayBuffer(file);
@@ -272,12 +272,12 @@ export class FileUploadManager {
       
       state.files.push({
         fileId: file.id,
-        fileType: file.originalFileName.toLowerCase().endsWith('.stl') ? 'stl' : 'step',
+        fileType: file.originalFileName.toLowerCase().endsWith('.gltf') ? 'gltf' : 'step',
         measurements: {},
         rawFile: new File(
           [Uint8Array.from(atob(file.data.split(',')[1]), c => c.charCodeAt(0))],
           file.originalFileName,
-          { type: 'model/stl' }
+          { type: 'model/gltf' }
         ),
         originalFileName: file.originalFileName,
         timestamp: file.timestamp

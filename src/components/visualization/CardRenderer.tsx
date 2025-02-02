@@ -2,10 +2,12 @@ import React from 'react';
 import { BarChart2 } from 'lucide-react';
 import { DistributionChart } from '../charts/ReactorCharts';
 import StableSTLViewer from './StableSTLViewer';
+import StableGLTFViewer from './StableGLTFViewer';
 
 // Types
 export type CardContent = 
   | { type: 'stl'; file: File }
+  | { type: 'gltf'; file: File }
   | { type: 'measurements'; data: Record<string, number> }
   | { type: 'distribution'; mean: number; stdDev: number; label: string; isLocal?: boolean }
   | { type: 'csv'; file: File; fileName: string; fileId: string };
@@ -49,6 +51,13 @@ const CardRenderer: React.FC<CardRendererProps> = React.memo(({ content, cards, 
           <span className="text-sm break-all text-center cursor-move">
             {content.fileName}
           </span>
+        </div>
+      );
+
+    case 'gltf':
+      return (
+        <div className="w-full h-full -ml-2 -mr-2 -mb-2">
+          <StableGLTFViewer file={content.file} />
         </div>
       );
 

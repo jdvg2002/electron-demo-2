@@ -26,20 +26,23 @@ interface ElectronWindow {
     }>;
 }
 
+interface StepConverterResult {
+    success: boolean;
+    gltf_data?: string;
+    stl_data?: string;
+    pipe_measurements?: {
+        inner_diameter: number;
+        outer_diameter: number;
+        wall_thickness: number;
+    };
+    error?: string;
+}
+
 declare interface Window {
     themeMode: ThemeModeContext;
     electronWindow: ElectronWindow;
     stepConverter: {
-        convertStep: (filePath: string) => Promise<{
-            success: boolean;
-            stl_data?: string;
-            pipe_measurements?: {
-                inner_diameter: number;
-                outer_diameter: number;
-                wall_thickness: number;
-            };
-            error?: string;
-        }>;
+        convertStep: (path: string) => Promise<StepConverterResult>;
     };
     cleanup: {
         clearStorage: () => Promise<void>;

@@ -3,15 +3,20 @@ import { GlobalManager } from '@/backend/manager/GlobalManager';
 import { VisualizationCard } from './CardRenderer';
 
 export class CardFactory {
-  private static createStlCard(stlFile: File | { name: string; data: string; type: string }): VisualizationCard {
+  private static createModelCard(file: File | { name: string; data: string; type: string }): VisualizationCard {
+    const fileName = file instanceof File ? file.name : file.name;
+    const isGltf = fileName.toLowerCase().endsWith('.gltf') || 
+                   fileName.toLowerCase().endsWith('.step') || 
+                   fileName.toLowerCase().endsWith('.stp');
+    
     return {
       title: '3D Model',
       content: { 
-        type: 'stl', 
-        file: stlFile instanceof File ? stlFile : new File(
-          [Uint8Array.from(atob(stlFile.data.split(',')[1]), c => c.charCodeAt(0))],
-          stlFile.name,
-          { type: stlFile.type }
+        type: isGltf ? 'gltf' : 'stl', 
+        file: file instanceof File ? file : new File(
+          [Uint8Array.from(atob(file.data.split(',')[1]), c => c.charCodeAt(0))],
+          file.name,
+          { type: isGltf ? 'model/gltf+json' : 'model/stl' }
         )
       }
     };
@@ -61,7 +66,6 @@ export class CardFactory {
     localVariables?: Map<string, VariableRecord>,
     isPreprocessing: boolean = !!localVariables
   ): VisualizationCard[] {
-
     const globalManager = GlobalManager.getInstance();
     const cards: VisualizationCard[] = [];
     
@@ -75,8 +79,8 @@ export class CardFactory {
       return cards;  // Return early for CSV files
     }
 
-    // Only add STL card for STL or STEP files
-    cards.push(this.createStlCard(file));
+    // Add model card for STL or GLTF files
+    cards.push(this.createModelCard(file));
 
     // Get and process measurements
     const globalMeasurements = globalManager.getVariablesForFile(fileId)
