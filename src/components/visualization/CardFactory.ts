@@ -6,6 +6,7 @@ export class CardFactory {
   private static createModelCard(file: File | { name: string; data: string; type: string }): VisualizationCard {
     const fileName = file instanceof File ? file.name : file.name;
     const isGltf = fileName.toLowerCase().endsWith('.gltf') || 
+                   fileName.toLowerCase().endsWith('.glb') ||
                    fileName.toLowerCase().endsWith('.step') || 
                    fileName.toLowerCase().endsWith('.stp');
     

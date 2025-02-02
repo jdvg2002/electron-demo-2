@@ -28,14 +28,14 @@ interface ElectronWindow {
 
 interface StepConverterResult {
     success: boolean;
-    gltf_data?: string;
-    stl_data?: string;
-    pipe_measurements?: {
-        inner_diameter: number;
-        outer_diameter: number;
-        wall_thickness: number;
-    };
     error?: string;
+    gltf_data?: string;
+    pipe_measurements?: Record<string, number>;
+    performance_metrics?: {
+        timings: Record<string, number>;
+        sizes: Record<string, number>;
+        total_time: number;
+    };
 }
 
 declare interface Window {

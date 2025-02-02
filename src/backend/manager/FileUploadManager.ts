@@ -50,7 +50,7 @@ export class FileUploadManager {
   async uploadFile(file: File, cell?: CellData): Promise<ParsedFileResult> {
     const fileType = file.name.toLowerCase();
     
-    if (fileType.endsWith('.gltf')) {
+    if (fileType.endsWith('.gltf') || fileType.endsWith('.glb')) {
       return this.handleGltfUpload(file, cell);
     } 
     else if (fileType.endsWith('.step') || fileType.endsWith('.stp')) {
@@ -68,6 +68,7 @@ export class FileUploadManager {
     const timestamp = new Date().toISOString();
     const fileId = `gltf_${timestamp}_${file.name}`;
     const measurements = await this.extractGltfMeasurements(file);
+    const isGlb = file.name.toLowerCase().endsWith('.glb');
 
     // Store in GlobalFileManager
     await this.globalManager.addFileFromUpload(file, file.name);
@@ -93,7 +94,7 @@ export class FileUploadManager {
 
     return {
       fileId,
-      fileType: 'gltf',
+      fileType: isGlb ? 'glb' : 'gltf',
       measurements,
       rawFile: file,
       originalFileName: file.name,

@@ -38,7 +38,7 @@ export const FileUploadContainer: React.FC = () => {
         ref={fileInputRef}
         onChange={(e) => e.target.files && handleFiles(e.target.files)}
         className="hidden"
-        accept=".gltf,.step,.stp,.csv"
+        accept=".gltf,.step,.stp,.csv,.glb"
       />
       
       <div className="flex flex-col items-center gap-4">
