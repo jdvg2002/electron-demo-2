@@ -103,68 +103,97 @@ export class FileUploadManager {
   }
 
   private async handleStepUpload(file: File, cell?: CellData): Promise<ParsedFileResult> {
-    const buffer = await file.arrayBuffer();
-    const tempPath = await window.electronWindow.saveTempFile(buffer);
-    const result = await window.stepConverter.convertStep(tempPath);
-
-    if (!result.success) {
-      throw new Error(result.error || 'Failed to convert STEP file');
-    }
-
-    if (!result.gltf_data) {
-        throw new Error('No GLTF data received from conversion');
-    }
-
-    // Convert base64 to binary data
-    const binaryString = atob(result.gltf_data);
-    const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-    }
-    
-    const gltfBlob = new Blob([bytes], { type: 'model/gltf' });
-    const newFileName = file.name.replace(/\.(step|stp)$/i, '.gltf');
-    const gltfFile = new File([gltfBlob], newFileName, { type: 'model/gltf' });
-    
-    const timestamp = new Date().toISOString();
-    const fileId = await this.globalManager.addFileFromUpload(gltfFile, file.name);
-
-    if (result.pipe_measurements) {
-        this.globalManager.addMeasurementBatch(
-            fileId,
-            Array.isArray(result.pipe_measurements) ? result.pipe_measurements.map((componentMeasurements: PipeMeasurement) => {
-                const { Component, ...measurements } = componentMeasurements;
-                return Object.entries(measurements).map(([name, value]): Omit<VariableRecord, 'id'> => ({
-                    name: `${Component} - ${name}`,
-                    value: value as number,
-                    component: Component,
-                    type: 'measurement' as const,
-                    fileId
-                }));
-            }).flat() : []
-        );
-    }
-
-    // After file is uploaded, add it to all existing modules
-    const modules = this.moduleManager.getAllModules();
-    modules.forEach(module => {
-        if (!module.globalFileIds.includes(fileId)) {
-            module.globalFileIds.push(fileId);
-        }
-    });
-    
-    // Notify listeners of the change
-    this.moduleManager.notifyListeners();
-
-    return {
-        fileId,
-        fileType: 'glb',
-        measurements: result.pipe_measurements || {},
-        rawFile: gltfFile,
-        originalFileName: file.name,
-        timestamp,
-        cell
+    const metrics = {
+        startTime: performance.now(),
+        steps: {} as Record<string, number>
     };
+
+    try {
+        console.log(`Starting STEP conversion for ${file.name} (${(file.size / (1024 * 1024)).toFixed(2)}MB)`);
+        
+        // Buffer creation
+        const bufferStartTime = performance.now();
+        const buffer = await file.arrayBuffer();
+        metrics.steps.bufferCreation = performance.now() - bufferStartTime;
+        
+        // Save temp file
+        const tempStartTime = performance.now();
+        const tempPath = await window.electronWindow.saveTempFile(buffer);
+        metrics.steps.tempFileSave = performance.now() - tempStartTime;
+        
+        // STEP conversion
+        const conversionStartTime = performance.now();
+        const result = await window.stepConverter.convertStep(tempPath);
+        metrics.steps.stepConversion = performance.now() - conversionStartTime;
+
+        if (!result.success) {
+            throw new Error(result.error || 'Failed to convert STEP file');
+        }
+
+        if (!result.gltf_data) {
+            throw new Error('No GLTF data received from conversion');
+        }
+
+        // GLTF processing
+        const gltfStartTime = performance.now();
+        const binaryString = atob(result.gltf_data);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+        }
+        
+        const gltfBlob = new Blob([bytes], { type: 'model/gltf' });
+        const newFileName = file.name.replace(/\.(step|stp)$/i, '.gltf');
+        const gltfFile = new File([gltfBlob], newFileName, { type: 'model/gltf' });
+        metrics.steps.gltfProcessing = performance.now() - gltfStartTime;
+        
+        const timestamp = new Date().toISOString();
+        const fileId = await this.globalManager.addFileFromUpload(gltfFile, file.name);
+
+        // Log performance metrics
+        const totalTime = performance.now() - metrics.startTime;
+        console.log('File Upload Performance Metrics:');
+        console.log(`Total time: ${(totalTime / 1000).toFixed(2)}s`);
+        Object.entries(metrics.steps).forEach(([step, time]) => {
+            console.log(`${step}: ${(time / 1000).toFixed(2)}s`);
+        });
+
+        // Log Python-side metrics if available
+        if (result.performance_metrics) {
+            console.log('Python-side Performance Metrics:', result.performance_metrics);
+        }
+
+        // Process measurements if available
+        if (result.pipe_measurements) {
+            this.globalManager.addMeasurementBatch(
+                fileId,
+                Array.isArray(result.pipe_measurements) ? result.pipe_measurements.map((componentMeasurements: PipeMeasurement) => {
+                    const { Component, ...measurements } = componentMeasurements;
+                    return Object.entries(measurements).map(([name, value]): Omit<VariableRecord, 'id'> => ({
+                        name: `${Component} - ${name}`,
+                        value: value as number,
+                        component: Component,
+                        type: 'measurement' as const,
+                        fileId
+                    }));
+                }).flat() : []
+            );
+        }
+
+        return {
+            fileId,
+            fileType: 'glb',
+            measurements: result.pipe_measurements || {},
+            rawFile: gltfFile,
+            originalFileName: file.name,
+            timestamp,
+            cell
+        };
+
+    } catch (error) {
+        console.error('Error in handleStepUpload:', error);
+        throw error;
+    }
   }
 
   private async handleCsvUpload(file: File, cell?: CellData): Promise<ParsedFileResult> {

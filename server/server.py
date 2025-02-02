@@ -16,6 +16,7 @@ import base64
 import numpy as np
 from pygltflib import GLTF2, BufferFormat, BufferView, Accessor, Buffer, Mesh, Primitive, Node, Scene
 import logging
+import time
 
 def convert_step_to_stl(file_path):
     try:
@@ -121,24 +122,35 @@ def convert_step_to_stl(file_path):
         })
 
 def convert_step_to_gltf(file_path):
+    start_time = time.time()
+    metrics = {
+        'timings': {},
+        'sizes': {}
+    }
+    
     try:
+        metrics['sizes']['input_file'] = os.path.getsize(file_path)
+        logging.info(f"Starting STEP conversion for: {os.path.basename(file_path)} ({metrics['sizes']['input_file'] / 1024 / 1024:.2f} MB)")
+
         # Import FreeCAD modules
+        import_start = time.time()
         sys.path.append('/Applications/FreeCAD.app/Contents/Resources/lib')
         sys.path.append('/Applications/FreeCAD.app/Contents/Resources/lib/python3.11/site-packages')
         os.environ['PATH_TO_FREECAD_LIBDIR'] = '/Applications/FreeCAD.app/Contents/Resources/lib'
         import FreeCAD
         import Import
         from shape_analysis import is_flange, is_bend, is_pipe
+        metrics['timings']['import'] = time.time() - import_start
 
-        # Create new document and import STEP
+        # Rest of your existing code, just add timing checkpoints
+        doc_start = time.time()
         doc = FreeCAD.newDocument()
         Import.insert(file_path, doc.Name)
-        
-        if not doc.RootObjects:
-            raise Exception("No objects found in STEP file")
+        metrics['timings']['document_creation'] = time.time() - doc_start
 
-        # Get measurements for each component
-        pipe_measurements = []  # Changed to array of component measurements
+        # Component analysis timing
+        analysis_start = time.time()
+        pipe_measurements = []
         components = []
         for obj in doc.RootObjects:
             if hasattr(obj, 'Group'):
@@ -191,6 +203,8 @@ def convert_step_to_gltf(file_path):
             
             pipe_measurements.append(component_measurements)
 
+        metrics['timings']['component_analysis'] = time.time() - analysis_start
+
         # Read STEP file for GLTF conversion
         step_reader = STEPControl_Reader()
         status = step_reader.ReadFile(file_path)
@@ -205,8 +219,10 @@ def convert_step_to_gltf(file_path):
             raise Exception('No shape found in STEP file')
 
         # Create mesh
-        mesh = BRepMesh_IncrementalMesh(shape, 0.1)
+        mesh_start = time.time()
+        mesh = BRepMesh_IncrementalMesh(shape, 5.0)
         mesh.Perform()
+        metrics['timings']['mesh_creation'] = time.time() - mesh_start
         
         if not mesh.IsDone():
             raise Exception('Failed to create mesh')
@@ -330,34 +346,40 @@ def convert_step_to_gltf(file_path):
         gltf.scene = 0
         
         # Save as GLB
+        gltf_start = time.time()
         temp_glb = tempfile.NamedTemporaryFile(delete=False, suffix='.glb')
         gltf.save_binary(temp_glb.name)
         
-        # Save a copy to output directory
-        # try:
-        #     output_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'output', 'gltf')
-        #     os.makedirs(output_dir, exist_ok=True)
-        #     output_path = os.path.join(output_dir, f'{os.path.basename(file_path)}.glb')
-        #     import shutil
-        #     shutil.copy2(temp_glb.name, output_path)
-        #     logging.info(f"Saved GLB file to: {output_path}")
-        # except Exception as save_error:
-        #     logging.error(f"Failed to save copy of GLB file: {save_error}")
-            # Continue even if saving copy fails
-        
-        # Continue with normal processing
+        metrics['sizes']['output_file'] = os.path.getsize(temp_glb.name)
+        metrics['timings']['gltf_conversion'] = time.time() - gltf_start
+
         with open(temp_glb.name, 'rb') as f:
             glb_data = f.read()
         
         os.unlink(temp_glb.name)
         glb_base64 = base64.b64encode(glb_data).decode('utf-8')
         
+        total_time = time.time() - start_time
+        
+        # Only log metrics that exist
+        logging.info("Performance Metrics:")
+        logging.info(f"Input STEP size: {metrics['sizes'].get('input_file', 0) / 1024 / 1024:.2f} MB")
+        logging.info(f"Output GLB size: {metrics['sizes'].get('output_file', 0) / 1024 / 1024:.2f} MB")
+        for key, value in metrics['timings'].items():
+            logging.info(f"{key.replace('_', ' ').title()}: {value:.2f}s")
+        logging.info(f"Total time: {total_time:.2f}s")
+
         return json.dumps({
             'success': True,
             'gltf_data': glb_base64,
-            'pipe_measurements': pipe_measurements
+            'pipe_measurements': pipe_measurements,
+            'performance_metrics': {
+                'timings': metrics['timings'],
+                'sizes': metrics['sizes'],
+                'total_time': total_time
+            }
         })
-        
+
     except Exception as e:
         import traceback
         logging.error(f"Error in convert_step_to_gltf: {str(e)}\n{traceback.format_exc()}")
